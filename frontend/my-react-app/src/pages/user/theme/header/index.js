@@ -48,42 +48,11 @@ const Header = () => {
     <>
       <div className="header__top">
         <div className="container">
-          <div className="row">
-            <div className="col-6 header__top_left">
-              <ul>
-                <li>Hello@gmail.com</li>
-                <li>Mien phi ship don tu {formatter(200000)}</li>
-              </ul>
-            </div>
-            <div className="col-6 header__top_right">
-              <ul>
-                <li>
-                  <Link to={""}>
-                    {" "}
-                    <BsFacebook />{" "}
-                  </Link>
-                </li>
-                <li>
-                  <Link to={""}>
-                    {" "}
-                    <BsInstagram />{" "}
-                  </Link>
-                </li>
-                <li>
-                  <Link to={""}>
-                    {" "}
-                    <BsTwitter />{" "}
-                  </Link>{" "}
-                </li>
-                <li>
-                  {" "}
-                  <span>
-                    <BsFillPersonFill />
-                    Đăng nhập{" "}
-                  </span>
-                </li>
-              </ul>
-            </div>
+          <div className="row">    
+              <div className="header__top_top"> 
+                Freeship đơn từ {formatter(100000)}, vận chuyển toàn quốc
+              </div>    
+                          
           </div>
         </div>
       </div>
@@ -132,9 +101,6 @@ const Header = () => {
           </div>
           <div className="col-lg-3 col-xl-3">
             <div className="header__cart">
-              <div className="header__cart__price">
-                <span>{formatter(1200000)}</span>
-              </div>
               <ul>
                 <li>
                   <Link to="#">
