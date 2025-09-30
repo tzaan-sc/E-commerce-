@@ -1,0 +1,135 @@
+@use "sass:map";
+@import "styles/pages/theme";
+
+.header__top {
+  background: #f5f5f5f5;
+}
+
+.header__top_left {
+  ul {
+    display: flex;
+    align-items: center;
+    padding: 10px 0 13px;
+    list-style: none;
+    column-gap: 10px;
+    li {
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      column-gap: 2px;
+      color: map.get($theme-colors, "normal-text");
+    }
+    li:first-child {
+      position: relative;
+      &:after {
+        position: absolute;
+        right: -5px;
+        height: 20px;
+        width: 1px;
+        background: #000000;
+        opacity: 0.2;
+        content: "";
+      }
+    }
+  }
+}
+.header__top_right {
+  display: flex;
+  justify-content: flex-end; //cho qua ben phai
+  align-items: center;
+  padding: 10px 0 10px;
+  ul {
+    display: flex;
+    column-gap: 5px; //khoang cách các item 10px
+    list-style: none;
+
+    a {
+      font-size: 14px;
+      display: inline-block;
+      color: map.get($theme-colors, "normal-text");
+    }
+
+    li:last-child {
+      cursor: pointer;
+      margin-left: 10px;
+      color: map.get($theme-colors, "normal-text");
+    }
+    span {
+      font-size: 14px;
+      margin-left: 2px;
+    }
+  }
+}
+
+.header__logo {
+  padding: 15px 0;
+}
+
+.header__menu {
+  padding: 24px 0;
+  
+  ul {
+    display: flex;
+    justify-content: space-between;
+    li {
+      list-style: none;
+
+      a{
+        text-decoration: none;
+        font-size: 14px;
+        color: map.get($theme-colors,"bold-text");
+        text-transform: uppercase;
+        font-weight: bold;
+        letter-spacing: 2px;
+        transition: all 0.3s;
+        padding: 5px;
+        display: block;
+
+      }
+    }
+
+    .active a{
+      color: map.get($theme-colors, "main");
+    }
+  }
+}
+
+.header__cart {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px 0;
+  
+  ul {
+    display: flex;
+    margin-right: 25px;
+    li {
+    list-style: none;
+     position: relative;
+     margin-left: 20px;
+  
+    svg {
+      font-size: 25px;
+      color: map.get($theme-colors, "normal-text");
+    }
+
+    span {
+      color: white ;
+      background: map.get($theme-colors, "main");
+      position: absolute;
+      height: 20px;
+      width: 20px;
+      border-radius: 50%;
+      display: inline-block;
+      line-height: 20px;
+      font-size: 13px;
+      padding: 0 7px;
+      left: 18px;
+      top: -5px;
+      
+    }
+    }
+  }
+  
+
+}

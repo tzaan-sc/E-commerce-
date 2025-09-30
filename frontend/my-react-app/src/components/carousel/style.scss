@@ -1,0 +1,40 @@
+.custom-carousel {
+  // Carousel sẽ tự động chiếm hết không gian còn lại
+  flex-grow: 1; 
+
+  // Bo góc và đổ bóng cho mềm mại, hiện đại
+  border-radius: 12px;
+  overflow: hidden; // Đảm bảo ảnh bên trong cũng bị bo góc
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  
+  // Giữ tỷ lệ khung hình cho carousel, tránh bị nhảy layout khi ảnh có kích thước khác nhau
+  aspect-ratio: 16 / 7;
+  
+  .carousel-inner {
+    border-radius: 12px;
+  }
+
+  // Tùy chỉnh ảnh bên trong
+  .carousel-img {
+    width: 100%;
+    height: 100%;
+    // Quan trọng: Giúp ảnh lấp đầy khung mà không bị méo
+    object-fit: cover; 
+  }
+
+  // Tùy chỉnh nút bấm next/prev cho đẹp hơn
+  .carousel-control-prev,
+  .carousel-control-next {
+    // Làm mờ nền để icon nổi bật hơn
+    background-color: rgba(0, 0, 0, 0.1);
+    width: 8%;
+    transition: background-color 0.3s ease;
+    
+    // Bỏ bo góc mặc định của Bootstrap nếu có
+    border-radius: 0;
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+  }
+}

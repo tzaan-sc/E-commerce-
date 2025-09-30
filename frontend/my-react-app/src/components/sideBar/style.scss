@@ -1,0 +1,55 @@
+// Biến màu để dễ thay đổi
+$primary-color: #0389ff; // Màu xanh lá cây đậm hơn một chút
+$border-color: #e0e0e0;
+$hover-bg-color: #f7f7f7;
+
+.sidebar {
+  width: 250px; // Chiều rộng cố định cho sidebar
+  flex-shrink: 0; // Đảm bảo sidebar không bị co lại
+  background-color: #fff;
+  border: 1px solid $border-color;
+  border-radius: 8px;
+  overflow: hidden; // Bo tròn các góc bên trong
+  font-family: Arial, sans-serif;
+}
+
+.category-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px;
+  font-size: 16px;
+  font-weight: bold;
+  color: white;
+  background-color: $primary-color;
+  cursor: pointer;
+}
+
+.category-list {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+
+  li {
+    border-bottom: 1px solid $border-color;
+
+    &:last-child {
+      border-bottom: none; // Bỏ đường kẻ ở mục cuối cùng
+    }
+
+    a {
+      display: block; // Giúp link chiếm toàn bộ chiều rộng của thẻ li
+      padding: 13px 15px;
+      text-decoration: none;
+      color: #333;
+      transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+      font-size: 15px;
+      
+      // Hiệu ứng khi rê chuột
+      &:hover {
+        background-color: $hover-bg-color;
+        font-weight: 500;
+      }
+    }
+  }
+}
