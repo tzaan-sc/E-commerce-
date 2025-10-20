@@ -20,14 +20,19 @@ body {
     margin: auto;
 }
 
-.row {
-    display: flex; //trải dài
-    flex-wrap: wrap; // tới khi tràn thì đưa xuống dưới
-}
-.col-6{
-    flex: 0 0 50%;
-    max-width: 50%;
-}
+// .row {
+//     display: flex; //trải dài
+//     flex-wrap: wrap; // tới khi tràn thì đưa xuống dưới
+// }
+// .col-6{
+//     flex: 0 0 50%;
+//     max-width: 50%;
+// }
+
+// .col-lg-3{
+//     flex: 0 0 25%;
+//     max-width: 25%;
+// }
 
 @include Responsive($DESTOP){
     .col-xl-3{

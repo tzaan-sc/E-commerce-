@@ -1,112 +1,364 @@
 @use "sass:map";
-@import "styles/pages/theme"; // Đảm bảo file này có $theme-colors
+@import "styles/pages/theme";
 
-.header__top {
-  background: #b2e0fff5;
-  padding: 10px;
+// Variables
+$primary-color: #0066cc;
+$secondary-color: #ff6600;
+$text-color: #333;
+$bg-light: #f5f5f5;
+$white: #fff;
+$border-color: #ddd;
+$hover-bg: #f0f0f0;
 
-  .header__top_top {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-
-    h1 {
-      font-size: 20px;
-    }
+// Animation chữ chạy
+@keyframes scroll-text {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
   }
 }
 
-.header__logo {
-  padding: 15px 0;
-}
+// Header
+.header {
+  width: 100%;
+  background: $white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 
-.header__menu {
-  padding: 24px 0;
+  // Top banner
+  &__top {
+    background: $primary-color;
+    color: $white;
+    padding: 8px 0;
+    font-size: 18px; // Tăng từ 14px lên 18px
+    text-align: center;
 
-  ul {
-    display: flex;
-    justify-content: space-between;
+    &_content {
+      font-weight: 500;
+      display: inline-block;
+      white-space: nowrap;
+      animation: scroll-text 15s linear infinite;
+    }
+  }
+
+  // Main header
+  &__main {
+    padding: 15px 0;
+
+    &_content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 30px;
+    }
+  }
+
+  // Logo
+  &__logo {
+    flex-shrink: 0;
+
+    a {
+      text-decoration: none;
+      color: $primary-color;
+    }
+
+    h1 {
+      font-size: 36px; // Tăng từ 28px lên 36px
+      font-weight: 700;
+      margin: 0;
+      letter-spacing: 1px;
+    }
+  }
+
+  // Menu
+  &__menu {
+    flex: 1;
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      gap: 30px;
+
+      li {
+        position: relative;
+
+        > a {
+          text-decoration: none;
+          color: $text-color;
+          font-size: 20px; // Tăng từ 16px lên 20px
+          font-weight: 500;
+          padding: 10px 15px;
+          display: block;
+          transition: all 0.3s ease;
+          border-radius: 4px;
+
+          &:hover {
+            color: $primary-color;
+            background: $hover-bg;
+          }
+        }
+
+        &.active > a {
+          color: $primary-color;
+          font-weight: 600;
+        }
+
+        // Dropdown on hover
+        &:hover .header__menu_dropdown {
+          opacity: 1;
+          visibility: visible;
+          transform: translateY(0);
+        }
+      }
+    }
+  }
+
+  // Dropdown menu
+  &__menu_dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: $white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    padding: 15px;
+    min-width: 200px;
+    list-style: none;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    z-index: 100;
 
     li {
-      list-style: none;
-      position: relative;
+      margin: 0;
 
       a {
         text-decoration: none;
-        font-size: 14px;
-        color: map.get($theme-colors, "bold-text");
-        text-transform: uppercase;
-        font-weight: bold;
-        letter-spacing: 2px;
-        transition: all 0.3s;
-        padding: 5px;
+        color: $text-color;
+        padding: 8px 12px;
         display: block;
-      }
+        border-radius: 4px;
+        transition: all 0.2s ease;
+        font-size: 18px; // Tăng từ 14px lên 18px
 
-      ul {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        background: #fff;
-        padding: 10px;
-        display: none;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-
-        li {
-          margin: 5px 0;
+        &:hover {
+          background: $hover-bg;
+          color: $primary-color;
+          padding-left: 16px;
         }
-
-        a {
-          color: #000;
-        }
-      }
-
-      &:hover ul {
-        display: block;
       }
     }
 
-    .active a {
-      color: map.get($theme-colors, "main");
+    // Laptop dropdown (multiple columns)
+    &.laptop-dropdown {
+      display: flex;
+      gap: 30px;
+      min-width: 600px;
+      padding: 20px;
+
+      .dropdown-column {
+        flex: 1;
+
+        .section-title {
+          font-weight: 600;
+          color: $primary-color;
+          font-size: 18px; // Tăng từ 15px lên 18px
+          display: block;
+          margin-bottom: 10px;
+          padding-bottom: 8px;
+          border-bottom: 2px solid $border-color;
+        }
+
+        .sub-dropdown {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 5px;
+
+          li {
+            margin: 0;
+          }
+        }
+      }
+    }
+  }
+
+  // Utilities section
+  &__utilities {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-shrink: 0;
+  }
+
+  // Search
+  &__search {
+    display: flex;
+    align-items: center;
+    border: 1px solid $border-color;
+    border-radius: 25px;
+    overflow: hidden;
+    background: $bg-light;
+    flex: 1;
+    max-width: 400px;
+
+    input {
+      border: none;
+      outline: none;
+      padding: 8px 15px;
+      font-size: 18px; // Tăng từ 14px lên 18px
+      background: transparent;
+      min-width: 250px;
+      flex: 1;
+    }
+
+    button {
+      border: none;
+      padding: 8px 15px;
+      cursor: pointer;
+      font-size: 20px; // Tăng từ 16px lên 20px
+      transition: background 0.3s ease;
+
+      &:hover {
+        background: darken($hover-bg, 10%);
+      }
+    }
+  }
+
+  // Cart
+  &__cart {
+    position: relative;
+
+    a {
+      text-decoration: none;
+      color: $text-color;
+      font-size: 28px; // Tăng từ 24px lên 28px
+      display: flex;
+      align-items: center;
+      position: relative;
+      padding: 8px;
+      transition: color 0.3s ease;
+
+      &:hover {
+        color: $primary-color;
+      }
+    }
+
+    .cart-count {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: $secondary-color;
+      color: $white;
+      font-size: 14px; // Tăng từ 11px lên 14px
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 10px;
+      min-width: 18px;
+      text-align: center;
+    }
+  }
+
+  // Account
+  &__account {
+    position: relative;
+
+    .account-menu {
+      position: relative;
+
+      > a {
+        text-decoration: none;
+        color: $text-color;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 12px;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+        font-size: 18px; // Tăng từ 14px lên 18px
+
+        svg {
+          font-size: 24px; // Tăng từ 20px lên 24px
+        }
+
+        &:hover {
+          background: $hover-bg;
+          color: $primary-color;
+        }
+      }
+
+      &:hover .header__menu_dropdown {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
     }
   }
 }
 
-.header__cart {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 24px 0;
+// // Container
+// .container {
+//   max-width: 1200px;
+//   margin: 0 auto;
+//   padding: 0 20px;
+// }
 
-  ul {
-    display: flex;
-    margin-right: 25px;
-
-    li {
-      list-style: none;
-      position: relative;
-      margin-left: 20px;
-
-      svg {
-        font-size: 25px;
-        color: map.get($theme-colors, "normal-text");
+// Responsive
+@media (max-width: 1024px) {
+  .header {
+    &__menu {
+      ul {
+        gap: 15px;
       }
+    }
 
-      span {
-        color: white;
-        background: map.get($theme-colors, "main");
-        position: absolute;
-        height: 20px;
-        width: 20px;
-        border-radius: 50%;
-        display: inline-block;
-        line-height: 20px;
-        font-size: 13px;
-        padding: 0 7px;
-        left: 18px;
-        top: -5px;
+    &__search input {
+      min-width: 180px;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .header {
+    &__main_content {
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    &__menu {
+      order: 3;
+      width: 100%;
+
+      ul {
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 10px;
       }
+    }
+
+    &__utilities {
+      gap: 10px;
+    }
+
+    &__search {
+      input {
+        min-width: 150px;
+      }
+    }
+
+    &__menu_dropdown.laptop-dropdown {
+      flex-direction: column;
+      min-width: 250px;
+      gap: 15px;
     }
   }
 }

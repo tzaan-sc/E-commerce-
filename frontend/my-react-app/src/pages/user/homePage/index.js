@@ -1,16 +1,12 @@
-// src/pages/user/homePage.js
-import React from "react";
-import "./style.scss";
+import {memo} from "react"
 
-const homePage = () => {
-  return (
-    <div className="home-page">
-      {/* Carousel */}
-  
-
- 
-    </div>
-  );
+const HomePage = () =>{
+    return (
+    <>
+   
+    <h1> homePage</h1>
+   
+    </>
+    );
 };
-
-export default homePage;
+export default memo(HomePage);

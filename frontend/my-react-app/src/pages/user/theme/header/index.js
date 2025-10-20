@@ -6,107 +6,152 @@ import {
   BsTwitter,
   BsFillPersonFill,
 } from "react-icons/bs";
+import { GrSearch } from "react-icons/gr";
 import { AiOutlineShoppingCart } from "react-icons/ai";
 import { Link } from "react-router-dom";
 import { formatter } from "utils/formatter";
-import Carousel from "components/carousel/Carousel"; // ✅ Sửa đúng tên
-import Sidebar from "components/sideBar";
-import Navbar from "components/navBar";
 import { ROUTERS } from "utils/router";
 
 const Header = () => {
-  const [menus, setMenus] = useState([
+  const [menus] = useState([
     {
       name: "Trang chủ",
       path: ROUTERS.USER.HOME,
     },
     {
-      name: "Thông báo",
-      path: ROUTERS.USER.NOTIFICATION,
-    },
-    {
-      name: "Hỗ trợ",
-      path: ROUTERS.USER.SUPPORT,
+      name: "Laptop",
+      path: ROUTERS.USER.LAPTOP,
+      child: [
+        {
+          name: "Thương hiệu",
+          subchild: [
+            { name: "Dell", path: "" },
+            { name: "HP", path: "" },
+            { name: "Asus", path: "" },
+            { name: "Lenovo", path: "" },
+          ],
+        },
+        {
+          name: "Nhu cầu sử dụng",
+          subchild: [
+            { name: "Gaming", path: "" },
+            { name: "Văn phòng", path: "" },
+            { name: "Thiết kế - Kĩ thuật", path: "" },
+            { name: "Học tập", path: "" },
+          ],
+        },
+        {
+          name: "Kích thước màn hình",
+          subchild: [
+            { name: "13-14 inch", path: "" },
+            { name: "15-16 inch", path: "" },
+            { name: "17 inch trở lên", path: "" },
+          ],
+        },
+      ],
     },
     {
       name: "Tài khoản",
-      path: "",
-      isShowSubmenu: false,
       child: [
-        {
-          name: "Tài khoản của tôi",
-          path: ROUTERS.USER.ACCOUNT,
-        },
-        {
-          name: "Đăng xuất",
-          path: "",
-        },
+        { name: "Đăng nhập", path: ROUTERS.USER.LOGIN },
+        { name: "Đăng ký", path: ROUTERS.USER.REGISTER },
       ],
     },
   ]);
 
+  const renderDropdown = (menu) => {
+    if (menu.name === "Laptop") {
+      return (
+        <ul className="header__menu_dropdown laptop-dropdown">
+          {menu.child.map((section, sectionKey) => (
+            <li key={sectionKey} className="dropdown-column">
+              <span className="section-title">{section.name}:</span>
+              <ul className="sub-dropdown">
+                {section.subchild.map((subItem, subKey) => (
+                  <li key={subKey}>
+                    <Link to={subItem.path}>{subItem.name}</Link>
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ))}
+        </ul>
+      );
+    }
+
+    // Tài khoản
+    return (
+      <ul className="header__menu_dropdown">
+        {menu.child.map((child, childKey) => (
+          <li key={childKey}>
+            <Link to={child.path}>{child.name}</Link>
+          </li>
+        ))}
+      </ul>
+    );
+  };
+
   return (
-    <>
+    <header className="header">
       <div className="header__top">
         <div className="container">
-          <div className="row">
-            <div className="header__top_top">
-              Freeship đơn từ {formatter(100000)}, vận chuyển toàn quốc
-            </div>
+          <div className="header__top_content">
+            Freeship đơn từ {formatter(100000)}, vận chuyển toàn quốc
           </div>
         </div>
       </div>
 
-      <div className="container">
-        <div className="row">
-          <div className="col-lg-3 col-xl-3">
+      <div className="header__main">
+        <div className="container">
+          <div className="header__main_content">
             <div className="header__logo">
-              <h1>ITSHOP</h1>
+              <Link to={ROUTERS.USER.HOME}>
+                <h1>LOGO</h1>
+              </Link>
             </div>
-          </div>
 
-          <div className="col-lg-6 col-xl-6">
             <nav className="header__menu">
               <ul>
-                {menus?.map((menu, menuKey) => (
+                {menus.slice(0, 2).map((menu, menuKey) => (
                   <li key={menuKey} className={menuKey === 0 ? "active" : ""}>
-                    <Link to={menu?.path}>{menu?.name}</Link>
-                    {menu?.child && (
-                      <ul>
-                        {menu?.child.map((child, childKey) => (
-                          <li key={childKey}>
-                            <Link to={child?.path}>{child?.name}</Link>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
+                    <Link to={menu.path}>{menu.name}</Link>
+                    {menu.child && renderDropdown(menu)}
                   </li>
                 ))}
               </ul>
             </nav>
-          </div>
 
-          <div className="col-lg-3 col-xl-3">
-            <div className="header__cart">
-              <ul>
-                <li>
-                  <Link to="#">
-                    <AiOutlineShoppingCart /> <span>5</span>
-                  </Link>
-                </li>
-              </ul>
+            <div className="header__utilities">
+              <div className="header__search">
+                <input type="text" placeholder="Tìm kiếm sản phẩm..." />
+                <button type="button"><GrSearch /></button>
+              </div>
+
+              <div className="header__cart">
+                <Link to="#">
+                  <AiOutlineShoppingCart />
+                  <span className="cart-count">5</span>
+                </Link>
+              </div>
+
+              <div className="header__account">
+                {menus.slice(2).map((menu, menuKey) => (
+                  <div key={`account-${menuKey}`} className="account-menu">
+                    <BsFillPersonFill />
+                    <span>{menu.name}</span>
+                    {menu.child && renderDropdown(menu)}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
-
-        {/* ✅ Thêm Carousel ở đây */}
-        <div className="row">
-          <div className="col-12">
-            <Carousel />
-          </div>
-        </div>
       </div>
-    </>
+    </header>
+    //  <Brand />
+    // <Purpose />
+    // <HotProduct />
+    // <RegistrationPage />
   );
 };
 

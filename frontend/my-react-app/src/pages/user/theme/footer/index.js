@@ -1,7 +1,7 @@
-// src/components/Footer.js
-import React from 'react';
-import './Footer.scss';
+import { memo } from "react";
+import "./style.scss";
 
+// src/components/Footer.js
 function Footer() {
   return (
     <footer className="footer">
@@ -67,4 +67,4 @@ function Footer() {
   );
 }
 
-export default Footer;
+export default memo(Footer);
