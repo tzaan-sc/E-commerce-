@@ -7,6 +7,7 @@ import MainLayout from "./pages/user/theme/mainLayout";
 import { ROUTERS } from "./utils/router";
 import LaptopPage from "./pages/user/laptopPage";
 import LoginPage from "./pages/user/loginPage";
+import CartPage from "./pages/user/cartPage";
 
 // Hàm kiểm tra đăng nhập
 const isAuthenticated = () => {
@@ -21,6 +22,7 @@ const renderUserRouter = () => {
     { path: ROUTERS.USER.REGISTER, component: <RegistrationPage /> },
     { path: ROUTERS.USER.LAPTOP, component: <LaptopPage /> },
     { path: ROUTERS.USER.LOGIN, component: <LoginPage /> },
+    { path: ROUTERS.USER.CART, component: <CartPage /> },
   ];
 
   return (

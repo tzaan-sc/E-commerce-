@@ -8,5 +8,6 @@ export const ROUTERS = {
     SUPPORT: "ho-tro",
     LOGIN: "dang-nhap",
     REGISTER: "dang-ky",
+    CART: "gio-hang",
   },
 };

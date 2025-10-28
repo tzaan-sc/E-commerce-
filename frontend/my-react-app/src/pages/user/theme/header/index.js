@@ -128,7 +128,7 @@ const Header = () => {
               </div>
 
               <div className="header__cart">
-                <Link to="#">
+                <Link to="/gio-hang">
                   <AiOutlineShoppingCart />
                   <span className="cart-count">5</span>
                 </Link>
