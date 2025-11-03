@@ -1,0 +1,16 @@
+package com.ecommerce.backend.service.product;
+import com.ecommerce.backend.util.SlugUtil;
+import com.ecommerce.backend.dto.product.Product.CreateProductRequest;
+import com.ecommerce.backend.dto.product.Product.UpdateProductRequest;
+import com.ecommerce.backend.entity.product.Product;
+
+import java.util.List;
+
+public interface ProductService {
+    Product createProduct(CreateProductRequest request);
+    Product updateProduct(Long id, UpdateProductRequest request);
+    void deleteProduct(Long id);
+    Product getProductById(Long id);
+    List<Product> getAllProducts();
+
+}
