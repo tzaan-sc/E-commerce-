@@ -1,0 +1,11 @@
+package com.ecommerce.backend.dto.product.UsagePurpose;
+
+import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
+
+@Data // ⚠️ BẮT BUỘC PHẢI CÓ ĐỂ SINH getter/setter
+public class UpdateUsagePurposeRequest {
+
+    @NotBlank(message = "Tên nhu cầu sử dụng không được để trống")
+    private String name;
+}
