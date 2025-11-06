@@ -1,4 +1,4 @@
-package com.ecommerce.backend.dto.product.UsagePurpose;
+package com.ecommerce.backend.dto.product.usagepurpose;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;

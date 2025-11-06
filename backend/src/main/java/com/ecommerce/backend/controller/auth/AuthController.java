@@ -3,6 +3,7 @@ package com.ecommerce.backend.controller.auth;
 import com.ecommerce.backend.dto.auth.*;
 import com.ecommerce.backend.entity.auth.User;
 import com.ecommerce.backend.service.auth.AuthService;
+import com.ecommerce.backend.service.auth.EmailService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -16,6 +17,12 @@ public class AuthController {
     @Autowired
     private AuthService authService;
 
+    @Autowired
+    private EmailService emailService; // <-- đặt ở đây, là field của class
+
+    /**
+     * Đăng ký tài khoản
+     */
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
         try {
@@ -28,63 +35,57 @@ public class AuthController {
                     request.getRole()
             );
 
-            return ResponseEntity.status(HttpStatus.CREATED).body(
-                    new MessageResponse("User registered successfully")
-            );
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(new MessageResponse("User registered successfully"));
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(
-                    new MessageResponse(e.getMessage())
-            );
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
     }
 
+    /**
+     * Đăng nhập
+     */
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
-        // Log request để debug
-        System.out.println("Login request received: " + request.getEmail() + " / " + request.getPassword());
-
         AuthResponse response = authService.login(request.getEmail(), request.getPassword());
-
-        // Log response để debug
-        System.out.println("Login response: " + response);
-
         return ResponseEntity.ok(response);
     }
 
-
-
+    /**
+     * Quên mật khẩu - gửi token reset
+     */
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         try {
+            // Tạo token reset
             String token = authService.createPasswordResetToken(request.getEmail());
 
-            // In production, send email with reset link
-            // For now, return the token (ONLY FOR DEVELOPMENT)
-            return ResponseEntity.ok(new MessageResponse(
-                    "Password reset token sent to email. Token: " + token
-            ));
+            // Gửi email thật
+            emailService.sendPasswordResetEmail(request.getEmail(), token);
+
+            return ResponseEntity.ok(new MessageResponse("Đã gửi liên kết đặt lại mật khẩu đến email của bạn."));
         } catch (RuntimeException e) {
-            // Don't reveal if email exists or not for security
-            return ResponseEntity.ok(new MessageResponse(
-                    "If the email exists, a password reset link will be sent"
-            ));
+            // Không tiết lộ email tồn tại hay không để tránh lộ thông tin
+            return ResponseEntity.ok(new MessageResponse("Nếu email tồn tại, liên kết đặt lại mật khẩu đã được gửi."));
         }
     }
 
+    /**
+     * Đặt lại mật khẩu
+     */
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         try {
             authService.resetPassword(request.getToken(), request.getNewPassword());
-            return ResponseEntity.ok(new MessageResponse(
-                    "Password has been reset successfully"
-            ));
+            return ResponseEntity.ok(new MessageResponse("Mật khẩu đã được đặt lại thành công"));
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(
-                    new MessageResponse(e.getMessage())
-            );
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
     }
 
+    /**
+     * Kiểm tra token hợp lệ
+     */
     @GetMapping("/validate")
     public ResponseEntity<?> validateToken() {
         return ResponseEntity.ok(new MessageResponse("Token is valid"));

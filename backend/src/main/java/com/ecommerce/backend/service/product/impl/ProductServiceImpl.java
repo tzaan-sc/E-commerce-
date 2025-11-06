@@ -1,7 +1,7 @@
 package com.ecommerce.backend.service.product.impl;
 
-import com.ecommerce.backend.dto.product.Product.CreateProductRequest;
-import com.ecommerce.backend.dto.product.Product.UpdateProductRequest;
+import com.ecommerce.backend.dto.product.CreateProductRequest;
+import com.ecommerce.backend.dto.product.UpdateProductRequest;
 import com.ecommerce.backend.entity.product.Brand;
 import com.ecommerce.backend.entity.product.Product;
 import com.ecommerce.backend.entity.product.ScreenSize;

@@ -1,9 +1,10 @@
-package com.ecommerce.backend.dto.product.Product;
+package com.ecommerce.backend.dto.product;
+
 
 import lombok.Data;
 
 @Data
-public class CreateProductRequest {
+public class UpdateProductRequest {
     private String name;
     private String description;
     private Double price;
@@ -13,6 +14,4 @@ public class CreateProductRequest {
     private Long brandId;
     private Long usagePurposeId;
     private Long screenSizeId;
-
-    private String slug;
 }

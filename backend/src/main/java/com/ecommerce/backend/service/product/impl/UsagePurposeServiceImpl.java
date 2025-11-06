@@ -1,8 +1,8 @@
 package com.ecommerce.backend.service.product.impl;
 
 import com.ecommerce.backend.entity.product.UsagePurpose;
-import com.ecommerce.backend.dto.product.UsagePurpose.CreateUsagePurposeRequest;
-import com.ecommerce.backend.dto.product.UsagePurpose.UpdateUsagePurposeRequest;
+import com.ecommerce.backend.dto.product.usagepurpose.CreateUsagePurposeRequest;
+import com.ecommerce.backend.dto.product.usagepurpose.UpdateUsagePurposeRequest;
 import com.ecommerce.backend.repository.product.UsagePurposeRepository;
 import com.ecommerce.backend.service.product.UsagePurposeService;
 import lombok.RequiredArgsConstructor;

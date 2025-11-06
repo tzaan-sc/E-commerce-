@@ -1,8 +1,8 @@
 package com.ecommerce.backend.controller.product;
 
 import com.ecommerce.backend.entity.product.UsagePurpose;
-import com.ecommerce.backend.dto.product.UsagePurpose.CreateUsagePurposeRequest;
-import com.ecommerce.backend.dto.product.UsagePurpose.UpdateUsagePurposeRequest;
+import com.ecommerce.backend.dto.product.usagepurpose.CreateUsagePurposeRequest;
+import com.ecommerce.backend.dto.product.usagepurpose.UpdateUsagePurposeRequest;
 import com.ecommerce.backend.service.product.UsagePurposeService;
 
 import jakarta.validation.Valid;
