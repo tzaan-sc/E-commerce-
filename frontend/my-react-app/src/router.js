@@ -1,60 +1,59 @@
 // src/router.js
-import { Routes, Route, Navigate } from "react-router-dom";
-import HomePage from "./pages/user/homePage";
-import ProfilePage from "./pages/user/profilePage";
-import RegistrationPage from "./pages/user/registrationPage";
-import MainLayout from "./pages/user/theme/mainLayout";
+import { Routes, Route } from "react-router-dom";
+
+import MainLayout from "./pages/user/mainLayout";
+import CustomerLayout from "pages/customer/customerLayout";
+import HomePage from "./components/page/homePage";
+import LaptopPage from "components/page/laptopPage";
+import LoginPage from "./components/page/loginPage";
+import RegistrationPage from "./components/page/registrationPage";
+import ProductDetailPage from "./components/page/productDetailPage";
+import ProfilePage from "./components/page/profilePage";
+import CartPage from "./components/page/cartPage";
+import MyOrdersPage from "components/page/myOrderPage";
+// ====== Import các trang Admin ======
+
 import { ROUTERS } from "./utils/router";
-import LaptopPage from "./pages/user/laptopPage";
-import LoginPage from "./pages/user/loginPage";
-import CartPage from "./pages/user/cartPage";
+import AdminDashboard from "pages/admin/dashboardPage";
+import SearchPage from "./components/page/searchPage";  
+import ForgotPasswordPage from "./components/page/forgotPasswordPage";
 
-// Hàm kiểm tra đăng nhập
-const isAuthenticated = () => {
-  return !!localStorage.getItem("user"); // dùng 'user'
-};
-
-
-const renderUserRouter = () => {
-  const userRouters = [
-    { path: ROUTERS.USER.HOME, component: <HomePage /> },
-    { path: ROUTERS.USER.PROFILE, component: <ProfilePage />, protected: true },
-    { path: ROUTERS.USER.REGISTER, component: <RegistrationPage /> },
-    { path: ROUTERS.USER.LAPTOP, component: <LaptopPage /> },
-    { path: ROUTERS.USER.LOGIN, component: <LoginPage /> },
-    { path: ROUTERS.USER.CART, component: <CartPage /> },
-  ];
-
+// ROUTER CHÍNH
+// ========================
+const RouterCustom = () => {
   return (
     <Routes>
-      <Route path="/" element={<MainLayout />}>
-        {userRouters.map((item, key) => {
-          // Nếu route có "protected" và chưa đăng nhập => chuyển hướng sang login
-          if (item.protected && !isAuthenticated()) {
-            return (
-              <Route
-                key={key}
-                path={item.path}
-                element={<Navigate to={ROUTERS.USER.LOGIN} replace />}
-              />
-            );
-          }
+      {/* ====================== USER ROUTES ====================== */}
+      <Route element={<MainLayout />}>
+        <Route index element={<HomePage />} />
+        <Route path={ROUTERS.USER.LAPTOP} element={<LaptopPage />} />
+        <Route path={ROUTERS.USER.LOGIN} element={<LoginPage />} />
+        <Route path={ROUTERS.USER.REGISTER} element={<RegistrationPage />} />
+        <Route path={ROUTERS.USER.PRODUCTDETAIL} element={<ProductDetailPage />}/>
+        <Route path={ROUTERS.USER.SEARCH} element={<SearchPage />}/>
+        <Route path={ROUTERS.USER.FORGOTPASSWORD} element={<ForgotPasswordPage />}/>
+        
+      </Route>
 
-          // Route cho trang chủ (index)
-          if (item.path === ROUTERS.USER.HOME) {
-            return <Route key={key} index element={item.component} />;
-          }
+      {/* ====================== ADMIN ROUTES ====================== */}
 
-          // Route bình thường
-          return <Route key={key} path={item.path} element={item.component} />;
-        })}
+      {/* Các route admin cần layout */}
+      <Route
+        path={ROUTERS.ADMIN.DASHBOARD}
+        element={<AdminDashboard />}
+      ></Route>
+
+      <Route path="/customer/home" element={<CustomerLayout />}>
+        <Route index element={<HomePage />} />
+        <Route path="thong-tin-ca-nhan" element={<ProfilePage />} />
+        <Route path="don-mua" element={<MyOrdersPage />} />
+        <Route path="gio-hang" element={<CartPage />} />
+        <Route path="laptop" element={<LaptopPage />} /> 
+        <Route path="product/:id" element={<ProductDetailPage />} />
+        <Route path="tim-kiem" element={<SearchPage />} />
       </Route>
     </Routes>
   );
-};
-
-const RouterCustom = () => {
-  return renderUserRouter();
 };
 
 export default RouterCustom;

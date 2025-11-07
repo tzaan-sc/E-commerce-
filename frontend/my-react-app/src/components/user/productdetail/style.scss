@@ -1,0 +1,302 @@
+// Variables
+// $primary-color: #667eea; #764ba2;
+$primary-color: #0066cc;
+$secondary-color: #0066cc;
+$text-dark: #1a202c;
+$text-gray: #4a5568;
+$text-light: #6b7280;
+$border-color: #e5e7eb;
+$bg-light: #f9fafb;
+$success-color: #16a34a;
+$danger-color: #ef4444;
+$warning-color: #fbbf24;
+
+// Mixins
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin transition($property: all) {
+  transition: $property 0.3s ease;
+}
+
+@mixin gradient-bg {
+  background: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%);
+}
+
+// Main Section
+.info-section {
+  padding: 20px 0;
+  max-width: 100%;
+  max-width: 1000px; /* Giới hạn độ rộng tối đa là 1000px */
+  margin: 40px auto 40px;
+
+  // Product Title
+  .product-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: $text-dark;
+    margin-bottom: 16px;
+    line-height: 1.2;
+
+    @media (max-width: 768px) {
+      font-size: 24px;
+    }
+  }
+
+  // Price Section
+  .price-section {
+    @include gradient-bg;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 32px;
+    color: white;
+    box-shadow: 0 4px 12px rgba($primary-color, 0.3);
+
+    .current-price {
+      font-size: 36px;
+      font-weight: 700;
+      margin-bottom: 8px;
+
+      @media (max-width: 768px) {
+        font-size: 28px;
+      }
+    }
+
+    .original-price {
+      font-size: 20px;
+      opacity: 0.8;
+      text-decoration: line-through;
+    }
+
+    .stock-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      margin-top: 12px;
+
+      .stock-dot {
+        width: 8px;
+        height: 8px;
+        background: #4ade80;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+      }
+    }
+  }
+
+  // Option Section
+  .option-section {
+    margin-bottom: 32px;
+
+    .option-label {
+      font-size: 16px;
+      font-weight: 600;
+      color: $text-gray;
+      margin-bottom: 12px;
+      display: block;
+
+      .selected-value {
+        color: $primary-color;
+        font-weight: 700;
+      }
+    }
+
+    
+  }
+
+  // Quantity Section
+  .quantity-section {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 32px;
+
+    .quantity-label {
+      font-size: 16px;
+      font-weight: 600;
+      color: $text-gray;
+    }
+
+    .quantity-control {
+      display: flex;
+      border: 2px solid $border-color;
+      border-radius: 8px;
+      overflow: hidden;
+
+      .quantity-btn {
+        width: 40px;
+        height: 40px;
+        border: none;
+        background: white;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: 600;
+        color: $text-dark;
+        @include transition(all);
+
+        &:hover:not(:disabled) {
+          background: $bg-light;
+        }
+
+        &:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+      }
+
+      .quantity-value {
+        width: 60px;
+        text-align: center;
+        line-height: 40px;
+        font-weight: 600;
+        border-left: 2px solid $border-color;
+        border-right: 2px solid $border-color;
+      }
+    }
+  }
+
+  // Action Buttons
+  .action-buttons {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 32px;
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 16px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      @include flex-center;
+      gap: 8px;
+      @include transition(all);
+
+      &.btn-primary {
+        @include gradient-bg;
+        color: white;
+        box-shadow: 0 4px 12px rgba($primary-color, 0.3);
+
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba($primary-color, 0.4);
+        }
+      }
+
+      &.btn-secondary {
+        background: white;
+        color: $primary-color;
+        border: 2px solid $primary-color;
+
+        &:hover {
+          background: rgba($primary-color, 0.05);
+        }
+      }
+
+      &.icon-btn {
+        width: 48px;
+        padding: 0;
+        flex: none;
+      }
+    }
+  }
+
+  // Features
+  .features {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    padding: 24px;
+    background: linear-gradient(135deg, #f6f8fb 0%, #f0f4f8 100%);
+    border-radius: 12px;
+    margin-bottom: 32px;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      .feature-icon {
+        color: $primary-color;
+        font-size: 24px;
+        flex-shrink: 0;
+      }
+
+      .feature-text {
+        font-size: 14px;
+        color: $text-gray;
+        font-weight: 600;
+      }
+    }
+  }
+
+  // Specs Section
+  .specs-section {
+    margin-top: 40px;
+    padding-top: 40px;
+    border-top: 1px solid $border-color;
+
+    .specs-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: $text-dark;
+      margin-bottom: 24px;
+    }
+
+    .specs-grid {
+      display: grid;
+      gap: 16px;
+
+      .spec-row {
+        display: grid;
+        grid-template-columns: 180px 1fr;
+        padding: 16px;
+        background: $bg-light;
+        border-radius: 8px;
+        border-left: 4px solid $primary-color;
+
+        @media (max-width: 768px) {
+          grid-template-columns: 1fr;
+          gap: 8px;
+        }
+
+        .spec-label {
+          font-weight: 600;
+          color: $text-light;
+        }
+
+        .spec-value {
+          color: $text-dark;
+          font-weight: 500;
+        }
+      }
+    }
+  }
+}
+
+// Animations
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
