@@ -13,44 +13,51 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/screensizes") // Endpoint: /api/screensizes
+@RequestMapping("/api/screen-sizes")
 @RequiredArgsConstructor
 public class ScreenSizeController {
 
     private final ScreenSizeService screenSizeService;
 
-    // POST: /api/screensizes
+    // POST: /api/screen-sizes
     @PostMapping
     public ResponseEntity<ScreenSize> createScreenSize(@Valid @RequestBody CreateScreenSizeRequest request) {
-        ScreenSize newSize = screenSizeService.createScreenSize(request);
-        return new ResponseEntity<>(newSize, HttpStatus.CREATED); // 201 Created
+        ScreenSize newScreenSize = screenSizeService.createScreenSize(request);
+        return new ResponseEntity<>(newScreenSize, HttpStatus.CREATED);
     }
 
-    // PUT: /api/screensizes
-    @PutMapping
-    public ResponseEntity<ScreenSize> updateScreenSize(@Valid @RequestBody UpdateScreenSizeRequest request) {
-        ScreenSize updatedSize = screenSizeService.updateScreenSize(request);
-        return ResponseEntity.ok(updatedSize); // 200 OK
+    // ✅ FIX: Sửa lại cấu trúc PUT
+    // PUT: /api/screen-sizes/{id}
+    @PutMapping("/{id}")
+    public ResponseEntity<ScreenSize> updateScreenSize(
+            @PathVariable Long id, // 👈 Lấy ID từ URL
+            @Valid @RequestBody UpdateScreenSizeRequest request) {
+
+        // 💡 FIX: Gán ID từ Path Variable vào DTO để thỏa mãn @NotNull id validation
+        request.setId(id);
+
+        ScreenSize updatedScreenSize = screenSizeService.updateScreenSize(request);
+        return ResponseEntity.ok(updatedScreenSize);
     }
 
-    // DELETE: /api/screensizes/{id}
+    // DELETE: /api/screen-sizes/{id}
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteScreenSize(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteScreenSize(@PathVariable Long id) {
         screenSizeService.deleteScreenSize(id);
-        return ResponseEntity.ok("ScreenSize với ID=" + id + " đã được xóa thành công."); // 200 OK
+        return ResponseEntity.noContent().build(); // Đồng bộ với RESTful deletion
     }
 
-    // GET: /api/screensizes
+    // GET: /api/screen-sizes
     @GetMapping
     public ResponseEntity<List<ScreenSize>> getAllScreenSizes() {
-        List<ScreenSize> sizes = screenSizeService.getAllScreenSizes();
-        return ResponseEntity.ok(sizes);
+        List<ScreenSize> screenSizes = screenSizeService.getAllScreenSizes();
+        return ResponseEntity.ok(screenSizes);
     }
 
-    // GET: /api/screensizes/{id}
+    // GET: /api/screen-sizes/{id}
     @GetMapping("/{id}")
     public ResponseEntity<ScreenSize> getScreenSizeById(@PathVariable Long id) {
-        ScreenSize size = screenSizeService.getScreenSizeById(id);
-        return ResponseEntity.ok(size);
+        ScreenSize screenSize = screenSizeService.getScreenSizeById(id);
+        return ResponseEntity.ok(screenSize);
     }
 }

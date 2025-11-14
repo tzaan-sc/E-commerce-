@@ -6,6 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ScreenSizeRepository extends JpaRepository<ScreenSize, Long> {
-    // Phương thức kiểm tra xem kích thước cụ thể đã tồn tại chưa
+    // Phương thức tùy chỉnh để kiểm tra xem một ScreenSize có giá trị cụ thể đã tồn tại chưa
     boolean existsByValue(Double value);
 }

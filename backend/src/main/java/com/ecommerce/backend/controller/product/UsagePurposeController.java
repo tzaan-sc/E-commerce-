@@ -24,7 +24,7 @@ public class UsagePurposeController {
     @PostMapping
     public ResponseEntity<UsagePurpose> createUsagePurpose(
             @Valid @RequestBody CreateUsagePurposeRequest request) {
-
+        // Trả về 201 Created
         return new ResponseEntity<>(usagePurposeService.createUsagePurpose(request), HttpStatus.CREATED);
     }
 
@@ -32,13 +32,14 @@ public class UsagePurposeController {
     public ResponseEntity<UsagePurpose> updateUsagePurpose(
             @PathVariable Long id,
             @Valid @RequestBody UpdateUsagePurposeRequest request) {
-
+        // Gọi Service với ID từ Path và Body DTO
         return ResponseEntity.ok(usagePurposeService.updateUsagePurpose(id, request));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUsagePurpose(@PathVariable Long id) {
         usagePurposeService.deleteUsagePurpose(id);
+        // Trả về 204 No Content, đồng bộ với RESTful deletion
         return ResponseEntity.noContent().build();
     }
 

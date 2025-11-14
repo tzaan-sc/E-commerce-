@@ -17,7 +17,7 @@ import { ROUTERS } from "./utils/router";
 import AdminDashboard from "pages/admin/dashboardPage";
 import SearchPage from "./components/page/searchPage";  
 import ForgotPasswordPage from "./components/page/forgotPasswordPage";
-
+import ResetPasswordPage from "./components/page/forgotPasswordPage"; 
 // ROUTER CHÍNH
 // ========================
 const RouterCustom = () => {
@@ -32,7 +32,7 @@ const RouterCustom = () => {
         <Route path={ROUTERS.USER.PRODUCTDETAIL} element={<ProductDetailPage />}/>
         <Route path={ROUTERS.USER.SEARCH} element={<SearchPage />}/>
         <Route path={ROUTERS.USER.FORGOTPASSWORD} element={<ForgotPasswordPage />}/>
-        
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
       </Route>
 
       {/* ====================== ADMIN ROUTES ====================== */}

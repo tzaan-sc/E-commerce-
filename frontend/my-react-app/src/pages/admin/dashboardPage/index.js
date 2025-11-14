@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios'; 
-import { 
-  LayoutDashboard, 
-  Laptop, 
-  Users, 
-  ShoppingCart, 
-  Tag, 
+import React, { useState, useEffect, useRef } from 'react';
+import { Save } from 'lucide-react';
+import {
+  LayoutDashboard,
+  Laptop,
+  Users,
+  ShoppingCart,
+  Tag,
   Monitor,
   Target,
   LogOut,
@@ -14,8 +14,9 @@ import {
   Plus,
   Edit,
   Trash2,
-  Search
+  Search,
 } from 'lucide-react';
+import useGenericApi from 'hooks/useGenericApi';
 import './style.scss';
 
 // Router simulation
@@ -28,20 +29,31 @@ const AdminDashboard = () => {
     { id: 'products', name: 'Sản phẩm', icon: Laptop },
     { id: 'orders', name: 'Đơn hàng', icon: ShoppingCart },
     { id: 'accounts', name: 'Tài khoản', icon: Users },
-    { 
-      id: 'categories', 
-      name: 'Danh mục', 
+    {
+      id: 'categories',
+      name: 'Danh mục',
       icon: Tag,
       submenu: [
         { id: 'brands', name: 'Thương hiệu', icon: Tag },
         { id: 'usage', name: 'Nhu cầu sử dụng', icon: Target },
-        { id: 'screensize', name: 'Kích thước màn hình', icon: Monitor }
-      ]
+        { id: 'screensize', name: 'Kích thước màn hình', icon: Monitor },
+      ],
     },
   ];
 
+  const handleLogout = () => {
+    if (window.confirm('Bạn có chắc muốn đăng xuất?')) {
+      // Xóa token khỏi localStorage
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+
+      // Redirect về trang đăng nhập
+      window.location.href = '/dang-nhap';
+    }
+  };
+
   const renderPage = () => {
-    switch(currentPage) {
+    switch (currentPage) {
       case 'dashboard':
         return <DashboardPage />;
       case 'products':
@@ -64,10 +76,17 @@ const AdminDashboard = () => {
   return (
     <div className="admin-dashboard">
       {/* Sidebar */}
-      <aside className={`sidebar ${sidebarOpen ? 'sidebar--open' : 'sidebar--closed'}`}>
+      <aside
+        className={`sidebar ${
+          sidebarOpen ? 'sidebar--open' : 'sidebar--closed'
+        }`}
+      >
         <div className="sidebar__header">
           {sidebarOpen && <h1 className="sidebar__title">Admin Panel</h1>}
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="sidebar__toggle">
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="sidebar__toggle"
+          >
             {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
@@ -77,19 +96,27 @@ const AdminDashboard = () => {
             <div key={item.id} className="sidebar__menu-group">
               <button
                 onClick={() => !item.submenu && setCurrentPage(item.id)}
-                className={`sidebar__menu-item ${currentPage === item.id ? 'sidebar__menu-item--active' : ''}`}
+                className={`sidebar__menu-item ${
+                  currentPage === item.id ? 'sidebar__menu-item--active' : ''
+                }`}
               >
                 <item.icon size={20} />
-                {sidebarOpen && <span className="sidebar__menu-text">{item.name}</span>}
+                {sidebarOpen && (
+                  <span className="sidebar__menu-text">{item.name}</span>
+                )}
               </button>
-              
+
               {item.submenu && sidebarOpen && (
                 <div className="sidebar__submenu">
                   {item.submenu.map((subItem) => (
                     <button
                       key={subItem.id}
                       onClick={() => setCurrentPage(subItem.id)}
-                      className={`sidebar__submenu-item ${currentPage === subItem.id ? 'sidebar__submenu-item--active' : ''}`}
+                      className={`sidebar__submenu-item ${
+                        currentPage === subItem.id
+                          ? 'sidebar__submenu-item--active'
+                          : ''
+                      }`}
                     >
                       <subItem.icon size={16} />
                       <span>{subItem.name}</span>
@@ -102,7 +129,7 @@ const AdminDashboard = () => {
         </nav>
 
         <div className="sidebar__footer">
-          <button className="sidebar__logout">
+          <button className="sidebar__logout" onClick={handleLogout}>
             <LogOut size={20} />
             {sidebarOpen && <span>Đăng xuất</span>}
           </button>
@@ -113,13 +140,13 @@ const AdminDashboard = () => {
       <main className="main-content">
         <div className="main-content__header">
           <h2 className="main-content__title">
-            {menuItems.find(m => m.id === currentPage)?.name || 
-             menuItems.flatMap(m => m.submenu || []).find(s => s.id === currentPage)?.name}
+            {menuItems.find((m) => m.id === currentPage)?.name ||
+              menuItems
+                .flatMap((m) => m.submenu || [])
+                .find((s) => s.id === currentPage)?.name}
           </h2>
         </div>
-        <div className="main-content__body">
-          {renderPage()}
-        </div>
+        <div className="main-content__body">{renderPage()}</div>
       </main>
     </div>
   );
@@ -141,11 +168,16 @@ const DashboardPage = () => {
       // TODO: Gọi API lấy dữ liệu thống kê
       // const response = await fetch('/api/dashboard/stats');
       // const data = await response.json();
-      
+
       // Mock data
       setStats([
         { label: 'Tổng sản phẩm', value: '248', icon: Laptop, color: 'blue' },
-        { label: 'Đơn hàng mới', value: '52', icon: ShoppingCart, color: 'green' },
+        {
+          label: 'Đơn hàng mới',
+          value: '52',
+          icon: ShoppingCart,
+          color: 'green',
+        },
         { label: 'Tài khoản', value: '1,234', icon: Users, color: 'purple' },
         { label: 'Doanh thu', value: '524M', icon: Tag, color: 'orange' },
       ]);
@@ -153,10 +185,22 @@ const DashboardPage = () => {
       // TODO: Gọi API lấy đơn hàng gần đây
       // const ordersResponse = await fetch('/api/orders/recent');
       // const ordersData = await ordersResponse.json();
-      
+
       setRecentOrders([
-        { id: '#ORD001', customer: 'Nguyễn Văn A', product: 'Dell XPS 15', total: '35,000,000đ', status: 'Đã giao' },
-        { id: '#ORD002', customer: 'Trần Thị B', product: 'HP Pavilion 14', total: '18,500,000đ', status: 'Đang xử lý' },
+        {
+          id: '#ORD001',
+          customer: 'Nguyễn Văn A',
+          product: 'Dell XPS 15',
+          total: '35,000,000đ',
+          status: 'Đã giao',
+        },
+        {
+          id: '#ORD002',
+          customer: 'Trần Thị B',
+          product: 'HP Pavilion 14',
+          total: '18,500,000đ',
+          status: 'Đang xử lý',
+        },
       ]);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -208,7 +252,13 @@ const DashboardPage = () => {
                   <td>{order.product}</td>
                   <td>{order.total}</td>
                   <td>
-                    <span className={`badge ${order.status === 'Đã giao' ? 'badge--success' : 'badge--warning'}`}>
+                    <span
+                      className={`badge ${
+                        order.status === 'Đã giao'
+                          ? 'badge--success'
+                          : 'badge--warning'
+                      }`}
+                    >
                       {order.status}
                     </span>
                   </td>
@@ -239,13 +289,41 @@ const ProductsPage = () => {
       // const response = await fetch('/api/products');
       // const data = await response.json();
       // setProducts(data);
-      
+
       // Mock data
       setProducts([
-        { id: 1, name: 'Dell XPS 15', brand: 'Dell', price: '35,000,000đ', stock: 15, status: 'Còn hàng' },
-        { id: 2, name: 'HP Pavilion 14', brand: 'HP', price: '18,500,000đ', stock: 8, status: 'Còn hàng' },
-        { id: 3, name: 'Asus ROG Strix G15', brand: 'Asus', price: '42,000,000đ', stock: 3, status: 'Sắp hết' },
-        { id: 4, name: 'Lenovo ThinkPad X1', brand: 'Lenovo', price: '38,500,000đ', stock: 12, status: 'Còn hàng' },
+        {
+          id: 1,
+          name: 'Dell XPS 15',
+          brand: 'Dell',
+          price: '35,000,000đ',
+          stock: 15,
+          status: 'Còn hàng',
+        },
+        {
+          id: 2,
+          name: 'HP Pavilion 14',
+          brand: 'HP',
+          price: '18,500,000đ',
+          stock: 8,
+          status: 'Còn hàng',
+        },
+        {
+          id: 3,
+          name: 'Asus ROG Strix G15',
+          brand: 'Asus',
+          price: '42,000,000đ',
+          stock: 3,
+          status: 'Sắp hết',
+        },
+        {
+          id: 4,
+          name: 'Lenovo ThinkPad X1',
+          brand: 'Lenovo',
+          price: '38,500,000đ',
+          stock: 12,
+          status: 'Còn hàng',
+        },
       ]);
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -269,8 +347,8 @@ const ProductsPage = () => {
       try {
         // TODO: Gọi API xóa sản phẩm
         // await fetch(`/api/products/${productId}`, { method: 'DELETE' });
-        
-        setProducts(products.filter(p => p.id !== productId));
+
+        setProducts(products.filter((p) => p.id !== productId));
         alert('Xóa sản phẩm thành công!');
       } catch (error) {
         console.error('Error deleting product:', error);
@@ -279,7 +357,7 @@ const ProductsPage = () => {
     }
   };
 
-  const filteredProducts = products.filter(product =>
+  const filteredProducts = products.filter((product) =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -328,16 +406,28 @@ const ProductsPage = () => {
                 <td>{product.price}</td>
                 <td>{product.stock}</td>
                 <td>
-                  <span className={`badge ${product.status === 'Còn hàng' ? 'badge--success' : 'badge--danger'}`}>
+                  <span
+                    className={`badge ${
+                      product.status === 'Còn hàng'
+                        ? 'badge--success'
+                        : 'badge--danger'
+                    }`}
+                  >
                     {product.status}
                   </span>
                 </td>
                 <td>
                   <div className="action-buttons">
-                    <button className="action-btn action-btn--edit" onClick={() => handleEditProduct(product.id)}>
+                    <button
+                      className="action-btn action-btn--edit"
+                      onClick={() => handleEditProduct(product.id)}
+                    >
                       <Edit size={18} />
                     </button>
-                    <button className="action-btn action-btn--delete" onClick={() => handleDeleteProduct(product.id)}>
+                    <button
+                      className="action-btn action-btn--delete"
+                      onClick={() => handleDeleteProduct(product.id)}
+                    >
                       <Trash2 size={18} />
                     </button>
                   </div>
@@ -351,9 +441,142 @@ const ProductsPage = () => {
   );
 };
 
+// // Orders Page
+// const OrdersPage = () => {
+//   const [orders, setOrders] = useState([]);
+//   const [statusFilter, setStatusFilter] = useState("all");
+//   const [loading, setLoading] = useState(true);
+
+//   useEffect(() => {
+//     fetchOrders();
+//   }, [statusFilter]);
+
+//   const fetchOrders = async () => {
+//     try {
+//       setLoading(true);
+//       // TODO: Gọi API lấy danh sách đơn hàng
+//       // const response = await fetch(`/api/orders?status=${statusFilter}`);
+//       // const data = await response.json();
+//       // setOrders(data);
+
+//       // Mock data
+//       setOrders([
+//         {
+//           id: "#ORD001",
+//           customer: "Nguyễn Văn A",
+//           date: "01/11/2025",
+//           total: "35,000,000đ",
+//           status: "Đã giao",
+//         },
+//         {
+//           id: "#ORD002",
+//           customer: "Trần Thị B",
+//           date: "01/11/2025",
+//           total: "18,500,000đ",
+//           status: "Đang xử lý",
+//         },
+//         {
+//           id: "#ORD003",
+//           customer: "Lê Văn C",
+//           date: "31/10/2025",
+//           total: "42,000,000đ",
+//           status: "Đang giao",
+//         },
+//         {
+//           id: "#ORD004",
+//           customer: "Phạm Thị D",
+//           date: "31/10/2025",
+//           total: "25,000,000đ",
+//           status: "Chờ xác nhận",
+//         },
+//       ]);
+//     } catch (error) {
+//       console.error("Error fetching orders:", error);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const handleViewOrderDetail = (orderId) => {
+//     // TODO: Mở modal hoặc chuyển trang chi tiết đơn hàng
+//     console.log("View order detail:", orderId);
+//   };
+
+//   const getStatusClass = (status) => {
+//     const statusMap = {
+//       "Đã giao": "success",
+//       "Đang giao": "info",
+//       "Đang xử lý": "warning",
+//       "Chờ xác nhận": "secondary",
+//     };
+//     return `badge--${statusMap[status] || "secondary"}`;
+//   };
+
+//   if (loading) {
+//     return <div className="loading">Đang tải dữ liệu...</div>;
+//   }
+
+//   return (
+//     <div className="page-card">
+//       <div className="page-card__header">
+//         <h3 className="page-card__title">Danh sách đơn hàng</h3>
+//         <select
+//           className="select-input"
+//           value={statusFilter}
+//           onChange={(e) => setStatusFilter(e.target.value)}
+//         >
+//           <option value="all">Tất cả trạng thái</option>
+//           <option value="pending">Chờ xác nhận</option>
+//           <option value="processing">Đang xử lý</option>
+//           <option value="shipping">Đang giao</option>
+//           <option value="completed">Đã giao</option>
+//         </select>
+//       </div>
+
+//       <div className="table-container">
+//         <table className="data-table">
+//           <thead>
+//             <tr>
+//               <th>Mã đơn</th>
+//               <th>Khách hàng</th>
+//               <th>Ngày đặt</th>
+//               <th>Tổng tiền</th>
+//               <th>Trạng thái</th>
+//               <th>Hành động</th>
+//             </tr>
+//           </thead>
+//           <tbody>
+//             {orders.map((order) => (
+//               <tr key={order.id}>
+//                 <td className="font-medium">{order.id}</td>
+//                 <td>{order.customer}</td>
+//                 <td>{order.date}</td>
+//                 <td>{order.total}</td>
+//                 <td>
+//                   <span className={`badge ${getStatusClass(order.status)}`}>
+//                     {order.status}
+//                   </span>
+//                 </td>
+//                 <td>
+//                   <button
+//                     className="link-btn"
+//                     onClick={() => handleViewOrderDetail(order.id)}
+//                   >
+//                     Chi tiết
+//                   </button>
+//                 </td>
+//               </tr>
+//             ))}
+//           </tbody>
+//         </table>
+//       </div>
+//     </div>
+//   );
+// };
+
 const OrdersPage = () => {
   const [orders, setOrders] = useState([]);
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null); // ✅ Thêm error state
 
@@ -367,26 +590,26 @@ const OrdersPage = () => {
       setError(null); // Reset error
 
       const url =
-        statusFilter === "all"
-          ? "http://localhost:8080/api/orders"
+        statusFilter === 'all'
+          ? 'http://localhost:8080/api/orders'
           : `http://localhost:8080/api/orders?status=${statusFilter}`;
 
       const res = await axios.get(url);
-      
+
       // ✅ Kiểm tra response data
-      console.log("API Response:", res.data); // Debug
-      
+      console.log('API Response:', res.data); // Debug
+
       // ✅ Đảm bảo data là array
       if (Array.isArray(res.data)) {
         setOrders(res.data);
       } else {
-        console.error("API không trả về array:", res.data);
+        console.error('API không trả về array:', res.data);
         setOrders([]); // Set empty array nếu không phải array
-        setError("Dữ liệu không hợp lệ");
+        setError('Dữ liệu không hợp lệ');
       }
     } catch (error) {
-      console.error("Lỗi tải đơn hàng:", error);
-      setError(error.message || "Không thể tải đơn hàng");
+      console.error('Lỗi tải đơn hàng:', error);
+      setError(error.message || 'Không thể tải đơn hàng');
       setOrders([]); // ✅ Đảm bảo orders luôn là array
     } finally {
       setLoading(false);
@@ -394,28 +617,31 @@ const OrdersPage = () => {
   };
 
   const handleViewOrderDetail = (orderId) => {
-    console.log("Xem chi tiết đơn:", orderId);
+    console.log('Xem chi tiết đơn:', orderId);
   };
 
   const getStatusClass = (status) => {
     const statusMap = {
-      "Đã giao": "success",
-      "Đang giao": "info",
-      "Đang xử lý": "warning",
-      "Chờ xác nhận": "secondary",
-      "completed": "success",
-      "shipping": "info",
-      "processing": "warning",
-      "pending": "secondary",
+      'Đã giao': 'success',
+      'Đang giao': 'info',
+      'Đang xử lý': 'warning',
+      'Chờ xác nhận': 'secondary',
+      completed: 'success',
+      shipping: 'info',
+      processing: 'warning',
+      pending: 'secondary',
     };
-    return `badge--${statusMap[status] || "secondary"}`;
+    return `badge--${statusMap[status] || 'secondary'}`;
   };
 
   // ✅ Hiển thị error nếu có
   if (error) {
     return (
       <div className="page-card">
-        <div className="error-message" style={{ color: 'red', padding: '20px' }}>
+        <div
+          className="error-message"
+          style={{ color: 'red', padding: '20px' }}
+        >
           Lỗi: {error}
         </div>
         <button onClick={fetchOrders} className="btn btn--primary">
@@ -489,12 +715,163 @@ const OrdersPage = () => {
   );
 };
 
+// // Accounts Page
+// const AccountsPage = () => {
+//   const [accounts, setAccounts] = useState([]);
+//   const [loading, setLoading] = useState(true);
 
-// Accounts Page
+//   useEffect(() => {
+//     fetchAccounts();
+//   }, []);
+
+//   const fetchAccounts = async () => {
+//     try {
+//       setLoading(true);
+//       // TODO: Gọi API lấy danh sách tài khoản
+//       // const response = await fetch('/api/accounts');
+//       // const data = await response.json();
+//       // setAccounts(data);
+
+//       // Mock data
+//       setAccounts([
+//         {
+//           id: 1,
+//           name: "Nguyễn Văn A",
+//           email: "nguyenvana@email.com",
+//           role: "Khách hàng",
+//           status: "Hoạt động",
+//         },
+//         {
+//           id: 2,
+//           name: "Trần Thị B",
+//           email: "tranthib@email.com",
+//           role: "Khách hàng",
+//           status: "Hoạt động",
+//         },
+//         {
+//           id: 3,
+//           name: "Admin User",
+//           email: "admin@email.com",
+//           role: "Admin",
+//           status: "Hoạt động",
+//         },
+//       ]);
+//     } catch (error) {
+//       console.error("Error fetching accounts:", error);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const handleAddAccount = () => {
+//     // TODO: Mở modal thêm tài khoản
+//     console.log("Add account");
+//   };
+
+//   const handleEditAccount = (accountId) => {
+//     // TODO: Mở modal sửa tài khoản
+//     console.log("Edit account:", accountId);
+//   };
+
+//   const handleDeleteAccount = async (accountId) => {
+//     if (window.confirm("Bạn có chắc muốn xóa tài khoản này?")) {
+//       try {
+//         // TODO: Gọi API xóa tài khoản
+//         // await fetch(`/api/accounts/${accountId}`, { method: 'DELETE' });
+
+//         setAccounts(accounts.filter((a) => a.id !== accountId));
+//         alert("Xóa tài khoản thành công!");
+//       } catch (error) {
+//         console.error("Error deleting account:", error);
+//         alert("Xóa tài khoản thất bại!");
+//       }
+//     }
+//   };
+
+//   if (loading) {
+//     return <div className="loading">Đang tải dữ liệu...</div>;
+//   }
+
+//   return (
+//     <div className="page-card">
+//       <div className="page-card__header">
+//         <h3 className="page-card__title">Quản lý tài khoản</h3>
+//         <button className="btn btn--primary" onClick={handleAddAccount}>
+//           <Plus size={20} />
+//           Thêm tài khoản
+//         </button>
+//       </div>
+
+//       <div className="table-container">
+//         <table className="data-table">
+//           <thead>
+//             <tr>
+//               <th>ID</th>
+//               <th>Tên</th>
+//               <th>Email</th>
+//               <th>Vai trò</th>
+//               <th>Trạng thái</th>
+//               <th>Hành động</th>
+//             </tr>
+//           </thead>
+//           <tbody>
+//             {accounts.map((account) => (
+//               <tr key={account.id}>
+//                 <td>{account.id}</td>
+//                 <td className="font-medium">{account.name}</td>
+//                 <td>{account.email}</td>
+//                 <td>
+//                   <span
+//                     className={`badge ${
+//                       account.role === "Admin" ? "badge--purple" : "badge--info"
+//                     }`}
+//                   >
+//                     {account.role}
+//                   </span>
+//                 </td>
+//                 <td>
+//                   <span className="badge badge--success">{account.status}</span>
+//                 </td>
+//                 <td>
+//                   <div className="action-buttons">
+//                     <button
+//                       className="action-btn action-btn--edit"
+//                       onClick={() => handleEditAccount(account.id)}
+//                     >
+//                       <Edit size={18} />
+//                     </button>
+//                     <button
+//                       className="action-btn action-btn--delete"
+//                       onClick={() => handleDeleteAccount(account.id)}
+//                     >
+//                       <Trash2 size={18} />
+//                     </button>
+//                   </div>
+//                 </td>
+//               </tr>
+//             ))}
+//           </tbody>
+//         </table>
+//       </div>
+//     </div>
+//   );
+// };
+const API_BASE = 'http://localhost:8080/api/users';
+
 const AccountsPage = () => {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [editingAccount, setEditingAccount] = useState(null);
+  const [newAccount, setNewAccount] = useState({
+    username: '',
+    email: '',
+    role: 'Khách hàng',
+    status: 'Hoạt động',
+  });
 
+  const formRef = useRef(null); // 👈 Dùng để scroll tới form
+
+  // ================== LẤY DANH SÁCH TÀI KHOẢN ==================
   useEffect(() => {
     fetchAccounts();
   }, []);
@@ -502,63 +879,118 @@ const AccountsPage = () => {
   const fetchAccounts = async () => {
     try {
       setLoading(true);
-      // TODO: Gọi API lấy danh sách tài khoản
-      // const response = await fetch('/api/accounts');
-      // const data = await response.json();
-      // setAccounts(data);
-      
-      // Mock data
-      setAccounts([
-        { id: 1, name: 'Nguyễn Văn A', email: 'nguyenvana@email.com', role: 'Khách hàng', status: 'Hoạt động' },
-        { id: 2, name: 'Trần Thị B', email: 'tranthib@email.com', role: 'Khách hàng', status: 'Hoạt động' },
-        { id: 3, name: 'Admin User', email: 'admin@email.com', role: 'Admin', status: 'Hoạt động' },
-      ]);
+      const response = await fetch(API_BASE);
+      const data = await response.json();
+
+      // Map dữ liệu từ backend
+      const mappedData = data.map((acc) => ({
+        id: acc.id,
+        username: acc.username,
+        email: acc.email,
+        role: acc.role === 'ADMIN' ? 'Admin' : 'Khách hàng',
+        status: acc.active ? 'Hoạt động' : 'Khóa',
+      }));
+
+      setAccounts(mappedData);
     } catch (error) {
-      console.error('Error fetching accounts:', error);
+      console.error('Lỗi tải tài khoản:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAddAccount = () => {
-    // TODO: Mở modal thêm tài khoản
-    console.log('Add account');
-  };
+  // ================== XỬ LÝ THÊM TÀI KHOẢN ==================
+  const handleAddAccount = async () => {
+    const userPayload = {
+      username: newAccount.username,
+      email: newAccount.email,
+      password: '123456',
+      role: newAccount.role === 'Admin' ? 'ADMIN' : 'CUSTOMER',
+      active: newAccount.status === 'Hoạt động',
+    };
 
-  const handleEditAccount = (accountId) => {
-    // TODO: Mở modal sửa tài khoản
-    console.log('Edit account:', accountId);
-  };
+    try {
+      const response = await fetch(API_BASE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userPayload),
+      });
 
-  const handleDeleteAccount = async (accountId) => {
-    if (window.confirm('Bạn có chắc muốn xóa tài khoản này?')) {
-      try {
-        // TODO: Gọi API xóa tài khoản
-        // await fetch(`/api/accounts/${accountId}`, { method: 'DELETE' });
-        
-        setAccounts(accounts.filter(a => a.id !== accountId));
-        alert('Xóa tài khoản thành công!');
-      } catch (error) {
-        console.error('Error deleting account:', error);
-        alert('Xóa tài khoản thất bại!');
+      if (response.ok) {
+        await fetchAccounts();
+        setNewAccount({
+          username: '',
+          email: '',
+          role: 'Khách hàng',
+          status: 'Hoạt động',
+        });
+        alert('Thêm tài khoản thành công!');
+      } else {
+        alert('Lỗi khi thêm tài khoản!');
       }
+    } catch (error) {
+      console.error('Error adding account:', error);
     }
   };
 
-  if (loading) {
-    return <div className="loading">Đang tải dữ liệu...</div>;
-  }
+  // ================== XỬ LÝ SỬA TÀI KHOẢN ==================
+  const handleEditAccount = (account) => {
+    setEditingAccount(account);
+    setNewAccount({ ...account });
+    formRef.current?.scrollIntoView({ behavior: 'smooth' }); // 👈 Scroll xuống form
+  };
+
+  const handleUpdateAccount = async () => {
+    const userPayload = {
+      username: newAccount.username,
+      email: newAccount.email,
+      role: newAccount.role === 'Admin' ? 'ADMIN' : 'CUSTOMER',
+      active: newAccount.status === 'Hoạt động',
+    };
+
+    try {
+      const response = await fetch(`${API_BASE}/${editingAccount.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userPayload),
+      });
+
+      if (response.ok) {
+        await fetchAccounts();
+        setEditingAccount(null);
+        setNewAccount({
+          username: '',
+          email: '',
+          role: 'Khách hàng',
+          status: 'Hoạt động',
+        });
+        alert('Cập nhật tài khoản thành công!');
+      } else {
+        alert('Lỗi khi cập nhật tài khoản!');
+      }
+    } catch (error) {
+      console.error('Error updating account:', error);
+    }
+  };
+
+  // ================== CUỘN XUỐNG FORM ==================
+  const scrollToForm = () => {
+    formRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  //if (loading) return <div className="loading">Đang tải dữ liệu...</div>;
 
   return (
     <div className="page-card">
+      {/* ======= HEADER ======= */}
       <div className="page-card__header">
         <h3 className="page-card__title">Quản lý tài khoản</h3>
-        <button className="btn btn--primary" onClick={handleAddAccount}>
-          <Plus size={20} />
+        <button className="btn btn-primary" onClick={scrollToForm}>
           Thêm tài khoản
         </button>
       </div>
 
+      {/* ======= BẢNG DỮ LIỆU ======= */}
       <div className="table-container">
         <table className="data-table">
           <thead>
@@ -575,22 +1007,530 @@ const AccountsPage = () => {
             {accounts.map((account) => (
               <tr key={account.id}>
                 <td>{account.id}</td>
-                <td className="font-medium">{account.name}</td>
+                <td className="font-medium">{account.username}</td>
                 <td>{account.email}</td>
                 <td>
-                  <span className={`badge ${account.role === 'Admin' ? 'badge--purple' : 'badge--info'}`}>
+                  <span
+                    className={`badge ${
+                      account.role === 'Admin'
+                        ? 'badge--purple text-dark'
+                        : 'badge--info text-dark'
+                    }`}
+                  >
                     {account.role}
                   </span>
                 </td>
                 <td>
-                  <span className="badge badge--success">{account.status}</span>
+                  <span
+                    className={`badge ${
+                      account.status === 'Hoạt động'
+                        ? 'badge--success text-dark'
+                        : 'badge--danger text-dark'
+                    }`}
+                  >
+                    {account.status}
+                  </span>
                 </td>
                 <td>
-                  <div className="action-buttons">
-                    <button className="action-btn action-btn--edit" onClick={() => handleEditAccount(account.id)}>
+                  <td className="action-buttons text-center">
+                    <button
+                      className="action-btn action-btn--edit"
+                      onClick={() => handleEditAccount(account)}
+                    >
                       <Edit size={18} />
                     </button>
-                    <button className="action-btn action-btn--delete" onClick={() => handleDeleteAccount(account.id)}>
+                  </td>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* ======= FORM THÊM / SỬA ======= */}
+      <div ref={formRef} className="container mt-4">
+        <div className="card shadow-sm border-0">
+          <div className="card-header bg-primary text-white d-flex align-items-center justify-content-between">
+            <h5 className="mb-0">
+              {editingAccount ? ' Chỉnh sửa tài khoản' : ' Thêm tài khoản mới'}
+            </h5>
+            {editingAccount && (
+              <button
+                className="btn btn-light btn-sm"
+                onClick={() => {
+                  setEditingAccount(null);
+                  setNewAccount({
+                    username: '',
+                    email: '',
+                    role: 'Khách hàng',
+                    status: 'Hoạt động',
+                  });
+                }}
+              >
+                Hủy
+              </button>
+            )}
+          </div>
+
+          <div className="card-body">
+            <div className="row g-3">
+              <div className="col-md-6">
+                <label className="form-label fw-semibold">Tên người dùng</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Nhập tên người dùng"
+                  value={newAccount.username}
+                  onChange={(e) =>
+                    setNewAccount({ ...newAccount, username: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="col-md-6">
+                <label className="form-label fw-semibold">Email</label>
+                <input
+                  type="email"
+                  className="form-control"
+                  placeholder="Nhập email"
+                  value={newAccount.email}
+                  onChange={(e) =>
+                    setNewAccount({ ...newAccount, email: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="col-md-6">
+                <label className="form-label fw-semibold">Vai trò</label>
+                <select
+                  className="form-select"
+                  value={newAccount.role}
+                  onChange={(e) =>
+                    setNewAccount({ ...newAccount, role: e.target.value })
+                  }
+                >
+                  <option value="Khách hàng">Khách hàng</option>
+                  <option value="Admin">Admin</option>
+                </select>
+              </div>
+
+              <div className="col-md-6">
+                <label className="form-label fw-semibold">Trạng thái</label>
+                <select
+                  className="form-select"
+                  value={newAccount.status}
+                  onChange={(e) =>
+                    setNewAccount({ ...newAccount, status: e.target.value })
+                  }
+                >
+                  <option value="Hoạt động">Hoạt động</option>
+                  <option value="Khóa">Khóa</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="text-center mt-4">
+              {editingAccount ? (
+                <button
+                  className="btn btn-primary px-4 me-2"
+                  onClick={handleUpdateAccount}
+                >
+                  <i className="bi bi-save"></i> Lưu thay đổi
+                </button>
+              ) : (
+                <button
+                  className="btn btn-primary px-4"
+                  onClick={handleAddAccount}
+                >
+                  <i className="bi bi-person-plus"></i> Thêm tài khoản
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Brands Page
+
+// const BrandsPage = () => {
+//  // 👈 SỬ DỤNG HOOK CHUNG VÀ ĐỔI TÊN HÀM CHO DỄ ĐỌC
+//   const {
+//     data: brands, // Đổi tên 'data' thành 'brands'
+//     loading,
+//     error,
+//     addItem: addBrand, // Đổi tên 'addItem' thành 'addBrand'
+//     deleteItem: deleteBrand, // Đổi tên 'deleteItem' thành 'deleteBrand'
+//     updateItem: updateBrand, // Đổi tên 'updateItem' thành 'updateBrand'
+//   } = useGenericApi('brands'); // 👈 Truyền tên resource 'brands'
+
+//   // ** LƯU Ý: Phần quản lý Modal (isModalOpen, itemToEdit) bị thiếu trong code hiện tại **
+//   // Tôi sẽ giữ nguyên logic xử lý sự kiện, nhưng bạn cần đảm bảo biến 'brand'
+//   // trong hàm updateItem (đã được đổi tên thành updateBrand) nhận đủ ID.
+
+//   const handleAddBrand = async () => {
+//     // TODO: Thực tế, dữ liệu này sẽ lấy từ Modal/Form
+//     const brandData = {
+//       name: `New Brand ${Date.now()}`,
+//       logoUrl: "new_logo.png",
+//     };
+//     const result = await addBrand(brandData); // Gọi hàm chung đã đổi tên
+//     if (result.success) {
+//       alert(`Thêm thương hiệu "${result.item.name}" thành công!`); // Đổi result.brand thành result.item
+//     } else {
+//       alert(`Thêm thương hiệu thất bại: ${result.error}`);
+//     }
+//   };
+
+//   const handleEditBrand = (brandId) => {
+//     // Logic này sẽ cần mở Modal và truyền Brand object
+//     console.log("Open Edit Modal for brand:", brandId);
+//     // VÍ DỤ: openModal(brands.find(b => b.id === brandId));
+//   };
+
+//   const handleDeleteBrand = async (brandId) => {
+//     if (
+//       window.confirm(
+//         "Bạn có chắc muốn xóa thương hiệu này? Thao tác này KHÔNG thể hoàn tác."
+//       )
+//     ) {
+//       const result = await deleteBrand(brandId); // Gọi hàm chung đã đổi tên
+//       if (result.success) {
+//         alert("Xóa thương hiệu thành công!");
+//       } else {
+//         alert(`Xóa thương hiệu thất bại: ${result.error}`);
+//       }
+//     }
+//   };
+
+//   if (loading) {
+//     return <div className="loading">Đang tải dữ liệu...</div>;
+//   }
+//   if (error) {
+//     return <div className="error">Lỗi: {error}</div>;
+//   }
+
+//   return (
+//     <div className="page-card">
+//       {/* ... Phần Header và Button (giữ nguyên) ... */}
+//       <div className="page-card__header">
+//         <h3 className="page-card__title">Quản lý thương hiệu</h3>
+//         <button
+//           className="btn btn--primary"
+//           onClick={handleAddBrand}
+//         >
+//           <Plus size={20} />
+//           Thêm thương hiệu
+//         </button>
+//       </div>
+
+//       <div className="table-container">
+//         <table className="data-table">
+//           <thead>
+//             {/* ... (Giữ nguyên Thead) ... */}
+//             <tr>
+//               <th>ID</th>
+//               <th>Tên thương hiệu</th>
+//               <th>Logo</th>
+//               <th>Số sản phẩm</th>
+//               <th>Hành động</th>
+//             </tr>
+//           </thead>
+//           <tbody>
+//             {brands.map((brand) => (
+//               <tr key={brand.id}>
+//                 <td className="font-medium">{brand.id}</td>
+//                 <td>{brand.name}</td>
+//                 <td>
+//                   <img
+//                     src={brand.logoUrl}
+//                     alt={brand.name}
+//                     className="brand-logo-thumbnail"
+//                     style={{ width: '40px', height: '40px', objectFit: 'contain', border: '1px solid #eee' }}
+//                   />
+//                 </td>
+//                 <td>{brand.productCount}</td> {/* Lấy từ processedData trong hook */}
+//                 <td>
+//                   <div className="action-buttons">
+//                     <button
+//                       className="action-btn action-btn--edit"
+//                       onClick={() => handleEditBrand(brand.id)}
+//                     >
+//                       <Edit size={18} />
+//                     </button>
+//                     <button
+//                       className="action-btn action-btn--delete"
+//                       onClick={() => handleDeleteBrand(brand.id)}
+//                     >
+//                       <Trash2 size={18} />
+//                     </button>
+//                   </div>
+//                 </td>
+//               </tr>
+//             ))}
+//           </tbody>
+//         </table>
+
+//         {brands.length === 0 && !loading && (
+//           <p className="empty-message">Chưa có thương hiệu nào được thêm.</p>
+//         )}
+//       </div>
+
+//       {/* TODO: Cần tích hợp GenericFormModal ở đây để Thêm/Sửa */}
+//     </div>
+//   );
+// };
+
+const BrandsPage = () => {
+  const {
+    data: brands,
+    loading,
+    error,
+    addItem: addBrand,
+    deleteItem: deleteBrand,
+    updateItem: updateBrand,
+  } = useGenericApi('brands');
+
+  const [formData, setFormData] = useState({
+    name: '',
+    logoUrl: '',
+  });
+  const [editingId, setEditingId] = useState(null);
+  const [selectedBrands, setSelectedBrands] = useState([]);
+  const formRef = useRef(null);
+
+  // Reset form
+  const resetForm = () => {
+    setFormData({ name: '', logoUrl: '' });
+    setEditingId(null);
+  };
+
+  // Xử lý thêm/sửa thương hiệu
+  const handleSubmit = async () => {
+    if (!formData.name.trim()) {
+      alert('Vui lòng nhập tên thương hiệu!');
+      return;
+    }
+
+    if (editingId) {
+      // Cập nhật
+      // BrandsPage: Gộp ID và FormData thành một object
+      const payload = { id: editingId, ...formData };
+      const result = await updateBrand(payload);
+      if (result.success) {
+        alert('Cập nhật thương hiệu thành công!');
+        resetForm();
+      } else {
+        alert(`Cập nhật thất bại: ${result.error}`);
+      }
+    } else {
+      // Thêm mới
+      const result = await addBrand(formData);
+      if (result.success) {
+        alert('Thêm thương hiệu thành công!');
+        resetForm();
+      } else {
+        alert(`Thêm thất bại: ${result.error}`);
+      }
+    }
+  };
+
+  // Xử lý sửa - đổ dữ liệu lên form
+  const handleEditBrand = (brand) => {
+    setFormData({ name: brand.name, logoUrl: brand.logoUrl });
+    setEditingId(brand.id);
+    formRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // Xử lý xóa một thương hiệu
+  const handleDeleteBrand = async (brandId) => {
+    if (window.confirm('Bạn có chắc muốn xóa thương hiệu này?')) {
+      const result = await deleteBrand(brandId);
+      if (result.success) {
+        alert('Xóa thương hiệu thành công!');
+        setSelectedBrands(selectedBrands.filter((id) => id !== brandId));
+      } else {
+        alert(`Xóa thất bại: ${result.error}`);
+      }
+    }
+  };
+
+  // Xử lý xóa nhiều thương hiệu
+  const handleDeleteSelected = async () => {
+    if (selectedBrands.length === 0) {
+      alert('Vui lòng chọn ít nhất một thương hiệu để xóa!');
+      return;
+    }
+
+    if (
+      window.confirm(
+        `Bạn có chắc muốn xóa ${selectedBrands.length} thương hiệu đã chọn?`
+      )
+    ) {
+      for (const brandId of selectedBrands) {
+        await deleteBrand(brandId);
+      }
+      alert('Xóa các thương hiệu thành công!');
+      setSelectedBrands([]);
+    }
+  };
+
+  // Toggle chọn một thương hiệu
+  const toggleSelectBrand = (brandId) => {
+    if (selectedBrands.includes(brandId)) {
+      setSelectedBrands(selectedBrands.filter((id) => id !== brandId));
+    } else {
+      setSelectedBrands([...selectedBrands, brandId]);
+    }
+  };
+
+  // Toggle chọn tất cả
+  const toggleSelectAll = () => {
+    if (selectedBrands.length === brands.length) {
+      setSelectedBrands([]);
+    } else {
+      setSelectedBrands(brands.map((b) => b.id));
+    }
+  };
+
+  if (loading) {
+    return <div className="loading">Đang tải dữ liệu...</div>;
+  }
+  if (error) {
+    return <div className="error">Lỗi: {error}</div>;
+  }
+
+  return (
+    <div className="page-card">
+      {/* FORM THÊM/SỬA */}
+      <div ref={formRef} className="container mt-4 mb-4">
+        <div className="card shadow-sm border-0">
+          <div className="card-header bg-primary text-white d-flex align-items-center justify-content-between">
+            <h5 className="mb-0">
+              {editingId
+                ? '✏️ Chỉnh sửa thương hiệu'
+                : '➕ Thêm thương hiệu mới'}
+            </h5>
+            {editingId && (
+              <button className="btn btn-light btn-sm" onClick={resetForm}>
+                Hủy
+              </button>
+            )}
+          </div>
+
+          <div className="card-body">
+            <div className="row g-3">
+              <div className="col-md-6">
+                <label className="form-label fw-semibold">
+                  Tên thương hiệu
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Nhập tên thương hiệu"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="col-md-6">
+                <label className="form-label fw-semibold">URL Logo</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Nhập URL logo"
+                  value={formData.logoUrl}
+                  onChange={(e) =>
+                    setFormData({ ...formData, logoUrl: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="text-center mt-4">
+              <button className="btn btn-primary px-4" onClick={handleSubmit}>
+                {editingId ? '💾 Lưu thay đổi' : '➕ Thêm thương hiệu'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* DANH SÁCH THƯƠNG HIỆU */}
+      <div className="page-card__header">
+        <h3 className="page-card__title">Danh sách thương hiệu</h3>
+        {selectedBrands.length > 0 && (
+          <button className="btn btn-danger" onClick={handleDeleteSelected}>
+            <Trash2 size={20} />
+            Xóa đã chọn ({selectedBrands.length})
+          </button>
+        )}
+      </div>
+
+      <div className="table-container">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th style={{ width: '50px' }}>
+                <input
+                  type="checkbox"
+                  checked={
+                    brands.length > 0 && selectedBrands.length === brands.length
+                  }
+                  onChange={toggleSelectAll}
+                  style={{ cursor: 'pointer' }}
+                />
+              </th>
+              <th>ID</th>
+              <th>Tên thương hiệu</th>
+              <th>Logo</th>
+              <th>Số sản phẩm</th>
+              <th>Hành động</th>
+            </tr>
+          </thead>
+          <tbody>
+            {brands.map((brand) => (
+              <tr key={brand.id}>
+                <td>
+                  <input
+                    type="checkbox"
+                    checked={selectedBrands.includes(brand.id)}
+                    onChange={() => toggleSelectBrand(brand.id)}
+                    style={{ cursor: 'pointer' }}
+                  />
+                </td>
+                <td className="font-medium">{brand.id}</td>
+                <td>{brand.name}</td>
+                <td>
+                  <img
+                    src={brand.logoUrl}
+                    alt={brand.name}
+                    className="brand-logo-thumbnail"
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      objectFit: 'contain',
+                      border: '1px solid #eee',
+                    }}
+                  />
+                </td>
+                <td>{brand.productCount}</td>
+                <td>
+                  <div className="action-buttons">
+                    <button
+                      className="action-btn action-btn--edit"
+                      onClick={() => handleEditBrand(brand)}
+                    >
+                      <Edit size={18} />
+                    </button>
+                    <button
+                      className="action-btn action-btn--delete"
+                      onClick={() => handleDeleteBrand(brand.id)}
+                    >
                       <Trash2 size={18} />
                     </button>
                   </div>
@@ -599,271 +1539,625 @@ const AccountsPage = () => {
             ))}
           </tbody>
         </table>
-      </div>
-    </div>
-  );
-};
 
-// Brands Page
-const BrandsPage = () => {
-  const [brands, setBrands] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchBrands();
-  }, []);
-
-  const fetchBrands = async () => {
-    try {
-      setLoading(true);
-      // TODO: Gọi API lấy danh sách thương hiệu
-      // const response = await fetch('/api/brands');
-      // const data = await response.json();
-      // setBrands(data);
-      
-      // Mock data
-      setBrands([
-        { id: 1, name: 'Dell', productCount: 45 },
-        { id: 2, name: 'HP', productCount: 38 },
-        { id: 3, name: 'Asus', productCount: 52 },
-        { id: 4, name: 'Lenovo', productCount: 41 },
-      ]);
-    } catch (error) {
-      console.error('Error fetching brands:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAddBrand = () => {
-    // TODO: Mở modal thêm thương hiệu
-    console.log('Add brand');
-  };
-
-  const handleEditBrand = (brandId) => {
-    // TODO: Mở modal sửa thương hiệu
-    console.log('Edit brand:', brandId);
-  };
-
-  const handleDeleteBrand = async (brandId) => {
-    if (window.confirm('Bạn có chắc muốn xóa thương hiệu này?')) {
-      try {
-        // TODO: Gọi API xóa thương hiệu
-        // await fetch(`/api/brands/${brandId}`, { method: 'DELETE' });
-        
-        setBrands(brands.filter(b => b.id !== brandId));
-        alert('Xóa thương hiệu thành công!');
-      } catch (error) {
-        console.error('Error deleting brand:', error);
-        alert('Xóa thương hiệu thất bại!');
-      }
-    }
-  };
-
-  if (loading) {
-    return <div className="loading">Đang tải dữ liệu...</div>;
-  }
-
-  return (
-    <div className="page-card">
-      <div className="page-card__header">
-        <h3 className="page-card__title">Quản lý thương hiệu</h3>
-        <button className="btn btn--primary" onClick={handleAddBrand}>
-          <Plus size={20} />
-          Thêm thương hiệu
-        </button>
-      </div>
-
-      <div className="category-grid">
-        {brands.map((brand) => (
-          <div key={brand.id} className="category-card">
-            <div className="category-card__header">
-              <h4 className="category-card__title">{brand.name}</h4>
-              <div className="action-buttons">
-                <button className="action-btn action-btn--edit action-btn--sm" onClick={() => handleEditBrand(brand.id)}>
-                  <Edit size={16} />
-                </button>
-                <button className="action-btn action-btn--delete action-btn--sm" onClick={() => handleDeleteBrand(brand.id)}>
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            </div>
-            <p className="category-card__count">{brand.productCount} sản phẩm</p>
-          </div>
-        ))}
+        {brands.length === 0 && !loading && (
+          <p className="empty-message">Chưa có thương hiệu nào được thêm.</p>
+        )}
       </div>
     </div>
   );
 };
 
 // Usage Purpose Page
+// const UsagePurposePage = () => {
+//   const [purposes, setPurposes] = useState([]);
+//   const [loading, setLoading] = useState(true);
+
+//   useEffect(() => {
+//     fetchUsagePurposes();
+//   }, []);
+
+//   const fetchUsagePurposes = async () => {
+//     try {
+//       setLoading(true);
+//       // TODO: Gọi API lấy danh sách nhu cầu sử dụng
+//       // const response = await fetch('/api/usage-purposes');
+//       // const data = await response.json();
+//       // setPurposes(data);
+
+//       // Mock data
+//       setPurposes([
+//         { id: 1, name: "Gaming", productCount: 35 },
+//         { id: 2, name: "Văn phòng", productCount: 68 },
+//         { id: 3, name: "Thiết kế - Kĩ thuật", productCount: 42 },
+//         { id: 4, name: "Học tập", productCount: 56 },
+//       ]);
+//     } catch (error) {
+//       console.error("Error fetching usage purposes:", error);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const handleAddPurpose = () => {
+//     console.log("Add purpose");
+//   };
+
+//   const handleEditPurpose = (purposeId) => {
+//     console.log("Edit purpose:", purposeId);
+//   };
+
+//   const handleDeletePurpose = async (purposeId) => {
+//     if (window.confirm("Bạn có chắc muốn xóa nhu cầu này?")) {
+//       try {
+//         setPurposes(purposes.filter((p) => p.id !== purposeId));
+//         alert("Xóa nhu cầu sử dụng thành công!");
+//       } catch (error) {
+//         console.error("Error deleting purpose:", error);
+//         alert("Xóa nhu cầu sử dụng thất bại!");
+//       }
+//     }
+//   };
+
+//   if (loading) {
+//     return <div className="loading">Đang tải dữ liệu...</div>;
+//   }
+
+//   return (
+//     <div className="page-card">
+//       <div className="page-card__header">
+//         <h3 className="page-card__title">Quản lý nhu cầu sử dụng</h3>
+//         <button className="btn btn--primary" onClick={handleAddPurpose}>
+//           <Plus size={20} />
+//           Thêm nhu cầu
+//         </button>
+//       </div>
+
+//       <div className="category-grid">
+//         {purposes.map((purpose) => (
+//           <div key={purpose.id} className="category-card">
+//             <div className="category-card__header">
+//               <h4 className="category-card__title">{purpose.name}</h4>
+//               <div className="action-buttons">
+//                 <button
+//                   className="action-btn action-btn--edit action-btn--sm"
+//                   onClick={() => handleEditPurpose(purpose.id)}
+//                 >
+//                   <Edit size={16} />
+//                 </button>
+//                 <button
+//                   className="action-btn action-btn--delete action-btn--sm"
+//                   onClick={() => handleDeletePurpose(purpose.id)}
+//                 >
+//                   <Trash2 size={16} />
+//                 </button>
+//               </div>
+//             </div>
+//             <p className="category-card__count">
+//               {purpose.productCount} sản phẩm
+//             </p>
+//           </div>
+//         ))}
+//       </div>
+//     </div>
+//   );
+// };
 const UsagePurposePage = () => {
-  const [purposes, setPurposes] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    data: purposes,
+    loading,
+    error,
+    addItem: addPurpose,
+    deleteItem: deletePurpose,
+    updateItem: updatePurpose,
+  } = useGenericApi('usage-purposes'); // endpoint: /api/usage-purposes
 
-  useEffect(() => {
-    fetchUsagePurposes();
-  }, []);
+  const [formData, setFormData] = useState({ name: '' });
+  const [editingId, setEditingId] = useState(null);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const formRef = useRef(null);
 
-  const fetchUsagePurposes = async () => {
-    try {
-      setLoading(true);
-      // TODO: Gọi API lấy danh sách nhu cầu sử dụng
-      // const response = await fetch('/api/usage-purposes');
-      // const data = await response.json();
-      // setPurposes(data);
-      
-      // Mock data
-      setPurposes([
-        { id: 1, name: 'Gaming', productCount: 35 },
-        { id: 2, name: 'Văn phòng', productCount: 68 },
-        { id: 3, name: 'Thiết kế - Kĩ thuật', productCount: 42 },
-        { id: 4, name: 'Học tập', productCount: 56 },
-      ]);
-    } catch (error) {
-      console.error('Error fetching usage purposes:', error);
-    } finally {
-      setLoading(false);
+  const resetForm = () => {
+    setFormData({ name: '' });
+    setEditingId(null);
+  };
+
+  const handleSubmit = async () => {
+    if (!formData.name.trim()) {
+      alert('Vui lòng nhập tên nhu cầu sử dụng!');
+      return;
+    }
+    // UsagePurposePage: Gộp ID và FormData thành một object
+    const payload = { id: editingId, ...formData };
+    const fn = editingId ? updatePurpose(payload) : addPurpose(formData);
+
+    const result = await fn;
+    if (result.success) {
+      alert(
+        editingId
+          ? 'Cập nhật nhu cầu sử dụng thành công!'
+          : 'Thêm nhu cầu sử dụng thành công!'
+      );
+      resetForm();
+    } else {
+      alert(`${editingId ? 'Cập nhật' : 'Thêm'} thất bại: ${result.error}`);
     }
   };
 
-  const handleAddPurpose = () => {
-    console.log('Add purpose');
+  const handleEdit = (item) => {
+    setFormData({ name: item.name });
+    setEditingId(item.id);
+    formRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleEditPurpose = (purposeId) => {
-    console.log('Edit purpose:', purposeId);
-  };
-
-  const handleDeletePurpose = async (purposeId) => {
-    if (window.confirm('Bạn có chắc muốn xóa nhu cầu này?')) {
-      try {
-        setPurposes(purposes.filter(p => p.id !== purposeId));
-        alert('Xóa nhu cầu sử dụng thành công!');
-      } catch (error) {
-        console.error('Error deleting purpose:', error);
-        alert('Xóa nhu cầu sử dụng thất bại!');
-      }
+  const handleDelete = async (id) => {
+    if (!window.confirm('Bạn có chắc muốn xóa nhu cầu này?')) return;
+    const result = await deletePurpose(id);
+    if (result.success) {
+      alert('Xóa thành công!');
+      setSelectedIds((prev) => prev.filter((x) => x !== id));
+    } else {
+      alert(`Xóa thất bại: ${result.error}`);
     }
   };
 
-  if (loading) {
-    return <div className="loading">Đang tải dữ liệu...</div>;
-  }
+  const handleDeleteSelected = async () => {
+    if (selectedIds.length === 0) {
+      alert('Vui lòng chọn ít nhất một nhu cầu để xóa!');
+      return;
+    }
+    if (
+      !window.confirm(
+        `Bạn có chắc muốn xóa ${selectedIds.length} nhu cầu đã chọn?`
+      )
+    )
+      return;
+    for (const id of selectedIds) await deletePurpose(id);
+    alert('Xóa các nhu cầu thành công!');
+    setSelectedIds([]);
+  };
+
+  const toggleSelect = (id) =>
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+
+  const toggleSelectAll = () =>
+    setSelectedIds((prev) =>
+      purposes.length > 0 && prev.length === purposes.length
+        ? []
+        : purposes.map((x) => x.id)
+    );
+
+  if (loading) return <div className="loading">Đang tải dữ liệu...</div>;
+  if (error) return <div className="error">Lỗi: {error}</div>;
 
   return (
     <div className="page-card">
-      <div className="page-card__header">
-        <h3 className="page-card__title">Quản lý nhu cầu sử dụng</h3>
-        <button className="btn btn--primary" onClick={handleAddPurpose}>
-          <Plus size={20} />
-          Thêm nhu cầu
-        </button>
-      </div>
-
-      <div className="category-grid">
-        {purposes.map((purpose) => (
-          <div key={purpose.id} className="category-card">
-            <div className="category-card__header">
-              <h4 className="category-card__title">{purpose.name}</h4>
-              <div className="action-buttons">
-                <button className="action-btn action-btn--edit action-btn--sm" onClick={() => handleEditPurpose(purpose.id)}>
-                  <Edit size={16} />
-                </button>
-                <button className="action-btn action-btn--delete action-btn--sm" onClick={() => handleDeletePurpose(purpose.id)}>
-                  <Trash2 size={16} />
-                </button>
+      {/* FORM THÊM/SỬA */}
+      <div ref={formRef} className="container mt-4 mb-4">
+        <div className="card shadow-sm border-0">
+          <div className="card-header bg-primary text-white d-flex align-items-center justify-content-between">
+            <h5 className="mb-0">
+              {editingId
+                ? '✏️ Chỉnh sửa nhu cầu sử dụng'
+                : '➕ Thêm nhu cầu sử dụng mới'}
+            </h5>
+            {editingId && (
+              <button className="btn btn-light btn-sm" onClick={resetForm}>
+                Hủy
+              </button>
+            )}
+          </div>
+          <div className="card-body">
+            <div className="row g-3">
+              <div className="col-md-12">
+                <label className="form-label fw-semibold">Tên nhu cầu</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="VD: Gaming, Văn phòng, Học tập..."
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                />
               </div>
             </div>
-            <p className="category-card__count">{purpose.productCount} sản phẩm</p>
+            <div className="text-center mt-4">
+              <button className="btn btn-primary px-4" onClick={handleSubmit}>
+                {editingId ? '💾 Lưu thay đổi' : '➕ Thêm nhu cầu'}
+              </button>
+            </div>
           </div>
-        ))}
+        </div>
+      </div>
+
+      {/* DANH SÁCH */}
+      <div className="page-card__header">
+        <h3 className="page-card__title">Danh sách nhu cầu sử dụng</h3>
+        {selectedIds.length > 0 && (
+          <button className="btn btn-danger" onClick={handleDeleteSelected}>
+            <Trash2 size={20} /> Xóa đã chọn ({selectedIds.length})
+          </button>
+        )}
+      </div>
+
+      <div className="table-container">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th style={{ width: '50px' }}>
+                <input
+                  type="checkbox"
+                  checked={
+                    purposes.length > 0 &&
+                    selectedIds.length === purposes.length
+                  }
+                  onChange={toggleSelectAll}
+                  style={{ cursor: 'pointer' }}
+                />
+              </th>
+              <th>ID</th>
+              <th>Tên nhu cầu</th>
+              <th>Số sản phẩm</th>
+              <th>Hành động</th>
+            </tr>
+          </thead>
+          <tbody>
+            {purposes.map((p) => (
+              <tr key={p.id}>
+                <td>
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(p.id)}
+                    onChange={() => toggleSelect(p.id)}
+                    style={{ cursor: 'pointer' }}
+                  />
+                </td>
+                <td className="font-medium">{p.id}</td>
+                <td>{p.name}</td>
+                <td>{p.productCount}</td>
+                <td>
+                  <div className="action-buttons">
+                    <button
+                      className="action-btn action-btn--edit"
+                      onClick={() => handleEdit(p)}
+                    >
+                      <Edit size={18} />
+                    </button>
+                    <button
+                      className="action-btn action-btn--delete"
+                      onClick={() => handleDelete(p.id)}
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {purposes.length === 0 && (
+          <p className="empty-message">Chưa có nhu cầu nào được thêm.</p>
+        )}
       </div>
     </div>
   );
 };
 
 // Screen Size Page
+// const ScreenSizePage = () => {
+//   const [sizes, setSizes] = useState([]);
+//   const [loading, setLoading] = useState(true);
+
+//   useEffect(() => {
+//     fetchScreenSizes();
+//   }, []);
+
+//   const fetchScreenSizes = async () => {
+//     try {
+//       setLoading(true);
+//       // TODO: Gọi API lấy danh sách kích thước màn hình
+//       // const response = await fetch('/api/screen-sizes');
+//       // const data = await response.json();
+//       // setSizes(data);
+
+//       // Mock data
+//       setSizes([
+//         { id: 1, name: "13-14 inch", productCount: 52 },
+//         { id: 2, name: "15-16 inch", productCount: 89 },
+//         { id: 3, name: "17 inch trở lên", productCount: 35 },
+//       ]);
+//     } catch (error) {
+//       console.error("Error fetching screen sizes:", error);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const handleAddSize = () => {
+//     console.log("Add size");
+//   };
+
+//   const handleEditSize = (sizeId) => {
+//     console.log("Edit size:", sizeId);
+//   };
+
+//   const handleDeleteSize = async (sizeId) => {
+//     if (window.confirm("Bạn có chắc muốn xóa kích thước này?")) {
+//       try {
+//         setSizes(sizes.filter((s) => s.id !== sizeId));
+//         alert("Xóa kích thước thành công!");
+//       } catch (error) {
+//         console.error("Error deleting size:", error);
+//         alert("Xóa kích thước thất bại!");
+//       }
+//     }
+//   };
+
+//   if (loading) {
+//     return <div className="loading">Đang tải dữ liệu...</div>;
+//   }
+
+//   return (
+//     <div className="page-card">
+//       <div className="page-card__header">
+//         <h3 className="page-card__title">Quản lý kích thước màn hình</h3>
+//         <button className="btn btn--primary" onClick={handleAddSize}>
+//           <Plus size={20} />
+//           Thêm kích thước
+//         </button>
+//       </div>
+
+//       <div className="category-grid category-grid--3col">
+//         {sizes.map((size) => (
+//           <div key={size.id} className="category-card">
+//             <div className="category-card__header">
+//               <h4 className="category-card__title">{size.name}</h4>
+//               <div className="action-buttons">
+//                 <button
+//                   className="action-btn action-btn--edit action-btn--sm"
+//                   onClick={() => handleEditSize(size.id)}
+//                 >
+//                   <Edit size={16} />
+//                 </button>
+//                 <button
+//                   className="action-btn action-btn--delete action-btn--sm"
+//                   onClick={() => handleDeleteSize(size.id)}
+//                 >
+//                   <Trash2 size={16} />
+//                 </button>
+//               </div>
+//             </div>
+//             <p className="category-card__count">{size.productCount} sản phẩm</p>
+//           </div>
+//         ))}
+//       </div>
+//     </div>
+//   );
+// };
 const ScreenSizePage = () => {
-  const [sizes, setSizes] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // 👈 Sử dụng useGenericApi với resource name là 'screen-sizes'
+  const {
+    data: sizes, // Đổi tên 'data' thành 'sizes'
+    loading,
+    error,
+    addItem: addSize,
+    deleteItem: deleteSize,
+    updateItem: updateSize,
+  } = useGenericApi('screen-sizes'); // endpoint: /api/screen-sizes
 
-  useEffect(() => {
-    fetchScreenSizes();
-  }, []);
+  const [formData, setFormData] = useState({ value: '' }); // Thay 'name' bằng 'value'
+  const [editingId, setEditingId] = useState(null);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const formRef = useRef(null);
 
-  const fetchScreenSizes = async () => {
-    try {
-      setLoading(true);
-      // TODO: Gọi API lấy danh sách kích thước màn hình
-      // const response = await fetch('/api/screen-sizes');
-      // const data = await response.json();
-      // setSizes(data);
-      
-      // Mock data
-      setSizes([
-        { id: 1, name: '13-14 inch', productCount: 52 },
-        { id: 2, name: '15-16 inch', productCount: 89 },
-        { id: 3, name: '17 inch trở lên', productCount: 35 },
-      ]);
-    } catch (error) {
-      console.error('Error fetching screen sizes:', error);
-    } finally {
-      setLoading(false);
+  const resetForm = () => {
+    setFormData({ value: '' });
+    setEditingId(null);
+  };
+
+  // Xử lý thêm/sửa kích thước
+  const handleSubmit = async () => {
+    const valueAsDouble = parseFloat(formData.value); // Chuyển đổi sang số thực
+
+    if (isNaN(valueAsDouble) || valueAsDouble <= 0) {
+      alert('Vui lòng nhập kích thước màn hình hợp lệ (là số dương)!');
+      return;
+    }
+
+    const payload = {
+      id: editingId, // Chỉ cần cho PUT
+      value: valueAsDouble,
+    };
+
+    const fn = editingId ? updateSize(payload) : addSize(payload); // Truyền payload
+    const result = await fn;
+
+    if (result.success) {
+      alert(
+        editingId
+          ? 'Cập nhật kích thước thành công!'
+          : 'Thêm kích thước thành công!'
+      );
+      resetForm();
+    } else {
+      alert(`${editingId ? 'Cập nhật' : 'Thêm'} thất bại: ${result.error}`);
     }
   };
 
-  const handleAddSize = () => {
-    console.log('Add size');
+  // Xử lý sửa - đổ dữ liệu lên form
+  const handleEdit = (item) => {
+    setFormData({ value: item.value.toString() }); // Chuyển Double về String cho input
+    setEditingId(item.id);
+    formRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleEditSize = (sizeId) => {
-    console.log('Edit size:', sizeId);
-  };
-
-  const handleDeleteSize = async (sizeId) => {
-    if (window.confirm('Bạn có chắc muốn xóa kích thước này?')) {
-      try {
-        setSizes(sizes.filter(s => s.id !== sizeId));
-        alert('Xóa kích thước thành công!');
-      } catch (error) {
-        console.error('Error deleting size:', error);
-        alert('Xóa kích thước thất bại!');
-      }
+  // Xử lý xóa một kích thước
+  const handleDelete = async (id) => {
+    if (!window.confirm('Bạn có chắc muốn xóa kích thước này?')) return;
+    const result = await deleteSize(id);
+    if (result.success) {
+      alert('Xóa thành công!');
+      setSelectedIds((prev) => prev.filter((x) => x !== id));
+    } else {
+      alert(`Xóa thất bại: ${result.error}`);
     }
   };
 
-  if (loading) {
-    return <div className="loading">Đang tải dữ liệu...</div>;
-  }
+  // Xử lý xóa nhiều kích thước
+  const handleDeleteSelected = async () => {
+    if (selectedIds.length === 0) {
+      alert('Vui lòng chọn ít nhất một mục để xóa!');
+      return;
+    }
+
+    if (
+      !window.confirm(`Bạn có chắc muốn xóa ${selectedIds.length} mục đã chọn?`)
+    )
+      return;
+
+    // Xóa từng mục một
+    for (const id of selectedIds) {
+      await deleteSize(id);
+    }
+
+    alert('Xóa các kích thước thành công!');
+    setSelectedIds([]);
+  };
+
+  // Toggle chọn một kích thước
+  const toggleSelect = (id) =>
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+
+  // Toggle chọn tất cả
+  const toggleSelectAll = () =>
+    setSelectedIds((prev) =>
+      sizes.length > 0 && prev.length === sizes.length
+        ? []
+        : sizes.map((x) => x.id)
+    );
+
+  if (loading) return <div className="loading">Đang tải dữ liệu...</div>;
+  if (error) return <div className="error">Lỗi: {error}</div>;
+
+  // Hàm hiển thị tên kích thước (kết hợp với 'inch')
+  const formatSizeName = (value) => {
+    return `${value} inch`;
+  };
 
   return (
     <div className="page-card">
-      <div className="page-card__header">
-        <h3 className="page-card__title">Quản lý kích thước màn hình</h3>
-        <button className="btn btn--primary" onClick={handleAddSize}>
-          <Plus size={20} />
-          Thêm kích thước
-        </button>
-      </div>
-
-      <div className="category-grid category-grid--3col">
-        {sizes.map((size) => (
-          <div key={size.id} className="category-card">
-            <div className="category-card__header">
-              <h4 className="category-card__title">{size.name}</h4>
-              <div className="action-buttons">
-                <button className="action-btn action-btn--edit action-btn--sm" onClick={() => handleEditSize(size.id)}>
-                  <Edit size={16} />
-                </button>
-                <button className="action-btn action-btn--delete action-btn--sm" onClick={() => handleDeleteSize(size.id)}>
-                  <Trash2 size={16} />
-                </button>
+      {/* FORM THÊM/SỬA */}
+      <div ref={formRef} className="container mt-4 mb-4">
+        <div className="card shadow-sm border-0">
+          <div className="card-header bg-primary text-white d-flex align-items-center justify-content-between">
+            <h5 className="mb-0">
+              {editingId
+                ? '✏️ Chỉnh sửa kích thước màn hình'
+                : '➕ Thêm kích thước màn hình mới'}
+            </h5>
+            {editingId && (
+              <button className="btn btn-light btn-sm" onClick={resetForm}>
+                Hủy
+              </button>
+            )}
+          </div>
+          <div className="card-body">
+            <div className="row g-3">
+              <div className="col-md-12">
+                <label className="form-label fw-semibold">Giá trị (inch)</label>
+                <input
+                  type="number" // Đổi sang type number
+                  step="0.1"
+                  className="form-control"
+                  placeholder="VD: 13.3, 15.6, 17.0..."
+                  value={formData.value}
+                  onChange={(e) =>
+                    setFormData({ ...formData, value: e.target.value })
+                  }
+                />
               </div>
             </div>
-            <p className="category-card__count">{size.productCount} sản phẩm</p>
+            <div className="text-center mt-4">
+              <button className="btn btn-primary px-4" onClick={handleSubmit}>
+                {editingId ? '💾 Lưu thay đổi' : '➕ Thêm kích thước'}
+              </button>
+            </div>
           </div>
-        ))}
+        </div>
+      </div>
+
+      {/* DANH SÁCH */}
+      <div className="page-card__header">
+        <h3 className="page-card__title">Danh sách kích thước màn hình</h3>
+        {selectedIds.length > 0 && (
+          <button className="btn btn-danger" onClick={handleDeleteSelected}>
+            <Trash2 size={20} /> Xóa đã chọn ({selectedIds.length})
+          </button>
+        )}
+      </div>
+
+      <div className="table-container">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th style={{ width: '50px' }}>
+                <input
+                  type="checkbox"
+                  checked={
+                    sizes.length > 0 && selectedIds.length === sizes.length
+                  }
+                  onChange={toggleSelectAll}
+                  style={{ cursor: 'pointer' }}
+                />
+              </th>
+              <th>ID</th>
+              <th>Kích thước</th>
+              <th>Số sản phẩm</th>
+              <th>Hành động</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sizes.map((s) => (
+              <tr key={s.id}>
+                <td>
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(s.id)}
+                    onChange={() => toggleSelect(s.id)}
+                    style={{ cursor: 'pointer' }}
+                  />
+                </td>
+                <td className="font-medium">{s.id}</td>
+                <td>{formatSizeName(s.value)}</td> {/* Hiển thị giá trị */}
+                <td>{s.productCount}</td>
+                <td>
+                  <div className="action-buttons">
+                    <button
+                      className="action-btn action-btn--edit"
+                      onClick={() => handleEdit(s)}
+                    >
+                      <Edit size={18} />
+                    </button>
+                    <button
+                      className="action-btn action-btn--delete"
+                      onClick={() => handleDelete(s.id)}
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {sizes.length === 0 && (
+          <p className="empty-message">Chưa có kích thước nào được thêm.</p>
+        )}
       </div>
     </div>
   );

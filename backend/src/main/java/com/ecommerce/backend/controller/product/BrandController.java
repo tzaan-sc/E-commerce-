@@ -23,21 +23,29 @@ public class BrandController {
     @PostMapping
     public ResponseEntity<Brand> createBrand(@Valid @RequestBody CreateBrandRequest request) {
         Brand newBrand = brandService.createBrand(request);
-        return new ResponseEntity<>(newBrand, HttpStatus.CREATED); // Trả về 201 Created
+        return new ResponseEntity<>(newBrand, HttpStatus.CREATED);
     }
 
-    // PUT: /api/brands
-    @PutMapping
-    public ResponseEntity<Brand> updateBrand(@Valid @RequestBody UpdateBrandRequest request) {
+    // ✅ FIX: Sửa lại cấu trúc PUT
+    // PUT: /api/brands/{id}
+    @PutMapping("/{id}")
+    public ResponseEntity<Brand> updateBrand(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateBrandRequest request) {
+
+        // 💡 Giữ lại dòng gán ID để đảm bảo DTO Validation (UpdateBrandRequest) thành công
+        request.setId(id);
+
+        // BrandService.updateBrand(request) giữ nguyên logic cũ.
         Brand updatedBrand = brandService.updateBrand(request);
-        return ResponseEntity.ok(updatedBrand); // Trả về 200 OK
+        return ResponseEntity.ok(updatedBrand);
     }
 
     // DELETE: /api/brands/{id}
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteBrand(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteBrand(@PathVariable Long id) {
         brandService.deleteBrand(id);
-        return ResponseEntity.ok("Brand với ID=" + id + " đã được xóa thành công."); // Trả về 200 OK
+        return ResponseEntity.noContent().build(); // Đồng bộ với UsagePurposeController (204 No Content)
     }
 
     // GET: /api/brands

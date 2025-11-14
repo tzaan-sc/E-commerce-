@@ -4,11 +4,15 @@ import com.ecommerce.backend.entity.product.UsagePurpose;
 import com.ecommerce.backend.dto.product.usagepurpose.CreateUsagePurposeRequest;
 import com.ecommerce.backend.dto.product.usagepurpose.UpdateUsagePurposeRequest;
 import com.ecommerce.backend.repository.product.UsagePurposeRepository;
+// Thêm các dependency cần thiết:
+import com.ecommerce.backend.repository.product.ProductRepository; // 👈 Cần import ProductRepository
+import com.ecommerce.backend.exception.ResourceNotFoundException;
+import com.ecommerce.backend.exception.DuplicateResourceException;
+
 import com.ecommerce.backend.service.product.UsagePurposeService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.transaction.annotation.Transactional; // 👈 Cần thiết cho thao tác DELETE
 
 import java.util.List;
 
@@ -17,31 +21,56 @@ import java.util.List;
 public class UsagePurposeServiceImpl implements UsagePurposeService {
 
     private final UsagePurposeRepository usagePurposeRepository;
+    // THÊM: Cần ProductRepository để xử lý khóa ngoại khi xóa
+    private final ProductRepository productRepository;
+
 
     @Override
+    @Transactional
     public UsagePurpose createUsagePurpose(CreateUsagePurposeRequest request) {
-        UsagePurpose up = new UsagePurpose();
-        up.setName(request.getName());
+        // 1. KIỂM TRA TRÙNG LẶP TÊN (ĐỒNG BỘ VỚI BRAND/SCREEN SIZE)
+        if (usagePurposeRepository.existsByName(request.getName())) {
+            throw new DuplicateResourceException("Nhu cầu sử dụng với tên '" + request.getName() + "' đã tồn tại.");
+        }
+
+        // 2. Tạo Entity và lưu
+        UsagePurpose up = UsagePurpose.builder()
+                .name(request.getName())
+                .build();
         return usagePurposeRepository.save(up);
     }
 
     @Override
+    @Transactional // Cần Transactional cho thao tác cập nhật
     public UsagePurpose updateUsagePurpose(Long id, UpdateUsagePurposeRequest request) {
-        UsagePurpose up = usagePurposeRepository.findById(id)
+        // 1. TÌM KIẾM THEO ID (Sử dụng ResourceNotFoundException đồng bộ)
+        UsagePurpose existingPurpose = usagePurposeRepository.findById(id)
                 .orElseThrow(() ->
-                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Nhu cầu sử dụng không tồn tại")
+                        new ResourceNotFoundException("UsagePurpose", "id", id)
                 );
 
-        up.setName(request.getName());
-        return usagePurposeRepository.save(up);
+        // 2. KIỂM TRA TRÙNG LẶP NẾU TÊN THAY ĐỔI
+        if (!existingPurpose.getName().equalsIgnoreCase(request.getName()) && usagePurposeRepository.existsByName(request.getName())) {
+            throw new DuplicateResourceException("Nhu cầu sử dụng với tên '" + request.getName() + "' đã tồn tại.");
+        }
+
+        // 3. Cập nhật và lưu
+        existingPurpose.setName(request.getName());
+        return usagePurposeRepository.save(existingPurpose);
     }
 
     @Override
+    @Transactional // Cần Transactional cho việc xóa và xử lý khóa ngoại
     public void deleteUsagePurpose(Long id) {
-        if (!usagePurposeRepository.existsById(id)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "ID không tồn tại, không thể xoá");
-        }
-        usagePurposeRepository.deleteById(id);
+        // 1. TÌM KIẾM THEO ID (Sử dụng ResourceNotFoundException đồng bộ)
+        UsagePurpose usagePurpose = usagePurposeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("UsagePurpose", "id", id));
+
+        // 2. XỬ LÝ KHÓA NGOẠI: Gán Product.usagePurpose về NULL
+        productRepository.setUsagePurposeToNullByUsagePurposeId(id);
+
+        // 3. Xóa
+        usagePurposeRepository.delete(usagePurpose);
     }
 
     @Override
@@ -51,9 +80,8 @@ public class UsagePurposeServiceImpl implements UsagePurposeService {
 
     @Override
     public UsagePurpose getUsagePurposeById(Long id) {
+        // Sử dụng ResourceNotFoundException đồng bộ
         return usagePurposeRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Nhu cầu sử dụng không tồn tại")
-                );
+                .orElseThrow(() -> new ResourceNotFoundException("UsagePurpose", "id", id));
     }
 }

@@ -1,0 +1,19 @@
+{
+  "sqltools.connections": [
+    {
+      "mysqlOptions": {
+        "authProtocol": "default",
+        "enableSsl": "Disabled"
+      },
+      "ssh": "Disabled",
+      "previewLimit": 50,
+      "server": "mainline.proxy.rlwy.net",
+      "port": 24679,
+      "driver": "MySQL",
+      "name": "raiway",
+      "database": "railway",
+      "username": "root",
+      "password": "EVpjZUKGdBcPNDQvPQLgbsnWprkombgm"
+    }
+  ]
+}
