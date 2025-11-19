@@ -24,5 +24,6 @@ public class UsagePurpose {
 
 
     @OneToMany(mappedBy = "usagePurpose")
+
     private List<Product> products;
 }

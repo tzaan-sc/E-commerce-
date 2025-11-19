@@ -1,0 +1,64 @@
+{
+  "sqltools.connections": [
+    {
+      "mysqlOptions": {
+        "authProtocol": "default",
+        "enableSsl": "Disabled"
+      },
+      "ssh": "Disabled",
+      "previewLimit": 50,
+      "server": "mainline.proxy.rlwy.net",
+      "port": 24679,
+      "driver": "MySQL",
+      "name": "raiway",
+      "database": "railway",
+      "username": "root",
+      "password": "EVpjZUKGdBcPNDQvPQLgbsnWprkombgm"
+    },
+    {
+      "mysqlOptions": {
+        "authProtocol": "default",
+        "enableSsl": "Disabled"
+      },
+      "ssh": "Disabled",
+      "previewLimit": 50,
+      "server": "nozomi.proxy.rlwy.net",
+      "port": 46569,
+      "driver": "MySQL",
+      "name": "csdl2",
+      "database": "railway",
+      "password": "KcODMieiLoEBeglsvlcAqBKljPgNYjcf",
+      "username": "root"
+    },
+    {
+      "mysqlOptions": {
+        "authProtocol": "default",
+        "enableSsl": "Disabled"
+      },
+      "ssh": "Disabled",
+      "previewLimit": 50,
+      "server": "switchback.proxy.rlwy.net",
+      "port": 56701,
+      "driver": "MySQL",
+      "name": "CSDL3_dream",
+      "database": "railway",
+      "username": "root",
+      "password": "xVDMdIifgeoSLUkonfaCHwiqlvbeNlPa"
+    },
+    {
+      "mysqlOptions": {
+        "authProtocol": "default",
+        "enableSsl": "Disabled"
+      },
+      "ssh": "Disabled",
+      "previewLimit": 50,
+      "server": "ecommerce.creimay48tr7.ap-southeast-1.rds.amazonaws.com",
+      "port": 3306,
+      "driver": "MySQL",
+      "name": "aws",
+      "database": "ecommerce",
+      "username": "admin",
+      "password": "12345678"
+    }
+  ]
+}

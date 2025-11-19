@@ -11,6 +11,7 @@ import ProductDetailPage from "./components/page/productDetailPage";
 import ProfilePage from "./components/page/profilePage";
 import CartPage from "./components/page/cartPage";
 import MyOrdersPage from "components/page/myOrderPage";
+import OrderDetailPage from "components/page/OrderDetailPage";
 // ====== Import các trang Admin ======
 
 import { ROUTERS } from "./utils/router";
@@ -47,6 +48,7 @@ const RouterCustom = () => {
         <Route index element={<HomePage />} />
         <Route path="thong-tin-ca-nhan" element={<ProfilePage />} />
         <Route path="don-mua" element={<MyOrdersPage />} />
+        <Route path="don-mua/:id" element={<OrderDetailPage />} />
         <Route path="gio-hang" element={<CartPage />} />
         <Route path="laptop" element={<LaptopPage />} /> 
         <Route path="product/:id" element={<ProductDetailPage />} />

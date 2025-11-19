@@ -19,7 +19,8 @@ export const ROUTERS = {
   CUSTOMER: { 
     HOME: "/customer/home",
     PROFILE: "/customer/home/thong-tin-ca-nhan",      // Thông tin cá nhân
-    MYORDER: "/customer/home/don-mua",                  // Đơn mua
+    MYORDER: "/customer/home/don-mua",
+    ORDERDETAIL: "/customer/home/don-mua/:id",                  // Đơn mua
     CART: "/customer/home/gio-hang",
     LAPTOP: "/customer/home/laptop",                  // Danh sách laptop
     SUPPORT: "/ho-tro",                 // Hỗ trợ

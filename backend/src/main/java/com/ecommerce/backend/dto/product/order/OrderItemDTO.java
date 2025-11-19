@@ -9,10 +9,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class OrderItemResponse {
-    private Long id;
+public class OrderItemDTO {
     private String productName;
     private Integer quantity;
     private Double price;
-    private Double subtotal; // quantity * price
+    private String imageUrl; // <-- SỬA: THÊM TRƯỜNG NÀY
 }

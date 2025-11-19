@@ -235,37 +235,46 @@ $hover-bg: #f0f0f0;
   }
 
   // Cart
-  &__cart {
-    position: relative;
+ 
+// Cart
+ &__cart {
+   // Xóa position: relative; ở đây nếu bạn đã thêm nó trong React
+   // và chuyển sang dùng cart-icon-wrapper như sau:
+   
+   .cart-icon-wrapper { // <-- Thêm wrapper class này vào thẻ Link trong React
+     position: relative; // Cần thiết lập vị trí tương đối cho Link
+     display: block;
+     color: $text-color;
+     font-size: 28px;
+     transition: color 0.3s ease;
+     padding: 8px; // Giữ nguyên padding cho vùng bấm
 
-    a {
-      text-decoration: none;
-      color: $text-color;
-      font-size: 28px; // Tăng từ 24px lên 28px
-      display: flex;
-      align-items: center;
-      position: relative;
-      padding: 8px;
-      transition: color 0.3s ease;
+     &:hover {
+       color: $primary-color;
+     }
+   }
 
-      &:hover {
-        color: $primary-color;
-      }
-    }
-
-    .cart-count {
-      position: absolute;
-      top: -5px;
-      right: -5px;
-      background: $secondary-color;
-      color: $white;
-      font-size: 14px; // Tăng từ 11px lên 14px
-      font-weight: 600;
-      padding: 2px 6px;
-      border-radius: 10px;
-      min-width: 18px;
-      text-align: center;
-    }
+   .cart-count {
+     position: absolute;
+     top: 0px; // Điều chỉnh vị trí trên/dưới
+     right: 0px; // Điều chỉnh vị trí trái/phải
+     background: $secondary-color; // Màu đỏ cam
+     color: $white;
+     font-size: 14px;
+     font-weight: 600;
+     padding: 2px 6px;
+     border-radius: 10px;
+     min-width: 18px;
+     text-align: center;
+     line-height: 1.2; // Căn chỉnh chữ
+     z-index: 10;
+     // Thêm viền (optional)
+     border: 2px solid $white; 
+     transform: translate(25%, -25%); // Dịch chuyển ra góc trên cùng bên phải của icon
+   }
+ 
+ 
+// ... (Các đoạn code khác giữ nguyên) ...
   }
 
   // Account

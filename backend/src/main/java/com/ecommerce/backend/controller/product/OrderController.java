@@ -1,94 +1,96 @@
 package com.ecommerce.backend.controller.product;
 
-import com.ecommerce.backend.dto.product.order.CreateOrderRequest;
-import com.ecommerce.backend.dto.product.order.OrderItemResponse;
-import com.ecommerce.backend.dto.product.order.OrderResponse;
-import com.ecommerce.backend.dto.product.order.OrderDetailResponse;
-import com.ecommerce.backend.entity.product.Order;
+import com.ecommerce.backend.dto.product.order.OrderDTO;
 import com.ecommerce.backend.service.product.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/orders")
+@CrossOrigin(
+        origins = "*",
+        methods = {
+                RequestMethod.GET,
+                RequestMethod.POST,
+                RequestMethod.PATCH, // <-- Cho phép PATCH
+                RequestMethod.DELETE, // (Thêm luôn cho các hàm xóa sau này)
+                RequestMethod.PUT    // (Thêm luôn cho các hàm cập nhật sau này)
+        }
+)
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000")
 public class OrderController {
 
     private final OrderService orderService;
 
     @GetMapping
-    public ResponseEntity<List<OrderResponse>> getAllOrders(
-            @RequestParam(required = false) String status) {
+    public ResponseEntity<List<OrderDTO>> getMyOrders(
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
+        String username = userDetails.getUsername();
+        List<OrderDTO> orders = orderService.getOrdersByUsername(username);
+        return ResponseEntity.ok(orders);
+    }
+    @GetMapping("/{orderId}")
+    public ResponseEntity<OrderDTO> getOrderDetail(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long orderId
+    ) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
+        String username = userDetails.getUsername();
 
-        List<Order> orders = orderService.getAllOrders();
+        // Gọi service mới mà bạn vừa tạo ở Bước 2
+        OrderDTO orderDetail = orderService.getOrderDetail(username, orderId);
 
-        if (status != null && !status.equalsIgnoreCase("all")) {
-            orders = orders.stream()
-                    .filter(order -> order.getStatus().equalsIgnoreCase(status))
-                    .collect(Collectors.toList());
+        return ResponseEntity.ok(orderDetail);
+    }
+    //huy don
+    @PatchMapping("/{orderId}/cancel") // Dùng PATCH để cập nhật 1 phần
+    public ResponseEntity<OrderDTO> cancelOrder(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long orderId
+    ) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
+        String username = userDetails.getUsername();
+
+        OrderDTO updatedOrder = orderService.cancelOrder(username, orderId);
+        return ResponseEntity.ok(updatedOrder);
+    }
+    @GetMapping("/admin")
+    public ResponseEntity<List<OrderDTO>> getAllOrdersForAdmin(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(defaultValue = "all") String status
+    ) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
         }
 
-        List<OrderResponse> response = orders.stream()
-                .map(this::convertToSummaryResponse)
-                .collect(Collectors.toList());
+        // (Tuỳ chọn) Kiểm tra quyền ADMIN chặt chẽ hơn tại đây nếu muốn
+        // if (!userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+        //    return ResponseEntity.status(403).build();
+        // }
 
-        return ResponseEntity.ok(response);
+        List<OrderDTO> orders = orderService.getAllOrdersForAdmin(status);
+        return ResponseEntity.ok(orders);
     }
-
-    @PostMapping
-    public ResponseEntity<OrderDetailResponse> createOrder(@RequestBody CreateOrderRequest request) {
-        Order order = orderService.createOrder(request);
-        OrderDetailResponse response = convertToDetailResponse(order);
-        return ResponseEntity.ok(response);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<OrderDetailResponse> getOrderById(@PathVariable Long id) {
-        Order order = orderService.getOrderById(id);
-        OrderDetailResponse response = convertToDetailResponse(order);
-        return ResponseEntity.ok(response);
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteOrder(@PathVariable Long id) {
-        orderService.deleteOrder(id);
-        return ResponseEntity.noContent().build();
-    }
-
-    private OrderResponse convertToSummaryResponse(Order order) {
-        return OrderResponse.builder()
-                .id(order.getId())
-                .orderCode(order.getOrderCode())
-                .customerName(order.getCustomerName())
-                .totalAmount(order.getTotalAmount())
-                .status(order.getStatus())
-                .itemCount(order.getItems() != null ? order.getItems().size() : 0)
-                .build();
-    }
-
-    private OrderDetailResponse convertToDetailResponse(Order order) {
-        List<OrderItemResponse> itemResponses = order.getItems().stream()
-                .map(item -> OrderItemResponse.builder()
-                        .id(item.getId())
-                        .productName(item.getProductName())
-                        .quantity(item.getQuantity())
-                        .price(item.getPrice())
-                        .subtotal(item.getQuantity() * item.getPrice())
-                        .build())
-                .collect(Collectors.toList());
-
-        return OrderDetailResponse.builder()
-                .id(order.getId())
-                .orderCode(order.getOrderCode())
-                .customerName(order.getCustomerName())
-                .totalAmount(order.getTotalAmount())
-                .status(order.getStatus())
-                .items(itemResponses)
-                .build();
+    @PutMapping("/{orderId}/status")
+    public ResponseEntity<OrderDTO> updateOrderStatus(
+            @PathVariable Long orderId,
+            @RequestParam String status
+    ) {
+        // Gọi service
+        OrderDTO updatedOrder = orderService.updateOrderStatus(orderId, status);
+        return ResponseEntity.ok(updatedOrder);
     }
 }

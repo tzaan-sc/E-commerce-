@@ -15,6 +15,7 @@ import com.ecommerce.backend.util.SlugUtil;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -28,35 +29,33 @@ public class ProductServiceImpl implements ProductService {
     private final ScreenSizeRepository screenSizeRepository;
 
     @Override
+    @Transactional
     public Product createProduct(CreateProductRequest request) {
+
         Product product = new Product();
+
         product.setName(request.getName());
         product.setDescription(request.getDescription());
         product.setPrice(request.getPrice());
         product.setStockQuantity(request.getStockQuantity());
         product.setImageUrl(request.getImageUrl());
-
-        // Generate slug
         product.setSlug(SlugUtil.toSlug(request.getName()));
 
-        // Set Brand nếu có
         if (request.getBrandId() != null) {
             Brand brand = brandRepository.findById(request.getBrandId())
                     .orElseThrow(() -> new RuntimeException("Brand not found"));
             product.setBrand(brand);
         }
 
-        // Set UsagePurpose nếu có
         if (request.getUsagePurposeId() != null) {
             UsagePurpose usagePurpose = usagePurposeRepository.findById(request.getUsagePurposeId())
-                    .orElseThrow(() -> new RuntimeException("Usage purpose not found"));
+                    .orElseThrow(() -> new RuntimeException("UsagePurpose not found"));
             product.setUsagePurpose(usagePurpose);
         }
 
-        // Set ScreenSize nếu có
         if (request.getScreenSizeId() != null) {
             ScreenSize screenSize = screenSizeRepository.findById(request.getScreenSizeId())
-                    .orElseThrow(() -> new RuntimeException("Screen size not found"));
+                    .orElseThrow(() -> new RuntimeException("ScreenSize not found"));
             product.setScreenSize(screenSize);
         }
 
@@ -64,7 +63,9 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional
     public Product updateProduct(Long id, UpdateProductRequest request) {
+
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product không tồn tại"));
 
@@ -73,25 +74,20 @@ public class ProductServiceImpl implements ProductService {
         product.setPrice(request.getPrice());
         product.setStockQuantity(request.getStockQuantity());
         product.setImageUrl(request.getImageUrl());
-
-        // Cập nhật slug khi tên thay đổi
         product.setSlug(SlugUtil.toSlug(request.getName()));
 
-        // Update Brand nếu có
         if (request.getBrandId() != null) {
             Brand brand = brandRepository.findById(request.getBrandId())
                     .orElseThrow(() -> new RuntimeException("Brand không tồn tại"));
             product.setBrand(brand);
         }
 
-        // Update UsagePurpose nếu có
         if (request.getUsagePurposeId() != null) {
             UsagePurpose usagePurpose = usagePurposeRepository.findById(request.getUsagePurposeId())
                     .orElseThrow(() -> new RuntimeException("UsagePurpose không tồn tại"));
             product.setUsagePurpose(usagePurpose);
         }
 
-        // Update ScreenSize nếu có
         if (request.getScreenSizeId() != null) {
             ScreenSize screenSize = screenSizeRepository.findById(request.getScreenSizeId())
                     .orElseThrow(() -> new RuntimeException("ScreenSize không tồn tại"));
@@ -102,7 +98,11 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional
     public void deleteProduct(Long id) {
+        if (!productRepository.existsById(id)) {
+            throw new RuntimeException("Product không tồn tại");
+        }
         productRepository.deleteById(id);
     }
 

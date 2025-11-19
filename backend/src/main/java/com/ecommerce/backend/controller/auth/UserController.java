@@ -2,19 +2,25 @@ package com.ecommerce.backend.controller.auth;
 
 import com.ecommerce.backend.entity.auth.User;
 import com.ecommerce.backend.service.auth.UserService;
+import com.ecommerce.backend.repository.auth.UserRepository; // ✅ FIX 1: THÊM IMPORT REPOSITORY
+import org.springframework.http.ResponseEntity; // ✅ FIX 2: THÊM IMPORT RESPONSE ENTITY
+import org.springframework.security.access.prepost.PreAuthorize; // ✅ Cần cho @PreAuthorize
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "http://localhost:3000") // cho phép frontend React gọi API
+@CrossOrigin(origins = "http://localhost:3000")
 public class UserController {
 
     private final UserService userService;
+    private final UserRepository userRepository;
 
-    public UserController(UserService userService) {
+    // ✅ FIX 3: SỬA CONSTRUCTOR để tiêm (inject) cả hai Repository/Service
+    public UserController(UserService userService, UserRepository userRepository) {
         this.userService = userService;
+        this.userRepository = userRepository;
     }
 
     // Lấy danh sách tài khoản
@@ -58,5 +64,12 @@ public class UserController {
     @DeleteMapping("/{id}")
     public void deleteUser(@PathVariable Long id) {
         userService.delete(id);
+    }
+
+    // ✅ FIX 4: Thêm API đếm tài khoản (Đã dùng UserRepository)
+    @GetMapping("/count")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Long> getTotalUserCount() {
+        return ResponseEntity.ok(userRepository.count());
     }
 }

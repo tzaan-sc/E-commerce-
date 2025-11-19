@@ -17,7 +17,6 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Query("UPDATE Product p SET p.screenSize = NULL WHERE p.screenSize.id = :screenSizeId")
     void setScreenSizeToNullByScreenSizeId(Long screenSizeId);
 
-    // 👈 THÊM PHƯƠNG THỨC MỚI CHO USAGE PURPOSE
     @Modifying
     @Query("UPDATE Product p SET p.usagePurpose = NULL WHERE p.usagePurpose.id = :usagePurposeId")
     void setUsagePurposeToNullByUsagePurposeId(Long usagePurposeId);

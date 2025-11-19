@@ -12,6 +12,7 @@ $orange-color: #f97316;
 $bg-gray-50: #f9fafb;
 $bg-gray-100: #f3f4f6;
 $border-gray: #e5e7eb;
+$text-gray-400:#b9bbc0;
 $text-gray-500: #6b7280;
 $text-gray-600: #4b5563;
 $text-gray-800: #1f2937;
@@ -322,45 +323,84 @@ $shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
 }
 
 // Table Styles
+// --- CẬP NHẬT PHẦN TABLE ---
 .table-container {
   overflow-x: auto;
+  border: 1px solid #c1c4c7; // Viền bao quanh container
+  border-radius: 0.5rem;
 }
 
 .data-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: collapse; // Quan trọng: Gộp viền để nét mảnh và liền mạch
 
   thead {
-    background-color: $bg-gray-50;
+    background-color: #c1c4c7;
+    border-bottom: 3px solid #d1d5db; // Viền đậm dưới header
 
     tr th {
-      padding: 0.75rem 1rem;
-      text-align: left;
+      padding: 0.85rem 1rem;
+      text-align: center; // (Cũ là left) Căn giữa chiều ngang
+      vertical-align: middle;
       font-size: 0.875rem;
       font-weight: 600;
-      color: $text-gray-600;
+      color: #374151;
       white-space: nowrap;
+      border-right: 1px solid #c1c4c7; // Viền ngăn cách cột (tùy chọn)
+
+      &:last-child {
+        border-right: none;
+      }
     }
   }
 
   tbody {
     tr {
-      border-top: 1px solid $border-gray;
-      transition: $transition;
+      border-bottom: 1px solid #c1c4c7; // Viền ngăn cách các hàng
+      transition: all 0.2s ease;
+
+      &:last-child {
+        border-bottom: none;
+      }
 
       &:hover {
-        background-color: $bg-gray-50;
+        background-color: #f3f4f6; // Màu nền khi di chuột vào
       }
 
       td {
-        padding: 0.75rem 1rem;
-        color: $text-gray-800;
+        padding: 0.85rem 1rem;
+        color: #1f2937;
+        border-right: 1px solid #c1c4c7; // Viền ngăn cách cột (mờ hơn header)
+        text-align: center; // Căn giữa chiều ngang
+        vertical-align: middle; // Căn giữa chiều dọc
+        &:last-child {
+          border-right: none;
+        }
 
         &.font-medium {
           font-weight: 500;
         }
       }
     }
+  }
+}
+
+// --- THÊM CLASS CHO KHUNG CẬP NHẬT TRẠNG THÁI TRONG MODAL ---
+.status-update-box {
+  flex: 1;
+  min-width: 300px;
+  background: #f9fafb;
+  padding: 1.25rem;
+  border-radius: 0.5rem;
+  border: 1px solid #d1d5db; // Viền đậm hơn cho khung trạng thái
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+
+  h4 {
+    margin-bottom: 1rem;
+    color: #374151;
+    font-weight: 600;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 0.5rem;
   }
 }
 
@@ -434,45 +474,65 @@ $shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
 }
 
 // Badge Styles
+// --- Thay thế đoạn .badge cũ bằng đoạn này ---
+
 .badge {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
+  display: inline-flex; 
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem 0.85rem;
   border-radius: 9999px;
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  line-height: 1;
+  min-width: 100px; 
 
+  // 1. COMPLETED (Xanh Lá - Success)
   &--success {
-    background-color: rgba($success-color, 0.1);
-    color: darken($success-color, 10%);
+    background-color: #d1fae5 !important; 
+    color: #065f46 !important; 
+    border: 1px solid #34d399; 
   }
 
+  // 2. PENDING (Vàng Cam - Warning)
   &--warning {
-    background-color: rgba($warning-color, 0.1);
-    color: darken($warning-color, 20%);
+    background-color: #fef3c7 !important; 
+    color: #92400e !important; 
+    border: 1px solid #f59e0b; 
   }
 
+  // 3. CANCELLED (Đỏ - Danger)
   &--danger {
-    background-color: rgba($danger-color, 0.1);
-    color: darken($danger-color, 10%);
+    background-color: #fee2e2 !important;
+    color: #991b1b !important; 
+    border: 1px solid #f87171; 
   }
 
+  // 4. SHIPPING (Xanh Dương - Info)
   &--info {
-    background-color: rgba($info-color, 0.1);
-    color: darken($info-color, 10%);
+    background-color: #dbeafe !important;
+    color: #1e40af !important; 
+    border: 1px solid #60a5fa; 
   }
 
+  // 5. PROCESSING (Tím/Chàm - Primary)
+  &--primary {
+    background-color: #e0e7ff !important; 
+    color: #3730a3 !important; 
+    border: 1px solid #818cf8; 
+  }
+
+  // 6. SECONDARY (Mặc định/Xám - CONFIRMED)
   &--secondary {
-    background-color: $bg-gray-100;
-    color: $text-gray-800;
-  }
-
-  &--purple {
-    background-color: rgba($purple-color, 0.1);
-    color: darken($purple-color, 10%);
+    background-color: $bg-gray-100 !important;
+    color: $text-gray-800 !important;
+    border: 1px solid #d1d5db;
   }
 }
 
 // Search Box Styles
+// --- KHUNG TÌM KIẾM (ĐẬM ĐÀ HƠN) ---
 .search-box {
   position: relative;
   flex: 1;
@@ -480,28 +540,44 @@ $shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
 
   &__icon {
     position: absolute;
-    left: 0.75rem;
+    left: 1rem; // Đẩy icon vào sâu hơn chút
     top: 50%;
     transform: translateY(-50%);
-    color: $text-gray-500;
+    color: #4b5563; // 🟢 Màu icon đậm hơn (Gray-600) thay vì màu nhạt cũ
+    pointer-events: none; // Cho phép bấm xuyên qua icon
+    z-index: 1;
   }
 
   &__input {
     width: 100%;
-    padding: 0.5rem 1rem 0.5rem 2.5rem;
-    border: 1px solid $border-gray;
-    border-radius: $border-radius-lg;
-    font-size: 0.875rem;
-    transition: $transition;
-
-    &:focus {
-      outline: none;
-      border-color: $primary-color;
-      box-shadow: 0 0 0 3px rgba($primary-color, 0.1);
-    }
+    // Tăng padding-left để chữ không đè lên icon
+    padding: 0.65rem 1rem 0.65rem 3rem; 
+    
+    // 🟢 VIỀN ĐẬM: Dày 2px và màu xám rõ (#d1d5db)
+    border: 2px solid #d1d5db; 
+    border-radius: 0.5rem; // Bo góc vừa phải
+    
+    font-size: 0.9rem;
+    font-weight: 500; // Chữ nhập vào đậm hơn
+    color: #111827; // Màu chữ đen gần như tuyệt đối
+    background-color: #fff;
+    transition: all 0.2s ease-in-out;
 
     &::placeholder {
-      color: $text-gray-500;
+      color: #9ca3af; // Màu placeholder xám vừa phải
+      font-weight: 400;
+    }
+
+    // Khi di chuột vào -> Viền tối hơn nữa
+    &:hover {
+      border-color: #9ca3af; 
+    }
+
+    // Khi bấm vào nhập liệu -> Viền xanh và bóng đổ
+    &:focus {
+      outline: none;
+      border-color: $primary-color; // Màu xanh chủ đạo (biến $primary-color của bạn)
+      box-shadow: 0 0 0 4px rgba($primary-color, 0.15); // Hiệu ứng "glow" quanh viền
     }
   }
 }
@@ -611,5 +687,186 @@ $shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
 
   .stat-card__value {
     font-size: 1.5rem;
+  }
+}
+//product
+.btn.btn--primary {
+  background-color: #1e90ff !important;  /* bắt buộc override */
+  color: #fff !important;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  &:hover {
+    background-color: #1c86ee !important;
+  }
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.45); // nền mờ
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  backdrop-filter: blur(2px);
+  animation: fadeIn 0.25s ease-out;
+}
+
+.modal-container {
+  width: 750px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: white;
+  border-radius: $border-radius-xl;   // dùng biến của bạn
+  box-shadow: $shadow-xl; // bóng lớn
+  padding: 2rem;
+  animation: popup 0.25s ease-out;
+
+  h2 {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: $text-gray-800;
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .modal-header {
+  display: flex;
+  justify-content: space-between; // tiêu đề bên trái, X bên phải
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.modal-header h2 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: $text-gray-800;
+  margin: 0;
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: $text-gray-600;
+  transition: $transition;
+
+  &:hover {
+    color: $danger-color;
+    transform: scale(1.2);
+  }
+}
+
+}
+
+// Input styling đồng bộ hệ thống
+.modal-input,
+.modal-select,
+.modal-textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid $text-gray-400;
+  border-radius: $border-radius-lg;
+  font-size: 0.9rem;
+  background: white;
+  color: $text-gray-800;
+  transition: $transition;
+
+  &:focus {
+    outline: none;
+    border-color: $primary-color;
+    box-shadow: 0 0 0 3px rgba($primary-color, 0.15);
+  }
+
+  &::placeholder {
+    color: $text-gray-500;
+  }
+}
+
+.modal-textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+// Form layout
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.modal-row {
+  display: flex;
+  gap: 1rem;
+
+  .modal-col {
+    flex: 1;
+  }
+}
+
+// Buttons
+.modal-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+
+  .btn-cancel {
+    background: $bg-gray-100;
+    color: $text-gray-600;
+    padding: 0.65rem 1.5rem;
+    border-radius: $border-radius-lg;
+    border: 1px solid $border-gray;
+    font-weight: 500;
+    transition: $transition;
+
+    &:hover {
+      background: $bg-gray-50;
+    }
+  }
+  
+  .btn-submit {
+    background: $primary-color;
+    color: white;
+    padding: 0.65rem 1.5rem;
+    border-radius: $border-radius-lg;
+    font-weight: 500;
+    transition: $transition;
+
+    &:hover {
+      background: $primary-hover;
+    }
+  }
+}
+
+// Animations
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes popup {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }

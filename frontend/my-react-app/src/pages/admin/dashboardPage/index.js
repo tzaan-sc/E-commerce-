@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Save } from 'lucide-react';
+// import axios from 'axios'; // You can remove axios if you use apiClient
+import apiClient from "../../../api/axiosConfig"; // 👈 FIXED IMPORT PATH
+
+import { Save,Upload } from 'lucide-react';
 import {
   LayoutDashboard,
   Laptop,
@@ -53,11 +56,12 @@ const AdminDashboard = () => {
   };
 
   const renderPage = () => {
-    switch (currentPage) {
-      case 'dashboard':
-        return <DashboardPage />;
-      case 'products':
-        return <ProductsPage />;
+    switch (currentPage) {
+      case 'dashboard':
+        // 👇 THAY ĐỔI: Truyền setter xuống DashboardPage
+        return <DashboardPage setCurrentPage={setCurrentPage} />;
+      case 'products':
+        return <ProductsPage />;
       case 'orders':
         return <OrdersPage />;
       case 'accounts':
@@ -153,217 +157,516 @@ const AdminDashboard = () => {
 };
 
 // Dashboard Page
-const DashboardPage = () => {
-  const [stats, setStats] = useState([]);
-  const [recentOrders, setRecentOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
+// const DashboardPage = () => {
+//   const [stats, setStats] = useState([]);
+//   const [recentOrders, setRecentOrders] = useState([]);
+//   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
+//   useEffect(() => {
+//     fetchDashboardData();
+//   }, []);
 
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      // TODO: Gọi API lấy dữ liệu thống kê
-      // const response = await fetch('/api/dashboard/stats');
-      // const data = await response.json();
+//   const fetchDashboardData = async () => {
+//     try {
+//       setLoading(true);
+//       // TODO: Gọi API lấy dữ liệu thống kê
+//       // const response = await fetch('/api/dashboard/stats');
+//       // const data = await response.json();
 
-      // Mock data
-      setStats([
-        { label: 'Tổng sản phẩm', value: '248', icon: Laptop, color: 'blue' },
-        {
-          label: 'Đơn hàng mới',
-          value: '52',
-          icon: ShoppingCart,
-          color: 'green',
-        },
-        { label: 'Tài khoản', value: '1,234', icon: Users, color: 'purple' },
-        { label: 'Doanh thu', value: '524M', icon: Tag, color: 'orange' },
-      ]);
+//       // Mock data
+//       setStats([
+//         { label: 'Tổng sản phẩm', value: '248', icon: Laptop, color: 'blue' },
+//         {
+//           label: 'Đơn hàng mới',
+//           value: '52',
+//           icon: ShoppingCart,
+//           color: 'green',
+//         },
+//         { label: 'Tài khoản', value: '1,234', icon: Users, color: 'purple' },
+//         { label: 'Doanh thu', value: '524M', icon: Tag, color: 'orange' },
+//       ]);
 
-      // TODO: Gọi API lấy đơn hàng gần đây
-      // const ordersResponse = await fetch('/api/orders/recent');
-      // const ordersData = await ordersResponse.json();
+//       // TODO: Gọi API lấy đơn hàng gần đây
+//       // const ordersResponse = await fetch('/api/orders/recent');
+//       // const ordersData = await ordersResponse.json();
 
-      setRecentOrders([
-        {
-          id: '#ORD001',
-          customer: 'Nguyễn Văn A',
-          product: 'Dell XPS 15',
-          total: '35,000,000đ',
-          status: 'Đã giao',
-        },
-        {
-          id: '#ORD002',
-          customer: 'Trần Thị B',
-          product: 'HP Pavilion 14',
-          total: '18,500,000đ',
-          status: 'Đang xử lý',
-        },
-      ]);
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-    } finally {
-      setLoading(false);
+//       setRecentOrders([
+//         {
+//           id: '#ORD001',
+//           customer: 'Nguyễn Văn A',
+//           product: 'Dell XPS 15',
+//           total: '35,000,000đ',
+//           status: 'Đã giao',
+//         },
+//         {
+//           id: '#ORD002',
+//           customer: 'Trần Thị B',
+//           product: 'HP Pavilion 14',
+//           total: '18,500,000đ',
+//           status: 'Đang xử lý',
+//         },
+//       ]);
+//     } catch (error) {
+//       console.error('Error fetching dashboard data:', error);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   if (loading) {
+//     return <div className="loading">Đang tải dữ liệu...</div>;
+//   }
+
+//   return (
+//     <div className="dashboard">
+//       <div className="stats-grid">
+//         {stats.map((stat, index) => (
+//           <div key={index} className="stat-card">
+//             <div className="stat-card__content">
+//               <div className="stat-card__info">
+//                 <p className="stat-card__label">{stat.label}</p>
+//                 <p className="stat-card__value">{stat.value}</p>
+//               </div>
+//               <div className={`stat-card__icon stat-card__icon--${stat.color}`}>
+//                 <stat.icon size={24} />
+//               </div>
+//             </div>
+//           </div>
+//         ))}
+//       </div>
+
+//       <div className="recent-orders">
+//         <h3 className="recent-orders__title">Đơn hàng gần đây</h3>
+//         <div className="table-container">
+//           <table className="data-table">
+//             <thead>
+//               <tr>
+//                 <th>Mã đơn</th>
+//                 <th>Khách hàng</th>
+//                 <th>Sản phẩm</th>
+//                 <th>Tổng tiền</th>
+//                 <th>Trạng thái</th>
+//               </tr>
+//             </thead>
+//             <tbody>
+//               {recentOrders.map((order) => (
+//                 <tr key={order.id}>
+//                   <td>{order.id}</td>
+//                   <td>{order.customer}</td>
+//                   <td>{order.product}</td>
+//                   <td>{order.total}</td>
+//                   <td>
+//                     <span
+//                       className={`badge ${
+//                         order.status === 'Đã giao'
+//                           ? 'badge--success'
+//                           : 'badge--warning'
+//                       }`}
+//                     >
+//                       {order.status}
+//                     </span>
+//                   </td>
+//                 </tr>
+//               ))}
+//             </tbody>
+//           </table>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
+// TRONG AdminDashboard.js (Phần DashboardPage component)
+
+ const DashboardPage = ({ setCurrentPage }) => {
+    const [stats, setStats] = useState([]);
+    const [recentOrders, setRecentOrders] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const getTargetPage = (label) => {
+        if (label.includes('Tài khoản')) return 'accounts'; // Chuyển sang trang accounts
+        if (label.includes('Đơn hàng') || label.includes('Doanh thu')) return 'orders'; // Chuyển sang trang orders
+        return 'dashboard'; 
+    };
+    // --- HELPER FUNCTIONS (Cần thống nhất giữa các component) ---
+    const translateStatus = (status) => {
+        if (!status) return 'Không rõ';
+        const map = {
+            'PENDING': 'Chờ xác nhận',
+            'PROCESSING': 'Đang xử lý',
+            'SHIPPING': 'Đang giao',
+            'COMPLETED': 'Đã giao',
+            'CANCELLED': 'Đã hủy',
+        };
+        return map[status.toUpperCase()] || status;
+    };
+    
+    // Hàm này trả về TÊN MÀU (blue, green, purple, orange) để khớp với SCSS stat-card__icon--<color>
+    const getStatColorForStatus = (status) => {
+        if (!status) return 'secondary';
+        const statusUpper = status.toUpperCase();
+        const statusMap = {
+            'COMPLETED': 'orange', // Đơn hoàn tất (Dùng màu cam cho STATS)
+            'PENDING': 'green',    // Đơn mới (Dùng màu xanh lá cho STATS)
+        };
+        return statusMap[statusUpper] || 'blue';
+    };
+    
+    // Hàm này trả về tên class badge--<color> để khớp với bảng
+    const getBadgeClass = (status) => {
+        if (!status) return 'secondary';
+        const statusUpper = status.toUpperCase();
+        const statusMap = {
+            'COMPLETED': 'success', 
+            'SHIPPING': 'info', 
+            'PROCESSING': 'primary', 
+            'PENDING': 'warning', 
+            'CANCELLED': 'danger', 
+        };
+        return statusMap[statusUpper] || 'secondary';
+    };
+
+
+    useEffect(() => {
+        fetchDashboardData();
+    }, []);
+
+   const fetchDashboardData = async () => {
+        try {
+            setLoading(true);
+            
+            const ordersRes = await apiClient.get('/orders/admin?status=all');
+            const usersCountRes = await apiClient.get('/users/count');
+            
+            const allOrders = ordersRes.data || [];
+            const totalUsers = usersCountRes.data; 
+
+            // Lọc dữ liệu
+            const pendingOrders = allOrders.filter(o => o.status === 'PENDING');
+            const completedOrders = allOrders.filter(o => o.status === 'COMPLETED');
+            const totalRevenue = completedOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+            const revenueDisplay = (totalRevenue / 1000000).toLocaleString('vi-VN', { 
+                maximumFractionDigits: 1 
+            }) + ' Tr'; 
+            
+            // Cập nhật stats
+            setStats([
+                { label: 'Tổng đơn hàng', value: allOrders.length.toLocaleString('vi-VN'), icon: ShoppingCart, color: 'blue' },
+                { label: 'Đơn hàng mới', value: pendingOrders.length.toLocaleString('vi-VN'), icon: ShoppingCart, color: 'green' },
+                { label: 'Tài khoản', value: totalUsers.toLocaleString('vi-VN'), icon: Users, color: 'purple' },
+                { label: 'Doanh thu', value: revenueDisplay, icon: Tag, color: 'orange' },
+            ]);
+
+            // Cập nhật đơn hàng gần đây
+            const recentData = allOrders.slice(0, 5).map(order => ({
+                id: `#ORD${String(order.id).padStart(3, '0')}`,
+                customer: order.customerName,
+                product: order.items[0]?.productName || 'Nhiều SP',
+                total: (order.totalAmount || 0).toLocaleString('vi-VN') + 'đ',
+                status: order.status, 
+            }));
+            
+            setRecentOrders(recentData);
+            
+        } catch (error) {
+            console.error('Error fetching dashboard data:', error);
+            setStats([{ label: 'Dữ liệu', value: 'Lỗi API', icon: Tag, color: 'danger' }]);
+        } finally {
+            setLoading(false);
+        }
+    };
+    
+    const handleStatClick = (pageId) => {
+        if (setCurrentPage) {
+            setCurrentPage(pageId);
+        }
+    };
+  
+
+    if (loading) {
+        return <div className="loading">Đang tải dữ liệu...</div>;
     }
-  };
 
-  if (loading) {
-    return <div className="loading">Đang tải dữ liệu...</div>;
-  }
-
-  return (
-    <div className="dashboard">
-      <div className="stats-grid">
-        {stats.map((stat, index) => (
-          <div key={index} className="stat-card">
-            <div className="stat-card__content">
-              <div className="stat-card__info">
-                <p className="stat-card__label">{stat.label}</p>
-                <p className="stat-card__value">{stat.value}</p>
-              </div>
-              <div className={`stat-card__icon stat-card__icon--${stat.color}`}>
-                <stat.icon size={24} />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="recent-orders">
-        <h3 className="recent-orders__title">Đơn hàng gần đây</h3>
-        <div className="table-container">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Mã đơn</th>
-                <th>Khách hàng</th>
-                <th>Sản phẩm</th>
-                <th>Tổng tiền</th>
-                <th>Trạng thái</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentOrders.map((order) => (
-                <tr key={order.id}>
-                  <td>{order.id}</td>
-                  <td>{order.customer}</td>
-                  <td>{order.product}</td>
-                  <td>{order.total}</td>
-                  <td>
-                    <span
-                      className={`badge ${
-                        order.status === 'Đã giao'
-                          ? 'badge--success'
-                          : 'badge--warning'
-                      }`}
+    return (
+        <div className="dashboard">
+            {/* ... Stats Grid JSX giữ nguyên ... */}
+            <div className="stats-grid">
+                {stats.map((stat, index) => (
+                    <div 
+                        key={index} 
+                        className="stat-card" 
+                        // 👇 SỬ DỤNG HÀM MỚI ĐỂ XÁC ĐỊNH TRANG ĐÍCH
+                        onClick={() => handleStatClick(getTargetPage(stat.label))}
+                        style={{cursor: 'pointer'}} 
                     >
-                      {order.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                        <div className="stat-card__content">
+                            <div className="stat-card__info">
+                                <p className="stat-card__label">{stat.label}</p>
+                                <p className="stat-card__value">{stat.value}</p>
+                            </div>
+                            <div className={`stat-card__icon stat-card__icon--${stat.color}`}>
+                                <stat.icon size={24} /> 
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Bảng Đơn hàng gần đây */}
+            <div className="recent-orders">
+                <h3 className="recent-orders__title">Đơn hàng gần đây</h3>
+                <div className="table-container">
+                    <table className="data-table">
+                        <thead>
+                            <tr>
+                                <th>Mã đơn</th>
+                                <th>Khách hàng</th>
+                                <th>Sản phẩm</th>
+                                <th>Tổng tiền</th>
+                                <th>Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {recentOrders.map((order, index) => (
+                                <tr key={order.id}>
+                                    <td>{order.id}</td> 
+                                    <td>{order.customer}</td>
+                                    <td>{order.product}</td>
+                                    <td>{order.total}</td>
+                                    <td>
+                                        {/* 👇 SỬ DỤNG HÀM DỊCH VÀ CLASS BADGE CHUẨN */}
+                                        <span className={`badge badge--${getBadgeClass(order.status)}`}>
+                                            {translateStatus(order.status)}
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))}
+                            {recentOrders.length === 0 && (
+                                <tr>
+                                    <td colSpan="5" style={{textAlign: 'center'}}>Chưa có đơn hàng nào được đặt.</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 };
 
-// Products Page
 const ProductsPage = () => {
   const [products, setProducts] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+
+  // Khi sửa → lưu ID sản phẩm
+  const [editingProductId, setEditingProductId] = useState(null);
+
+  // Form state
+  const [formData, setFormData] = useState({
+    name: "",
+    slug: "",
+    description: "",
+    price: "",
+    stockQuantity: "",
+    imageUrl: "",
+    brandId: "",
+    usagePurposeId: "",
+    screenSizeId: "",
+  });
+
+  // Dropdown data
+  const [brands, setBrands] = useState([]);
+  const [usagePurposes, setUsagePurposes] = useState([]);
+  const [screenSizes, setScreenSizes] = useState([]);
 
   useEffect(() => {
     fetchProducts();
+    fetchBrands();
+    fetchUsagePurposes();
+    fetchScreenSizes();
   }, []);
 
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      // TODO: Gọi API lấy danh sách sản phẩm
-      // const response = await fetch('/api/products');
-      // const data = await response.json();
-      // setProducts(data);
-
-      // Mock data
-      setProducts([
-        {
-          id: 1,
-          name: 'Dell XPS 15',
-          brand: 'Dell',
-          price: '35,000,000đ',
-          stock: 15,
-          status: 'Còn hàng',
-        },
-        {
-          id: 2,
-          name: 'HP Pavilion 14',
-          brand: 'HP',
-          price: '18,500,000đ',
-          stock: 8,
-          status: 'Còn hàng',
-        },
-        {
-          id: 3,
-          name: 'Asus ROG Strix G15',
-          brand: 'Asus',
-          price: '42,000,000đ',
-          stock: 3,
-          status: 'Sắp hết',
-        },
-        {
-          id: 4,
-          name: 'Lenovo ThinkPad X1',
-          brand: 'Lenovo',
-          price: '38,500,000đ',
-          stock: 12,
-          status: 'Còn hàng',
-        },
-      ]);
+      const response = await fetch("http://localhost:8080/api/products");
+      const data = await response.json();
+      setProducts(data);
     } catch (error) {
-      console.error('Error fetching products:', error);
+      console.error("❌ Error fetching products:", error);
+      alert("Không thể tải danh sách sản phẩm!");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAddProduct = () => {
-    // TODO: Mở modal hoặc chuyển trang thêm sản phẩm
-    console.log('Add product');
-  };
-
-  const handleEditProduct = (productId) => {
-    // TODO: Mở modal hoặc chuyển trang sửa sản phẩm
-    console.log('Edit product:', productId);
-  };
-
-  const handleDeleteProduct = async (productId) => {
-    if (window.confirm('Bạn có chắc muốn xóa sản phẩm này?')) {
-      try {
-        // TODO: Gọi API xóa sản phẩm
-        // await fetch(`/api/products/${productId}`, { method: 'DELETE' });
-
-        setProducts(products.filter((p) => p.id !== productId));
-        alert('Xóa sản phẩm thành công!');
-      } catch (error) {
-        console.error('Error deleting product:', error);
-        alert('Xóa sản phẩm thất bại!');
-      }
+  const fetchBrands = async () => {
+    try {
+      const res = await fetch("http://localhost:8080/api/brands");
+      setBrands(await res.json());
+    } catch (err) {
+      console.log(err);
     }
   };
 
-  const filteredProducts = products.filter((product) =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const fetchUsagePurposes = async () => {
+    try {
+      const res = await fetch("http://localhost:8080/api/usage-purposes");
+      setUsagePurposes(await res.json());
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const fetchScreenSizes = async () => {
+    try {
+      const res = await fetch("http://localhost:8080/api/screen-sizes");
+      setScreenSizes(await res.json());
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      slug: "",
+      description: "",
+      price: "",
+      stockQuantity: "",
+      imageUrl: "",
+      brandId: "",
+      usagePurposeId: "",
+      screenSizeId: "",
+    });
+  };
+
+  const handleAddProduct = () => {
+    resetForm();
+    setEditingProductId(null);
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    resetForm();
+    setEditingProductId(null);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    if (name === "name") {
+      const slug = value
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/đ/g, "d")
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-")
+        .trim();
+      setFormData((prev) => ({ ...prev, slug }));
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      const payload = {
+        name: formData.name,
+        slug: formData.slug,
+        description: formData.description,
+        price: parseFloat(formData.price),
+        stockQuantity: parseInt(formData.stockQuantity),
+        imageUrl: formData.imageUrl, // Lấy trực tiếp URL
+        brandId: parseInt(formData.brandId),
+        usagePurposeId: parseInt(formData.usagePurposeId),
+        screenSizeId: parseInt(formData.screenSizeId),
+      };
+
+      let res;
+
+      if (editingProductId) {
+        // UPDATE PRODUCT
+        res = await fetch(
+          `http://localhost:8080/api/products/${editingProductId}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          }
+        );
+      } else {
+        // CREATE PRODUCT
+        res = await fetch("http://localhost:8080/api/products", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      if (!res.ok) throw new Error("Không thể lưu sản phẩm!");
+
+      await fetchProducts();
+      handleCloseModal();
+
+      alert(editingProductId ? "Cập nhật thành công!" : "Thêm sản phẩm thành công!");
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi: " + err.message);
+    }
+  };
+
+  const handleEditProduct = (productId) => {
+    const product = products.find((p) => p.id === productId);
+    if (!product) return;
+
+    setEditingProductId(productId);
+    setShowModal(true);
+
+    setFormData({
+      name: product.name,
+      slug: product.slug,
+      description: product.description,
+      price: product.price,
+      stockQuantity: product.stockQuantity,
+      imageUrl: product.imageUrl,
+      brandId: product.brand?.id || "",
+      usagePurposeId: product.usagePurpose?.id || "",
+      screenSizeId: product.screenSize?.id || "",
+    });
+  };
+
+  const handleDeleteProduct = async (id) => {
+    if (!window.confirm("Bạn chắc chắn muốn xóa?")) return;
+
+    try {
+      const res = await fetch(`http://localhost:8080/api/products/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) throw new Error("Xóa thất bại!");
+
+      setProducts(products.filter((p) => p.id !== id));
+      alert("Xóa thành công!");
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi khi xóa sản phẩm!");
+    }
+  };
+
+  const filteredProducts = products.filter((p) =>
+    p.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (loading) {
-    return <div className="loading">Đang tải dữ liệu...</div>;
-  }
+  if (loading) return <div>Đang tải dữ liệu...</div>;
 
   return (
     <div className="page-card">
@@ -379,206 +682,291 @@ const ProductsPage = () => {
           />
         </div>
         <button className="btn btn--primary" onClick={handleAddProduct}>
-          <Plus size={20} />
-          Thêm sản phẩm
+          <Plus size={0} /> ➕ Thêm sản phẩm
         </button>
       </div>
 
-      <div className="table-container">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Tên sản phẩm</th>
-              <th>Thương hiệu</th>
-              <th>Giá</th>
-              <th>Tồn kho</th>
-              <th>Trạng thái</th>
-              <th>Hành động</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredProducts.map((product) => (
-              <tr key={product.id}>
-                <td>{product.id}</td>
-                <td className="font-medium">{product.name}</td>
-                <td>{product.brand}</td>
-                <td>{product.price}</td>
-                <td>{product.stock}</td>
-                <td>
-                  <span
-                    className={`badge ${
-                      product.status === 'Còn hàng'
-                        ? 'badge--success'
-                        : 'badge--danger'
-                    }`}
-                  >
-                    {product.status}
-                  </span>
-                </td>
-                <td>
-                  <div className="action-buttons">
-                    <button
-                      className="action-btn action-btn--edit"
-                      onClick={() => handleEditProduct(product.id)}
-                    >
-                      <Edit size={18} />
-                    </button>
-                    <button
-                      className="action-btn action-btn--delete"
-                      onClick={() => handleDeleteProduct(product.id)}
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* TABLE LIST */}
+   <div className="table-container">
+  {filteredProducts.length === 0 ? (
+    <p>Không có sản phẩm phù hợp</p>
+  ) : (
+    <table className="data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Ảnh</th>
+          <th>Tên</th>
+          <th>Thương hiệu</th>
+          <th>Giá</th>
+          <th>Kho</th>
+          <th>Màn hình</th>
+          <th>Mục đích</th>
+          <th>Mô tả</th> {/* Thêm cột mô tả */}
+          <th>Hành động</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {filteredProducts.map((p) => (
+          <tr key={p.id}>
+            <td>{p.id}</td>
+            <td>
+              {p.imageUrl && (
+                <img
+                  src={
+                    p.imageUrl.startsWith("http")
+                      ? p.imageUrl
+                      : `http://localhost:8080${p.imageUrl}`
+                  }
+                  alt={p.name}
+                  style={{
+                    width: 80,
+                    height: 60,
+                    objectFit: "cover",
+                    borderRadius: 4,
+                  }}
+                />
+              )}
+            </td>
+            <td>{p.name}</td>
+            <td>{p.brand?.name}</td>
+            <td>{p.price.toLocaleString()} đ</td>
+            <td>{p.stockQuantity}</td>
+            <td>{p.screenSize?.value} inch</td>
+            <td>{p.usagePurpose?.name}</td>
+            <td>{p.description}</td> {/* Hiển thị mô tả */}
+            <td>
+              <button
+                className="action-btn action-btn--edit"
+                onClick={() => handleEditProduct(p.id)}
+              >
+                <Edit size={18} />
+              </button>
+              <button
+                className="action-btn action-btn--delete"
+                onClick={() => handleDeleteProduct(p.id)}
+              >
+                <Trash2 size={18} />
+              </button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )}
+</div>
+
+
+      {/* MODAL */}
+    {showModal && (
+  <div className="modal-overlay" onClick={handleCloseModal}>
+    <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+      
+      {/* Header */}
+      <div className="modal-header">
+        <h2>{editingProductId ? "Cập nhật sản phẩm" : "Thêm Sản Phẩm Mới"}</h2>
+        <button className="modal-close" onClick={handleCloseModal}>
+          <X size={26} />
+        </button>
       </div>
+
+      {/* Form */}
+      <form className="modal-form" onSubmit={handleSubmit}>
+        <div className="modal-grid">
+
+          <div className="form-group">
+            <label>Tên Sản Phẩm *</label>
+            <input
+              className="modal-input"
+              name="name"
+              value={formData.name}
+              onChange={handleInputChange}
+              placeholder="VD: Dell XPS 13"
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Slug *</label>
+            <input
+              className="modal-input"
+              name="slug"
+              value={formData.slug}
+              onChange={handleInputChange}
+              placeholder="dell-xps-13"
+              required
+            />
+          </div>
+
+          <div className="form-group form-full">
+            <label>Mô tả</label>
+            <textarea
+              className="modal-textarea"
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              placeholder="Mô tả chi tiết..."
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Giá (VND) *</label>
+            <input
+              type="number"
+              className="modal-input"
+              name="price"
+              value={formData.price}
+              onChange={handleInputChange}
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Số lượng *</label>
+            <input
+              type="number"
+              className="modal-input"
+              name="stockQuantity"
+              value={formData.stockQuantity}
+              onChange={handleInputChange}
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Thương hiệu *</label>
+            <select
+              className="modal-select"
+              name="brandId"
+              value={formData.brandId}
+              onChange={handleInputChange}
+              required
+            >
+              <option value="">-- Chọn thương hiệu --</option>
+              {brands.map((b) => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label>Mục đích sử dụng *</label>
+            <select
+              className="modal-select"
+              name="usagePurposeId"
+              value={formData.usagePurposeId}
+              onChange={handleInputChange}
+              required
+            >
+              <option value="">-- Chọn mục đích --</option>
+              {usagePurposes.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label>Kích thước màn hình *</label>
+            <select
+              className="modal-select"
+              name="screenSizeId"
+              value={formData.screenSizeId}
+              onChange={handleInputChange}
+              required
+            >
+              <option value="">-- Chọn kích thước --</option>
+              {screenSizes.map((s) => (
+                <option key={s.id} value={s.id}>{s.value} inch</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-group form-full">
+            <label>Hình ảnh (Path từ server)</label>
+            <input
+              type="text"
+              className="modal-input"
+              name="imageUrl"
+              value={formData.imageUrl}
+              onChange={handleInputChange}
+              placeholder="/uploads/images/abc.jpg"
+            />
+            {formData.imageUrl && (
+              <div className="image-preview">
+                <img
+                  src={`http://localhost:8080${formData.imageUrl}`}
+                  alt="Preview"
+                  style={{ width: 120, height: 90, objectFit: "cover", borderRadius: 4 }}
+                  onError={(e) => e.target.style.display = "none"}
+                />
+              </div>
+            )}
+          </div>
+
+        </div>
+
+        {/* Footer */}
+        <div className="modal-actions">
+          <button type="button" className="btn-cancel" onClick={handleCloseModal}>
+            Hủy
+          </button>
+          <button type="submit" className="btn-submit">
+            {editingProductId ? "Cập nhật" : "Thêm Sản Phẩm"}
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+)}
+
+      
     </div>
   );
 };
-
-// // Orders Page
-// const OrdersPage = () => {
-//   const [orders, setOrders] = useState([]);
-//   const [statusFilter, setStatusFilter] = useState("all");
-//   const [loading, setLoading] = useState(true);
-
-//   useEffect(() => {
-//     fetchOrders();
-//   }, [statusFilter]);
-
-//   const fetchOrders = async () => {
-//     try {
-//       setLoading(true);
-//       // TODO: Gọi API lấy danh sách đơn hàng
-//       // const response = await fetch(`/api/orders?status=${statusFilter}`);
-//       // const data = await response.json();
-//       // setOrders(data);
-
-//       // Mock data
-//       setOrders([
-//         {
-//           id: "#ORD001",
-//           customer: "Nguyễn Văn A",
-//           date: "01/11/2025",
-//           total: "35,000,000đ",
-//           status: "Đã giao",
-//         },
-//         {
-//           id: "#ORD002",
-//           customer: "Trần Thị B",
-//           date: "01/11/2025",
-//           total: "18,500,000đ",
-//           status: "Đang xử lý",
-//         },
-//         {
-//           id: "#ORD003",
-//           customer: "Lê Văn C",
-//           date: "31/10/2025",
-//           total: "42,000,000đ",
-//           status: "Đang giao",
-//         },
-//         {
-//           id: "#ORD004",
-//           customer: "Phạm Thị D",
-//           date: "31/10/2025",
-//           total: "25,000,000đ",
-//           status: "Chờ xác nhận",
-//         },
-//       ]);
-//     } catch (error) {
-//       console.error("Error fetching orders:", error);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const handleViewOrderDetail = (orderId) => {
-//     // TODO: Mở modal hoặc chuyển trang chi tiết đơn hàng
-//     console.log("View order detail:", orderId);
-//   };
-
-//   const getStatusClass = (status) => {
-//     const statusMap = {
-//       "Đã giao": "success",
-//       "Đang giao": "info",
-//       "Đang xử lý": "warning",
-//       "Chờ xác nhận": "secondary",
-//     };
-//     return `badge--${statusMap[status] || "secondary"}`;
-//   };
-
-//   if (loading) {
-//     return <div className="loading">Đang tải dữ liệu...</div>;
-//   }
-
-//   return (
-//     <div className="page-card">
-//       <div className="page-card__header">
-//         <h3 className="page-card__title">Danh sách đơn hàng</h3>
-//         <select
-//           className="select-input"
-//           value={statusFilter}
-//           onChange={(e) => setStatusFilter(e.target.value)}
-//         >
-//           <option value="all">Tất cả trạng thái</option>
-//           <option value="pending">Chờ xác nhận</option>
-//           <option value="processing">Đang xử lý</option>
-//           <option value="shipping">Đang giao</option>
-//           <option value="completed">Đã giao</option>
-//         </select>
-//       </div>
-
-//       <div className="table-container">
-//         <table className="data-table">
-//           <thead>
-//             <tr>
-//               <th>Mã đơn</th>
-//               <th>Khách hàng</th>
-//               <th>Ngày đặt</th>
-//               <th>Tổng tiền</th>
-//               <th>Trạng thái</th>
-//               <th>Hành động</th>
-//             </tr>
-//           </thead>
-//           <tbody>
-//             {orders.map((order) => (
-//               <tr key={order.id}>
-//                 <td className="font-medium">{order.id}</td>
-//                 <td>{order.customer}</td>
-//                 <td>{order.date}</td>
-//                 <td>{order.total}</td>
-//                 <td>
-//                   <span className={`badge ${getStatusClass(order.status)}`}>
-//                     {order.status}
-//                   </span>
-//                 </td>
-//                 <td>
-//                   <button
-//                     className="link-btn"
-//                     onClick={() => handleViewOrderDetail(order.id)}
-//                   >
-//                     Chi tiết
-//                   </button>
-//                 </td>
-//               </tr>
-//             ))}
-//           </tbody>
-//         </table>
-//       </div>
-//     </div>
-//   );
-// };
 
 const OrdersPage = () => {
   const [orders, setOrders] = useState([]);
   const [statusFilter, setStatusFilter] = useState('all');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null); // ✅ Thêm error state
+  const [error, setError] = useState(null);
+  
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [editingStatus, setEditingStatus] = useState(""); 
+
+  // --- HÀM TẠO MÃ ĐƠN HÀNG MỚI (VÍ DỤ: #ORD001) ---
+  const formatOrderId = (id) => {
+    if (!id) return '#N/A';
+    // Chuyển ID sang chuỗi, đệm số 0 vào trước (Ví dụ: 1 -> 001)
+    return `#ORD${String(id).padStart(3, '0')}`;
+  };
+
+  // Helper: Hàm dịch trạng thái sang tiếng Việt
+  const translateStatus = (status) => {
+    if (!status) return 'Không rõ';
+    const map = {
+      'PENDING': 'Chờ xác nhận',
+      'PROCESSING': 'Đang xử lý',
+      'SHIPPING': 'Đang giao',
+      'COMPLETED': 'Đã giao',
+      'CANCELLED': 'Đã hủy',
+      'CONFIRMED': 'Đã xác nhận',
+    };
+    return map[status.toUpperCase()] || status;
+  };
+
+  // Helper: Hàm lấy màu sắc cho badge
+  const getStatusClass = (status) => {
+    if (!status) return 'secondary';
+    const statusUpper = status.toUpperCase();
+    const statusMap = {
+      'COMPLETED': 'success', 'SHIPPING': 'info', 'PROCESSING': 'primary',
+      'PENDING': 'warning', 'CANCELLED': 'danger',
+    };
+    return `badge--${statusMap[statusUpper] || 'secondary'}`;
+  };
 
   useEffect(() => {
     fetchOrders();
@@ -587,88 +975,75 @@ const OrdersPage = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      setError(null); // Reset error
+      setError(null);
+      const url = `/orders/admin?status=${statusFilter}`; 
+      const res = await apiClient.get(url);
 
-      const url =
-        statusFilter === 'all'
-          ? 'http://localhost:8080/api/orders'
-          : `http://localhost:8080/api/orders?status=${statusFilter}`;
-
-      const res = await axios.get(url);
-
-      // ✅ Kiểm tra response data
-      console.log('API Response:', res.data); // Debug
-
-      // ✅ Đảm bảo data là array
       if (Array.isArray(res.data)) {
-        setOrders(res.data);
+        // Sắp xếp đơn hàng cũ nhất lên trên (Tăng dần ID)
+        const sortedOrders = res.data.sort((a, b) => a.id - b.id);
+        setOrders(sortedOrders);
       } else {
-        console.error('API không trả về array:', res.data);
-        setOrders([]); // Set empty array nếu không phải array
+        setOrders([]);
         setError('Dữ liệu không hợp lệ');
       }
     } catch (error) {
       console.error('Lỗi tải đơn hàng:', error);
-      setError(error.message || 'Không thể tải đơn hàng');
-      setOrders([]); // ✅ Đảm bảo orders luôn là array
+      setError('Không thể tải đơn hàng');
+      setOrders([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleViewOrderDetail = (orderId) => {
-    console.log('Xem chi tiết đơn:', orderId);
+  const handleViewOrderDetail = async (orderId) => {
+    try {
+      const res = await apiClient.get(`/orders/${orderId}`);
+      setSelectedOrder(res.data);
+      setEditingStatus(res.data.status); 
+      setShowDetailModal(true);
+    } catch (err) {
+      alert("Lỗi tải chi tiết đơn hàng");
+    }
   };
 
-  const getStatusClass = (status) => {
-    const statusMap = {
-      'Đã giao': 'success',
-      'Đang giao': 'info',
-      'Đang xử lý': 'warning',
-      'Chờ xác nhận': 'secondary',
-      completed: 'success',
-      shipping: 'info',
-      processing: 'warning',
-      pending: 'secondary',
-    };
-    return `badge--${statusMap[status] || 'secondary'}`;
+  const handleCloseDetailModal = () => {
+    setShowDetailModal(false);
+    setSelectedOrder(null);
+  };
+  
+  const handleUpdateStatus = async () => {
+    if (!selectedOrder) return;
+    
+    try {
+      await apiClient.put(`/orders/${selectedOrder.id}/status`, null, {
+        params: { status: editingStatus }
+      });
+      
+      alert("Cập nhật trạng thái thành công!");
+      fetchOrders(); 
+      handleCloseDetailModal();
+      
+    } catch (err) {
+      console.error(err);
+      alert("Cập nhật thất bại!");
+    }
   };
 
-  // ✅ Hiển thị error nếu có
-  if (error) {
-    return (
-      <div className="page-card">
-        <div
-          className="error-message"
-          style={{ color: 'red', padding: '20px' }}
-        >
-          Lỗi: {error}
-        </div>
-        <button onClick={fetchOrders} className="btn btn--primary">
-          Thử lại
-        </button>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return <div className="loading">Đang tải dữ liệu...</div>;
-  }
+  if (loading && !showDetailModal) return <div className="loading">Đang tải...</div>;
+  if (error) return <div className="error">Lỗi: {error}</div>;
 
   return (
     <div className="page-card">
       <div className="page-card__header">
         <h3 className="page-card__title">Danh sách đơn hàng</h3>
-        <select
-          className="select-input"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
+        <select className="select-input" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
           <option value="all">Tất cả trạng thái</option>
           <option value="pending">Chờ xác nhận</option>
           <option value="processing">Đang xử lý</option>
           <option value="shipping">Đang giao</option>
           <option value="completed">Đã giao</option>
+          <option value="cancelled">Đã hủy</option>
         </select>
       </div>
 
@@ -676,29 +1051,33 @@ const OrdersPage = () => {
         <table className="data-table">
           <thead>
             <tr>
-              <th>Mã đơn</th>
+              <th>Mã đơn</th> {/* Tiêu đề cột Mã đơn */}
               <th>Khách hàng</th>
+              <th>Ngày tạo</th>
               <th>Tổng tiền</th>
               <th>Trạng thái</th>
               <th>Hành động</th>
             </tr>
           </thead>
           <tbody>
-            {orders.map((order) => (
+            {orders.map((order, index) => (
               <tr key={order.id}>
-                <td className="font-medium">#{order.orderCode}</td>
-                <td>{order.customerName}</td>
+                {/* 👇 SỬ DỤNG HÀM MỚI ĐỂ HIỂN THỊ MÃ ĐƠN HÀNG */}
+                <td className="font-medium">{formatOrderId(order.id)}</td> 
+                
+                <td>
+                  <div style={{fontWeight: 500}}>{order.customerName}</div>
+                  <small className="text-muted">{order.phone}</small>
+                </td>
+                <td>{order.createdAt ? new Date(order.createdAt).toLocaleDateString('vi-VN') : '-'}</td>
                 <td>{order.totalAmount?.toLocaleString('vi-VN')}đ</td>
                 <td>
                   <span className={`badge ${getStatusClass(order.status)}`}>
-                    {order.status}
+                    {translateStatus(order.status)}
                   </span>
                 </td>
                 <td>
-                  <button
-                    className="link-btn"
-                    onClick={() => handleViewOrderDetail(order.id)}
-                  >
+                  <button className="link-btn" onClick={() => handleViewOrderDetail(order.id)}>
                     Chi tiết
                   </button>
                 </td>
@@ -706,11 +1085,99 @@ const OrdersPage = () => {
             ))}
           </tbody>
         </table>
-
-        {orders.length === 0 && !loading && (
-          <div className="no-data">Không có đơn hàng nào.</div>
-        )}
+        {orders.length === 0 && <div className="no-data">Chưa có đơn hàng nào.</div>}
       </div>
+
+      {/* --- MODAL CHI TIẾT ĐƠN HÀNG (ADMIN) --- */}
+      {showDetailModal && selectedOrder && (
+        <div className="modal-overlay" onClick={handleCloseDetailModal}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()} style={{maxWidth: '800px', width: '90%'}}>
+            
+            <div className="modal-header" style={{borderBottom: '1px solid #eee', paddingBottom: '15px', marginBottom: '20px'}}>
+              <h2 style={{margin: 0}}>Chi tiết đơn hàng {formatOrderId(selectedOrder.id)}</h2>
+              <button className="close-btn" onClick={handleCloseDetailModal} style={{background: 'none', border: 'none', cursor: 'pointer'}}>
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="modal-body" style={{maxHeight: '70vh', overflowY: 'auto'}}>
+              <div style={{display: 'flex', flexWrap: 'wrap', gap: '20px', marginBottom: '20px'}}>
+                
+                <div style={{flex: 1, minWidth: '300px'}}>
+                  <h4 style={{marginBottom: '10px', color: '#555'}}>Thông tin giao hàng</h4>
+                  <p style={{marginBottom: '5px'}}><strong>Người nhận:</strong> {selectedOrder.customerName}</p>
+                  <p style={{marginBottom: '5px'}}><strong>SĐT:</strong> {selectedOrder.phone}</p>
+                  <p style={{marginBottom: '5px'}}><strong>Địa chỉ:</strong> {selectedOrder.shippingAddress}</p>
+                </div>
+
+                <div style={{flex: 1, minWidth: '300px', background: '#f9fafb', padding: '15px', borderRadius: '8px', border: '1px solid #eee'}}>
+                  <h4 style={{marginBottom: '15px', color: '#555'}}>Cập nhật trạng thái</h4>
+                  
+                  <div style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
+                    <select 
+                      className="modal-select" 
+                      value={editingStatus}
+                      onChange={(e) => setEditingStatus(e.target.value)}
+                      style={{flex: 1}}
+                    >
+                      <option value="PENDING">Chờ xác nhận</option>
+                      <option value="PROCESSING">Đang xử lý</option>
+                      <option value="SHIPPING">Đang giao</option>
+                      <option value="COMPLETED">Đã giao</option>
+                      <option value="CANCELLED">Đã hủy</option>
+                    </select>
+                    
+                    <button 
+                      className="btn btn--primary" 
+                      onClick={handleUpdateStatus}
+                      style={{whiteSpace: 'nowrap'}}
+                    >
+                      <Save size={16}/> Lưu
+                    </button>
+                  </div>
+
+                  <p style={{marginTop: '15px', fontSize: '0.9em', color: '#666'}}>
+                    <strong>Ngày đặt:</strong> {new Date(selectedOrder.createdAt).toLocaleString('vi-VN')}
+                  </p>
+                </div>
+              </div>
+
+              <h4 style={{marginBottom: '10px', color: '#555'}}>Sản phẩm</h4>
+              <table className="data-table" style={{width: '100%', border: '1px solid #eee'}}>
+                <thead style={{background: '#f3f4f6'}}>
+                  <tr>
+                    <th style={{padding: '10px'}}>Sản phẩm</th>
+                    <th style={{padding: '10px'}}>Đơn giá</th>
+                    <th style={{padding: '10px'}}>SL</th>
+                    <th style={{padding: '10px', textAlign: 'right'}}>Thành tiền</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedOrder.items?.map((item, index) => (
+                    <tr key={index} style={{borderBottom: '1px solid #eee'}}>
+                      <td style={{padding: '10px', display: 'flex', alignItems: 'center', gap: '10px'}}>
+                        <img src={item.imageUrl ? `http://localhost:8080${item.imageUrl}` : 'https://via.placeholder.com/50'} alt="" style={{width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ddd'}}/>
+                        <span>{item.productName}</span>
+                      </td>
+                      <td style={{padding: '10px'}}>{item.price?.toLocaleString('vi-VN')}đ</td>
+                      <td style={{padding: '10px'}}>x{item.quantity}</td>
+                      <td style={{padding: '10px', textAlign: 'right', fontWeight: 'bold'}}>{(item.price * item.quantity).toLocaleString('vi-VN')}đ</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <div style={{marginTop: '20px', textAlign: 'right', fontSize: '1.2rem'}}>
+                 Tổng cộng: <span style={{color: '#d32f2f', fontWeight: 'bold'}}>{selectedOrder.totalAmount?.toLocaleString('vi-VN')}đ</span>
+              </div>
+            </div>
+
+            <div className="modal-actions" style={{marginTop: '20px', display: 'flex', justifyContent: 'flex-end'}}>
+              <button className="btn-cancel" onClick={handleCloseDetailModal}>Đóng</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -1507,7 +1974,13 @@ const BrandsPage = () => {
                 <td>{brand.name}</td>
                 <td>
                   <img
-                    src={brand.logoUrl}
+                    src={
+                      brand.logoUrl
+                        ? brand.logoUrl.startsWith("http")
+                          ? brand.logoUrl
+                          : `http://localhost:8080${brand.logoUrl}`
+                        : "https://via.placeholder.com/40" // Ảnh mặc định nếu không có logo
+                    }
                     alt={brand.name}
                     className="brand-logo-thumbnail"
                     style={{
@@ -1515,6 +1988,10 @@ const BrandsPage = () => {
                       height: '40px',
                       objectFit: 'contain',
                       border: '1px solid #eee',
+                    }}
+                    // Thêm xử lý lỗi ảnh nếu link chết
+                    onError={(e) => {
+                      e.target.src = "https://via.placeholder.com/40?text=Error";
                     }}
                   />
                 </td>

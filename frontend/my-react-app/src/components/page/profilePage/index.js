@@ -1,16 +1,16 @@
-import { memo } from "react";
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import "./style.scss";
+import { memo } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import './style.scss';
 
 const ProfilePage = () => {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
-    name: "",
-    phone: "",
-    email: "",
-    address: "",
+    name: '',
+    phone: '',
+    email: '',
+    address: '',
   });
 
   const [avatar, setAvatar] = useState(null);
@@ -18,15 +18,15 @@ const ProfilePage = () => {
 
   // Kiểm tra user đăng nhập
   useEffect(() => {
-    const user = localStorage.getItem("user");
+    const user = localStorage.getItem('user');
     if (!user) {
-      navigate("/login");
+      navigate('/login');
     } else {
       const userData = JSON.parse(user);
       setFormData((prev) => ({
         ...prev,
-        email: userData.email || "",
-        name: userData.name || "",
+        email: userData.email || '',
+        name: userData.name || '',
       }));
     }
   }, [navigate]);
@@ -48,7 +48,7 @@ const ProfilePage = () => {
   // Gửi form
   const handleSubmit = (e) => {
     e.preventDefault();
-    alert("Cập nhật thành công!");
+    alert('Cập nhật thành công!');
     // TODO: Gọi API cập nhật profile ở đây nếu backend sẵn sàng
   };
 
@@ -79,7 +79,11 @@ const ProfilePage = () => {
                 onChange={handleAvatarChange}
                 hidden
               />
-              <small>Dung lượng tối đa 1MB<br />Định dạng: JPEG, PNG</small>
+              <small>
+                Dung lượng tối đa 1MB
+                <br />
+                Định dạng: JPEG, PNG
+              </small>
             </div>
           </div>
 
