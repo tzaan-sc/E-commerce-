@@ -67,10 +67,9 @@ package com.ecommerce.backend.entity.product;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-import java.time.LocalDateTime;
-
+import java.util.List;
+import java.util.ArrayList;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 @Entity
 @Table(name = "products")
 @Data
@@ -101,7 +100,12 @@ public class Product {
     @Column(name = "imageUrl", length = 500)
     // HOẶC nếu database dùng snake_case:
     // @Column(name = "image_url", length = 500)
-    private String imageUrl;
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JsonManagedReference // Parent: Quản lý vòng lặp JSON
+    private List<ImageProduct> images = new ArrayList<>();
+
+    @Column(name = "specifications", columnDefinition = "TEXT")
+    private String specifications;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "brand_id", nullable = true)

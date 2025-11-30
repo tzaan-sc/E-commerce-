@@ -43,4 +43,22 @@ public class ProductController {
         productService.deleteProduct(id);
         return ResponseEntity.ok("Đã xoá sản phẩm");
     }
+    @GetMapping("/brand/{brandId}")
+    public ResponseEntity<List<Product>> getProductsByBrand(@PathVariable Long brandId) {
+        List<Product> products = productService.getProductsByBrand(brandId);
+        return ResponseEntity.ok(products);
+    }
+    @GetMapping("/usage-purpose/{usagePurposeId}")
+    public ResponseEntity<List<Product>> getProductsByUsagePurpose(@PathVariable Long usagePurposeId) {
+        return ResponseEntity.ok(productService.getProductsByUsagePurpose(usagePurposeId));
+    }
+    // API: GET /api/products/filter?purpose=4&brand=2
+    @GetMapping("/filter")
+    public ResponseEntity<List<Product>> filterProducts(
+            @RequestParam("purpose") Long purpose, // Phải khớp với chữ trong URL (?purpose=...)
+            @RequestParam("brand") Long brand      // Phải khớp với chữ trong URL (&brand=...)
+    ) {
+        // Gọi service
+        return ResponseEntity.ok(productService.filterProducts(purpose, brand));
+    }
 }

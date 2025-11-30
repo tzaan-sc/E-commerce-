@@ -207,30 +207,36 @@ public class OrderServiceImpl implements OrderService {
      * Đã cập nhật đầy đủ các trường cho Frontend
      */
     private OrderDTO mapOrderToDTO(Order order) {
-        // Map danh sách sản phẩm
         List<OrderItemDTO> itemDTOs = order.getOrderItems().stream()
-                .map(item -> OrderItemDTO.builder()
-                        .productName(item.getProductName())
-                        .quantity(item.getQuantity())
-                        .price(item.getPrice())
-                        // Kiểm tra null để tránh lỗi nếu sản phẩm đã bị xóa
-                        .imageUrl(item.getProduct() != null ? item.getProduct().getImageUrl() : null)
-                        .build())
+                .map(item -> {
+                    // Logic mới: Lấy ảnh đầu tiên từ danh sách ảnh (vì Product không còn imageUrl)
+                    String productImageUrl = null;
+                    if (item.getProduct() != null
+                            && item.getProduct().getImages() != null
+                            && !item.getProduct().getImages().isEmpty()) {
+                        // Lấy ảnh đầu tiên trong list (index 0)
+                        productImageUrl = item.getProduct().getImages().get(0).getUrlImage();
+                    }
+
+                    return OrderItemDTO.builder()
+                            .productName(item.getProductName())
+                            .quantity(item.getQuantity())
+                            .price(item.getPrice())
+                            .imageUrl(productImageUrl) // Gán URL tìm được vào DTO
+                            .build();
+                })
                 .collect(Collectors.toList());
 
-        // Build OrderDTO đầy đủ
         return OrderDTO.builder()
                 .id(order.getId())
                 .status(order.getStatus())
                 .totalAmount(order.getTotalAmount())
                 .createdAt(order.getCreatedAt())
                 .items(itemDTOs)
-
-                // --- CÁC TRƯỜNG QUAN TRỌNG MỚI THÊM ---
                 .userOrderNumber(order.getUserOrderNumber())
-                .customerName(order.getCustomerName()) // Tên người nhận
-                .phone(order.getPhone())             // Số điện thoại
-                .shippingAddress(order.getShippingAddress()) // Địa chỉ giao hàng
+                .customerName(order.getCustomerName())
+                .phone(order.getPhone())
+                .shippingAddress(order.getShippingAddress())
                 .build();
     }
     @Override

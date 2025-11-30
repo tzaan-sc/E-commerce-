@@ -12,5 +12,7 @@ public interface ProductService {
     void deleteProduct(Long id);
     Product getProductById(Long id);
     List<Product> getAllProducts();
-
+    List<Product> getProductsByBrand(Long brandId);
+    List<Product> getProductsByUsagePurpose(Long usagePurposeId);
+    List<Product> filterProducts(Long usagePurposeId, Long brandId);
 }

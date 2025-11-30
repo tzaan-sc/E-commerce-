@@ -31,6 +31,10 @@ public class User {
     private String phone;
     private String address;
 
+    @Column(name = "avatar_url", length = 500)
+    private String avatarUrl;
+
     @Column(nullable = false)
+    @Builder.Default
     private boolean isActive = true;
 }
