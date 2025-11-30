@@ -12,6 +12,8 @@ import ProfilePage from "./components/page/profilePage";
 import CartPage from "./components/page/cartPage";
 import MyOrdersPage from "components/page/myOrderPage";
 import OrderDetailPage from "components/page/OrderDetailPage";
+import BrandProductsPage from "./components/page/brandProducts"
+import UsagePurposeProductsPage from "./components/page/usagePurposeProducts"
 // ====== Import các trang Admin ======
 
 import { ROUTERS } from "./utils/router";
@@ -34,6 +36,8 @@ const RouterCustom = () => {
         <Route path={ROUTERS.USER.SEARCH} element={<SearchPage />}/>
         <Route path={ROUTERS.USER.FORGOTPASSWORD} element={<ForgotPasswordPage />}/>
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        {/* <Route path={ROUTERS.USER.BRAND} element={<BrandProductsPage />} />
+        <Route path={ROUTERS.USER.USAGE_PURPOSE} element={<UsagePurposeProductsPage />} /> */}
       </Route>
 
       {/* ====================== ADMIN ROUTES ====================== */}
@@ -53,6 +57,8 @@ const RouterCustom = () => {
         <Route path="laptop" element={<LaptopPage />} /> 
         <Route path="product/:id" element={<ProductDetailPage />} />
         <Route path="tim-kiem" element={<SearchPage />} />
+        {/* <Route path="brand/:id" element={<BrandProductsPage />} />
+        <Route path="usage-purpose/:id" element={<UsagePurposeProductsPage />} /> */}
       </Route>
     </Routes>
   );

@@ -10,7 +10,8 @@ export const ROUTERS = {
     PRODUCTDETAIL: "/product/:id",      // Chi tiết sản phẩm
     SEARCH: "/tim-kiem",               // Tìm kiếm
     FORGOTPASSWORD: "/quen-mat-khau", // Quên mật khẩu
-
+    BRAND: "/brand/:id",
+    USAGE_PURPOSE: "/usage-purpose/:id",
   },
   ADMIN: {
     DASHBOARD: "/admin/dashboard",               
@@ -26,6 +27,8 @@ export const ROUTERS = {
     SUPPORT: "/ho-tro",                 // Hỗ trợ
     PRODUCTDETAIL: "/customer/home/product/:id",      // Chi tiết sản phẩm
     SEARCH: "/customer/home/tim-kiem",               // Tìm kiếm
+    BRAND: "/customer/home/brand/:id",
+    USAGE_PURPOSE: "/customer/home/usage-purpose/:id",
   }
 };
 

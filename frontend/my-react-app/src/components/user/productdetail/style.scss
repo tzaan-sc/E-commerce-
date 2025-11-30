@@ -1,17 +1,14 @@
-// Variables
-// $primary-color: #667eea; #764ba2;
+// =========================================
+// 1. VARIABLES & MIXINS
+// =========================================
 $primary-color: #0066cc;
-$secondary-color: #0066cc;
+$secondary-color: #005bb5; // Màu đậm hơn chút cho gradient đẹp
 $text-dark: #1a202c;
 $text-gray: #4a5568;
 $text-light: #6b7280;
 $border-color: #e5e7eb;
 $bg-light: #f9fafb;
-$success-color: #16a34a;
-$danger-color: #ef4444;
-$warning-color: #fbbf24;
 
-// Mixins
 @mixin flex-center {
   display: flex;
   align-items: center;
@@ -26,14 +23,18 @@ $warning-color: #fbbf24;
   background: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%);
 }
 
-// Main Section
+// =========================================
+// 2. MAIN SECTION
+// =========================================
 .info-section {
   padding: 20px 0;
-  max-width: 100%;
-  max-width: 1000px; /* Giới hạn độ rộng tối đa là 1000px */
-  margin: 40px auto 40px;
+  width: 100%;
+  max-width: 1300px;
+  margin: 40px auto;
+  padding-left: 20px; // Padding an toàn cho mobile
+  padding-right: 20px;
 
-  // Product Title
+  // --- Product Title ---
   .product-title {
     font-size: 32px;
     font-weight: 700;
@@ -46,7 +47,7 @@ $warning-color: #fbbf24;
     }
   }
 
-  // Price Section
+  // --- Price Section ---
   .price-section {
     @include gradient-bg;
     padding: 20px;
@@ -59,7 +60,6 @@ $warning-color: #fbbf24;
       font-size: 36px;
       font-weight: 700;
       margin-bottom: 8px;
-
       @media (max-width: 768px) {
         font-size: 28px;
       }
@@ -92,27 +92,7 @@ $warning-color: #fbbf24;
     }
   }
 
-  // Option Section
-  .option-section {
-    margin-bottom: 32px;
-
-    .option-label {
-      font-size: 16px;
-      font-weight: 600;
-      color: $text-gray;
-      margin-bottom: 12px;
-      display: block;
-
-      .selected-value {
-        color: $primary-color;
-        font-weight: 700;
-      }
-    }
-
-    
-  }
-
-  // Quantity Section
+  // --- Quantity Section ---
   .quantity-section {
     display: flex;
     align-items: center;
@@ -145,7 +125,6 @@ $warning-color: #fbbf24;
         &:hover:not(:disabled) {
           background: $bg-light;
         }
-
         &:disabled {
           opacity: 0.5;
           cursor: not-allowed;
@@ -163,11 +142,11 @@ $warning-color: #fbbf24;
     }
   }
 
-  // Action Buttons
+  // --- Action Buttons ---
   .action-buttons {
     display: flex;
     gap: 12px;
-    margin-bottom: 32px;
+    margin-bottom: 40px;
 
     @media (max-width: 768px) {
       flex-direction: column;
@@ -189,7 +168,6 @@ $warning-color: #fbbf24;
         @include gradient-bg;
         color: white;
         box-shadow: 0 4px 12px rgba($primary-color, 0.3);
-
         &:hover {
           transform: translateY(-2px);
           box-shadow: 0 6px 20px rgba($primary-color, 0.4);
@@ -200,7 +178,6 @@ $warning-color: #fbbf24;
         background: white;
         color: $primary-color;
         border: 2px solid $primary-color;
-
         &:hover {
           background: rgba($primary-color, 0.05);
         }
@@ -214,89 +191,168 @@ $warning-color: #fbbf24;
     }
   }
 
-  // Features
-  .features {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    padding: 24px;
-    background: linear-gradient(135deg, #f6f8fb 0%, #f0f4f8 100%);
-    border-radius: 12px;
-    margin-bottom: 32px;
+  // =========================================
+  // 3. TABS SYSTEM (Mô tả & Thông số)
+  // =========================================
+  .product-tabs-container {
+    margin-top: 20px;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 20px;
 
-    @media (max-width: 768px) {
-      grid-template-columns: 1fr;
-    }
-
-    .feature-item {
+    // Header Tabs
+    .tabs-header {
       display: flex;
-      align-items: center;
-      gap: 12px;
-
-      .feature-icon {
-        color: $primary-color;
-        font-size: 24px;
-        flex-shrink: 0;
-      }
-
-      .feature-text {
-        font-size: 14px;
-        color: $text-gray;
-        font-weight: 600;
-      }
-    }
-  }
-
-  // Specs Section
-  .specs-section {
-    margin-top: 40px;
-    padding-top: 40px;
-    border-top: 1px solid $border-color;
-
-    .specs-title {
-      font-size: 24px;
-      font-weight: 700;
-      color: $text-dark;
+      gap: 30px;
+      border-bottom: 1px solid #e5e7eb;
       margin-bottom: 24px;
+
+      .tab-item {
+        padding: 12px 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: $text-light;
+        cursor: pointer;
+        position: relative;
+        transition: color 0.3s ease;
+
+        &:hover {
+          color: $primary-color;
+        }
+
+        &.active {
+          color: $primary-color;
+          &::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: $primary-color;
+            border-radius: 3px 3px 0 0;
+          }
+        }
+      }
     }
 
-    .specs-grid {
-      display: grid;
-      gap: 16px;
+    // Nội dung Tabs
+    .tabs-content-area {
+      animation: fadeIn 0.3s ease;
 
-      .spec-row {
-        display: grid;
-        grid-template-columns: 180px 1fr;
-        padding: 16px;
-        background: $bg-light;
-        border-radius: 8px;
-        border-left: 4px solid $primary-color;
+      // --- Tab 1: Mô tả văn bản ---
+      .description-box {
+        color: #333;
+        line-height: 1.8;
+        font-size: 16px;
 
-        @media (max-width: 768px) {
-          grid-template-columns: 1fr;
-          gap: 8px;
-        }
-
-        .spec-label {
-          font-weight: 600;
-          color: $text-light;
-        }
-
-        .spec-value {
+        h3 {
+          font-size: 20px;
+          font-weight: 700;
+          margin-bottom: 16px;
           color: $text-dark;
-          font-weight: 500;
+        }
+        p {
+          margin-bottom: 16px;
+          color: #4b5563;
+          text-align: justify;
+        }
+      }
+
+      // --- Tab 2: Card Thông số kỹ thuật (STYLE ĐẸP) ---
+
+      .specs-grid {
+        display: flex; // Thay đổi sang flexbox
+        flex-direction: column; // Sắp xếp các item theo chiều dọc
+        gap: 12px; // Khoảng cách giữa các hàng
+        margin-top: 10px; // Điều chỉnh khoảng cách với header tab
+
+        .spec-row {
+          position: relative;
+          display: flex;
+          align-items: center;
+          // justify-content: space-between; // Bỏ cái này để label và value không bị giãn xa nhau
+          padding: 10px 15px; // Giảm padding để nhỏ gọn hơn
+          background: #ffffff; // Nền trắng
+          border-radius: 8px; // Bo góc nhỏ hơn
+          // box-shadow: none; // Bỏ đổ bóng
+          border: 1px solid #f0f0f0; // Viền nhẹ
+          overflow: hidden;
+          // transition: none; // Bỏ hiệu ứng transition
+
+          // Vạch xanh bên trái (bo tròn góc dưới)
+          &::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            width: 6px;
+            background-color: $primary-color;
+            // Thêm bo tròn góc dưới bên trái của vạch
+            border-top-left-radius: 8px;
+            border-bottom-left-radius: 8px;
+          }
+
+          // Label (CPU, RAM...)
+          .spec-label {
+            font-weight: 600; // Giảm độ đậm một chút
+            color: #555; // Màu xám đậm vừa
+            // text-transform: none; // Bỏ in hoa nếu bạn không muốn nữa
+            font-size: 0.9rem; // Nhỏ hơn chút
+            letter-spacing: normal; // Bỏ khoảng cách chữ
+            padding-left: 15px; // Khoảng cách với vạch xanh
+            flex-basis: 120px; // Giới hạn độ rộng cho label
+            flex-shrink: 0; // Không cho label bị co lại
+          }
+
+          // Value (Apple M3, 32GB...)
+          .spec-value {
+            font-weight: 500; // Giảm độ đậm một chút
+            color: #333; // Màu đen vừa
+            font-size: 0.9rem; // Nhỏ hơn chút
+            text-align: left; // Căn trái
+            flex-grow: 1; // Cho value chiếm phần còn lại
+          }
+
+          // Bỏ hết hiệu ứng Hover
+          &:hover {
+            transform: none;
+            box-shadow: none;
+            border-color: #f0f0f0; // Trở lại màu viền ban đầu
+
+            &::before {
+              width: 6px; // Giữ nguyên độ dày
+              background-color: $primary-color; // Giữ nguyên màu
+            }
+
+            .spec-label {
+              color: #555; // Giữ nguyên màu
+            }
+          }
         }
       }
     }
   }
 }
 
-// Animations
+// Animation
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
     opacity: 0.5;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
