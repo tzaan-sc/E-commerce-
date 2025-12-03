@@ -174,35 +174,6 @@ public class ProductServiceImpl implements ProductService {
         // Gọi phương thức FULL-TEXT SEARCH mới
         return productRepository.fullTextSearch(keyword);
     }
-
-    //    @Override
-//    public List<Product> advancedFilter(String keyword, List<Long> brandIds, Long purposeId,
-//                                        Long screenSizeId, Double minPrice, Double maxPrice, String sortBy) {
-//        List<Product> products = productRepository.advancedFilter(
-//                keyword, brandIds, purposeId, screenSizeId, minPrice, maxPrice
-//        );
-//
-//        // Sắp xếp
-//        if (sortBy != null) {
-//            switch (sortBy) {
-//                case "price_asc":
-//                    products.sort((p1, p2) -> p1.getPrice().compareTo(p2.getPrice()));
-//                    break;
-//                case "price_desc":
-//                    products.sort((p1, p2) -> p2.getPrice().compareTo(p1.getPrice()));
-//                    break;
-//                case "name_asc":
-//                    products.sort((p1, p2) -> p1.getName().compareTo(p2.getName()));
-//                    break;
-//                case "name_desc":
-//                    products.sort((p1, p2) -> p2.getName().compareTo(p1.getName()));
-//                    break;
-//            }
-//        }
-//
-//        return products;
-//    }
-//}
     @Override
     public List<Product> advancedFilter(
             String keyword,
