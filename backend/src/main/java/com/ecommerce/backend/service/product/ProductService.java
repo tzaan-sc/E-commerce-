@@ -15,4 +15,17 @@ public interface ProductService {
     List<Product> getProductsByBrand(Long brandId);
     List<Product> getProductsByUsagePurpose(Long usagePurposeId);
     List<Product> filterProducts(Long usagePurposeId, Long brandId);
+    List<Product> searchProducts(String keyword);
+    //    List<Product> advancedFilter(String keyword, List<Long> brandIds, Long purposeId,
+//                                 Long screenSizeId, Double minPrice, Double maxPrice, String sortBy);
+    List<Product> advancedFilter(
+            String keyword,
+            List<Long> brandIds,
+            Long purposeId,
+            Long screenSizeId,
+            Double minPrice,
+            Double maxPrice,
+            String sortBy
+    );
+
 }

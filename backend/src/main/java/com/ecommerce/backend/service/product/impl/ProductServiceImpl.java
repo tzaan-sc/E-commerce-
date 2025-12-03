@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.ArrayList;
 @Service
@@ -39,20 +40,21 @@ public class ProductServiceImpl implements ProductService {
         product.setPrice(request.getPrice());
         product.setStockQuantity(request.getStockQuantity());
         product.setSlug(SlugUtil.toSlug(request.getName()));
-        product.setSpecifications(request.getSpecifications());
-        if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
-            List<ImageProduct> images = new ArrayList<>();
-            for (String url : request.getImageUrls()) {
-                if (url != null && !url.trim().isEmpty()) {
-                    ImageProduct img = ImageProduct.builder()
-                            .urlImage(url.trim())
-                            .name("Ảnh sản phẩm")
-                            .product(product)
-                            .build();
-                    images.add(img);
-                }
+
+        if (request.getImageUrl() != null && !request.getImageUrl().isEmpty()) {
+            ImageProduct image = ImageProduct.builder()
+                    .urlImage(request.getImageUrl()) // Lấy link từ request
+                    .name("Ảnh đại diện")            // Đặt tên mặc định
+                    .product(product)                // Gán sản phẩm chủ sở hữu
+                    .build();
+
+            // Khởi tạo list nếu chưa có
+            if (product.getImages() == null) {
+                product.setImages(new ArrayList<>());
             }
-            product.setImages(images);
+
+            // Thêm ảnh vào danh sách
+            product.getImages().add(image);
         }
         if (request.getBrandId() != null) {
             Brand brand = brandRepository.findById(request.getBrandId())
@@ -87,26 +89,22 @@ public class ProductServiceImpl implements ProductService {
         product.setPrice(request.getPrice());
         product.setStockQuantity(request.getStockQuantity());
         product.setSlug(SlugUtil.toSlug(request.getName()));
-        product.setSpecifications(request.getSpecifications());
-        if (request.getImageUrls() != null) {
-            // Xóa ảnh cũ
+
+        if (request.getImageUrl() != null && !request.getImageUrl().isEmpty()) {
+            // Cách 1: Xóa hết ảnh cũ, thay bằng ảnh mới (Reset ảnh)
             if (product.getImages() != null) {
                 product.getImages().clear();
             } else {
                 product.setImages(new ArrayList<>());
             }
 
-            // Thêm ảnh mới
-            for (String url : request.getImageUrls()) {
-                if (url != null && !url.trim().isEmpty()) {
-                    ImageProduct img = ImageProduct.builder()
-                            .urlImage(url.trim())
-                            .name("Ảnh cập nhật")
-                            .product(product)
-                            .build();
-                    product.getImages().add(img);
-                }
-            }
+            ImageProduct image = ImageProduct.builder()
+                    .urlImage(request.getImageUrl())
+                    .name("Ảnh cập nhật")
+                    .product(product)
+                    .build();
+
+            product.getImages().add(image);
         }
 
         if (request.getBrandId() != null) {
@@ -166,5 +164,95 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public List<Product> filterProducts(Long usagePurposeId, Long brandId) {
         return productRepository.findByUsagePurposeIdAndBrandId(usagePurposeId, brandId);
+    }
+    @Override
+    public List<Product> searchProducts(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            // Trả về tất cả sản phẩm nếu từ khóa trống
+            return productRepository.findAll();
+        }
+        // Gọi phương thức FULL-TEXT SEARCH mới
+        return productRepository.fullTextSearch(keyword);
+    }
+
+    //    @Override
+//    public List<Product> advancedFilter(String keyword, List<Long> brandIds, Long purposeId,
+//                                        Long screenSizeId, Double minPrice, Double maxPrice, String sortBy) {
+//        List<Product> products = productRepository.advancedFilter(
+//                keyword, brandIds, purposeId, screenSizeId, minPrice, maxPrice
+//        );
+//
+//        // Sắp xếp
+//        if (sortBy != null) {
+//            switch (sortBy) {
+//                case "price_asc":
+//                    products.sort((p1, p2) -> p1.getPrice().compareTo(p2.getPrice()));
+//                    break;
+//                case "price_desc":
+//                    products.sort((p1, p2) -> p2.getPrice().compareTo(p1.getPrice()));
+//                    break;
+//                case "name_asc":
+//                    products.sort((p1, p2) -> p1.getName().compareTo(p2.getName()));
+//                    break;
+//                case "name_desc":
+//                    products.sort((p1, p2) -> p2.getName().compareTo(p1.getName()));
+//                    break;
+//            }
+//        }
+//
+//        return products;
+//    }
+//}
+    @Override
+    public List<Product> advancedFilter(
+            String keyword,
+            List<Long> brandIds,
+            Long purposeId,
+            Long screenSizeId,
+            Double minPrice,
+            Double maxPrice,
+            String sortBy
+    ) {
+        // Log để debug
+        System.out.println("=== ADVANCED FILTER ===");
+        System.out.println("Keyword: " + keyword);
+        System.out.println("BrandIds: " + brandIds);
+        System.out.println("PurposeId: " + purposeId);
+        System.out.println("ScreenSizeId: " + screenSizeId);
+        System.out.println("MinPrice: " + minPrice);
+        System.out.println("MaxPrice: " + maxPrice);
+        System.out.println("SortBy: " + sortBy);
+
+        // Gọi repository để lấy dữ liệu
+        List<Product> products = productRepository.advancedFilter(
+                keyword,
+                brandIds,
+                purposeId,
+                screenSizeId,
+                minPrice,
+                maxPrice
+        );
+
+        System.out.println("Số sản phẩm tìm được: " + products.size());
+
+        // Sắp xếp nếu có
+        if (sortBy != null && !sortBy.equals("default")) {
+            switch (sortBy) {
+                case "price_asc":
+                    products.sort(Comparator.comparing(Product::getPrice));
+                    break;
+                case "price_desc":
+                    products.sort(Comparator.comparing(Product::getPrice).reversed());
+                    break;
+                case "name_asc":
+                    products.sort(Comparator.comparing(Product::getName));
+                    break;
+                case "name_desc":
+                    products.sort(Comparator.comparing(Product::getName).reversed());
+                    break;
+            }
+        }
+
+        return products;
     }
 }
