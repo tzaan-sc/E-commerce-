@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 // import axios from 'axios'; // You can remove axios if you use apiClient
 import apiClient from "../../../api/axiosConfig"; // 👈 FIXED IMPORT PATH
-
-import { Save,Upload } from 'lucide-react';
+import { Save,UploadCloud } from 'lucide-react';
 import {
   LayoutDashboard,
   Laptop,
@@ -18,6 +17,8 @@ import {
   Edit,
   Trash2,
   Search,
+  ChevronLeft,
+  ChevronRight ,
 } from 'lucide-react';
 import useGenericApi from 'hooks/useGenericApi';
 import './style.scss';
@@ -457,9 +458,8 @@ const ProductsPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-
-  // Khi sửa → lưu ID sản phẩm
   const [editingProductId, setEditingProductId] = useState(null);
+  const [isUploading, setIsUploading] = useState(false); // State hiển thị loading khi upload
 
   // Form state
   const [formData, setFormData] = useState({
@@ -468,7 +468,6 @@ const ProductsPage = () => {
     description: "",
     price: "",
     stockQuantity: "",
-    // 👇 ĐỔI TÊN THÀNH imageUrls ĐỂ NHẬP NHIỀU DÒNG
     imageUrls: "", 
     brandId: "",
     usagePurposeId: "",
@@ -476,7 +475,6 @@ const ProductsPage = () => {
     specifications: "",
   });
 
-  // Dropdown data
   const [brands, setBrands] = useState([]);
   const [usagePurposes, setUsagePurposes] = useState([]);
   const [screenSizes, setScreenSizes] = useState([]);
@@ -496,106 +494,111 @@ const ProductsPage = () => {
       setProducts(data);
     } catch (error) {
       console.error("❌ Error fetching products:", error);
-      alert("Không thể tải danh sách sản phẩm!");
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchBrands = async () => {
-    try { const res = await fetch("http://localhost:8080/api/brands"); setBrands(await res.json()); } catch (err) { console.log(err); }
-  };
-
-  const fetchUsagePurposes = async () => {
-    try { const res = await fetch("http://localhost:8080/api/usage-purposes"); setUsagePurposes(await res.json()); } catch (err) { console.log(err); }
-  };
-
-  const fetchScreenSizes = async () => {
-    try { const res = await fetch("http://localhost:8080/api/screen-sizes"); setScreenSizes(await res.json()); } catch (err) { console.log(err); }
-  };
+  const fetchBrands = async () => { try { const res = await fetch("http://localhost:8080/api/brands"); setBrands(await res.json()); } catch (err) { console.log(err); } };
+  const fetchUsagePurposes = async () => { try { const res = await fetch("http://localhost:8080/api/usage-purposes"); setUsagePurposes(await res.json()); } catch (err) { console.log(err); } };
+  const fetchScreenSizes = async () => { try { const res = await fetch("http://localhost:8080/api/screen-sizes"); setScreenSizes(await res.json()); } catch (err) { console.log(err); } };
 
   const resetForm = () => {
-    setFormData({
-      name: "",
-      slug: "",
-      description: "",
-      price: "",
-      stockQuantity: "",
-      imageUrls: "", // Reset
-      brandId: "",
-      usagePurposeId: "",
-      screenSizeId: "",
-      specifications: "",
-    });
+    setFormData({ name: "", slug: "", description: "", price: "", stockQuantity: "", imageUrls: "", brandId: "", usagePurposeId: "", screenSizeId: "", specifications: "" });
   };
 
-  const handleAddProduct = () => {
-    resetForm();
-    setEditingProductId(null);
-    setShowModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-    resetForm();
-    setEditingProductId(null);
-  };
+  const handleAddProduct = () => { resetForm(); setEditingProductId(null); setShowModal(true); };
+  const handleCloseModal = () => { setShowModal(false); resetForm(); setEditingProductId(null); };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-
     if (name === "name") {
-      const slug = value
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/đ/g, "d")
-        .replace(/[^a-z0-9\s-]/g, "")
-        .replace(/\s+/g, "-")
-        .replace(/-+/g, "-")
-        .trim();
+      const slug = value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-").trim();
       setFormData((prev) => ({ ...prev, slug }));
     }
   };
 
-  // --- HÀM MỚI: XỬ LÝ ẢNH HIỂN THỊ TRONG BẢNG ---
   const getProductImage = (p) => {
-    // 1. Ưu tiên lấy từ danh sách images
     if (p.images && p.images.length > 0) {
         const img = p.images[0];
         const url = img.urlImage || img;
         return url.startsWith("http") ? url : `http://localhost:8080${url}`;
     }
-    // 2. Fallback imageUrl cũ
     if (p.imageUrl) {
         return p.imageUrl.startsWith("http") ? p.imageUrl : `http://localhost:8080${p.imageUrl}`;
     }
     return "https://via.placeholder.com/80x60?text=No+Img";
   };
 
+  // --- 1. HÀM GỌI API UPLOAD TỪ URL ---
+  const uploadFromUrl = async (urlOnline) => {
+    try {
+        const res = await fetch("http://localhost:8080/api/uploads/image-from-url", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: urlOnline })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            return data.url; // Trả về đường dẫn nội bộ (vd: /uploads/products/abc.jpg)
+        } else {
+            console.error("Lỗi upload ảnh:", data.error);
+            return null;
+        }
+    } catch (err) {
+        console.error("Lỗi kết nối:", err);
+        return null;
+    }
+  };
+
+  // --- 2. HÀM XỬ LÝ NÚT BẤM "TẢI ẢNH VỀ SERVER" ---
+  const handleAutoUploadImages = async () => {
+    if (!formData.imageUrls.trim()) return;
+    
+    setIsUploading(true);
+    
+    // Tách các dòng trong textarea thành mảng
+    const lines = formData.imageUrls.split('\n');
+    const newLines = [];
+
+    for (let line of lines) {
+        const trimmedLine = line.trim();
+        // Nếu là link online (http...) thì gọi API tải về
+        if (trimmedLine.startsWith("http")) {
+            const newUrl = await uploadFromUrl(trimmedLine);
+            if (newUrl) {
+                newLines.push(newUrl); // Thay thế bằng link nội bộ
+            } else {
+                newLines.push(trimmedLine); // Giữ nguyên nếu lỗi
+            }
+        } else {
+            newLines.push(trimmedLine); // Giữ nguyên nếu đã là link nội bộ
+        }
+    }
+
+    // Cập nhật lại state formData với danh sách link mới
+    setFormData(prev => ({
+        ...prev,
+        imageUrls: newLines.join('\n')
+    }));
+    
+    setIsUploading(false);
+    alert("Đã xử lý xong hình ảnh!");
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
-      // 👇 TÁCH CHUỖI TEXTAREA THÀNH MẢNG URL
-      const imageList = formData.imageUrls
-        .split('\n')
-        .map(url => url.trim())
-        .filter(url => url !== "");
-
+      const imageList = formData.imageUrls.split('\n').map(url => url.trim()).filter(url => url !== "");
       const payload = {
         name: formData.name,
         slug: formData.slug,
         description: formData.description,
         price: parseFloat(formData.price),
         stockQuantity: parseInt(formData.stockQuantity),
-        
-        // Gửi danh sách ảnh lên backend (Backend cần nhận List<String> imageUrls)
         imageUrls: imageList,
-        // Fallback: gửi ảnh đầu tiên vào field cũ để tránh lỗi
         imageUrl: imageList.length > 0 ? imageList[0] : "",
-
         brandId: parseInt(formData.brandId),
         usagePurposeId: parseInt(formData.usagePurposeId),
         screenSizeId: parseInt(formData.screenSizeId),
@@ -603,84 +606,48 @@ const ProductsPage = () => {
       };
 
       let res;
+      const url = editingProductId ? `http://localhost:8080/api/products/${editingProductId}` : "http://localhost:8080/api/products";
+      const method = editingProductId ? "PUT" : "POST";
 
-      if (editingProductId) {
-        // UPDATE PRODUCT
-        res = await fetch(
-          `http://localhost:8080/api/products/${editingProductId}`,
-          {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          }
-        );
-      } else {
-        // CREATE PRODUCT
-        res = await fetch("http://localhost:8080/api/products", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-      }
+      res = await fetch(url, { method: method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
 
       if (!res.ok) throw new Error("Không thể lưu sản phẩm!");
-
       await fetchProducts();
       handleCloseModal();
-
       alert(editingProductId ? "Cập nhật thành công!" : "Thêm sản phẩm thành công!");
-    } catch (err) {
-      console.error(err);
-      alert("Lỗi: " + err.message);
-    }
+    } catch (err) { console.error(err); alert("Lỗi: " + err.message); }
   };
 
   const handleEditProduct = (productId) => {
     const product = products.find((p) => p.id === productId);
     if (!product) return;
-
     setEditingProductId(productId);
     setShowModal(true);
 
-    // 👇 LOGIC LẤY NHIỀU ẢNH ĐỂ ĐIỀN VÀO FORM
     let imagesString = "";
     if (product.images && product.images.length > 0) {
-        // Nối các url lại bằng dấu xuống dòng
         imagesString = product.images.map(img => img.urlImage || img).join("\n");
     } else if (product.imageUrl) {
         imagesString = product.imageUrl;
     }
 
     setFormData({
-      name: product.name,
-      slug: product.slug,
-      description: product.description || "",
-      price: product.price,
-      stockQuantity: product.stockQuantity,
-      imageUrls: imagesString, // Load vào textarea
-      brandId: product.brand?.id || "",
-      usagePurposeId: product.usagePurpose?.id || "",
-      screenSizeId: product.screenSize?.id || "",
+      name: product.name, slug: product.slug, description: product.description || "",
+      price: product.price, stockQuantity: product.stockQuantity,
+      imageUrls: imagesString, 
+      brandId: product.brand?.id || "", usagePurposeId: product.usagePurpose?.id || "", screenSizeId: product.screenSize?.id || "",
       specifications: product.specifications || "",
     });
   };
 
   const handleDeleteProduct = async (id) => {
     if (!window.confirm("Bạn chắc chắn muốn xóa?")) return;
-
     try {
-      const res = await fetch(`http://localhost:8080/api/products/${id}`, {
-        method: "DELETE",
-      });
-
+      const res = await fetch(`http://localhost:8080/api/products/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Xóa thất bại!");
-
       setProducts(products.filter((p) => p.id !== id));
       alert("Xóa thành công!");
-    } catch (err) {
-      console.error(err);
-      alert("Lỗi khi xóa sản phẩm!");
-    }
+    } catch (err) { console.error(err); alert("Lỗi khi xóa sản phẩm!"); }
   };
 
   const filteredProducts = products.filter((p) =>
@@ -715,21 +682,10 @@ const ProductsPage = () => {
           <table className="data-table">
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Ảnh</th>
-                <th>Tên</th>
-                <th>Thương hiệu</th>
-                <th>Giá</th>
-                <th>Kho</th>
-                <th>Màn hình</th>
-                <th>Mục đích</th>
-                <th>Mô tả</th>
-                <th>Thông số</th>
-                <th>Hành động</th>
+                <th>ID</th> <th>Ảnh</th> <th>Tên</th> <th>Thương hiệu</th> <th>Giá</th> <th>Kho</th> <th>Màn hình</th> <th>Mục đích</th> <th style={{maxWidth: '150px'}}>Mô tả</th> <th style={{maxWidth: '150px'}}>Thông số</th> <th>Hành động</th>
               </tr>
             </thead>
-
-           <tbody>
+            <tbody>
               {filteredProducts.map((p) => (
                 <tr key={p.id}>
                   <td>{p.id}</td>
@@ -737,13 +693,7 @@ const ProductsPage = () => {
                     <img
                       src={getProductImage(p)}
                       alt={p.name}
-                      style={{
-                        width: 80,
-                        height: 60,
-                        objectFit: "cover",
-                        borderRadius: 4,
-                        border: "1px solid #ddd"
-                      }}
+                      style={{ width: 80, height: 60, objectFit: "cover", borderRadius: 4, border: "1px solid #ddd" }}
                       onError={(e) => { e.target.src = "https://via.placeholder.com/80x60?text=Error"; }}
                     />
                   </td>
@@ -753,31 +703,12 @@ const ProductsPage = () => {
                   <td>{p.stockQuantity}</td>
                   <td>{p.screenSize?.value} inch</td>
                   <td>{p.usagePurpose?.name}</td>
-                  
-                  {/* Cột Mô tả */}
-                  <td style={{maxWidth: '150px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '13px', color: '#666'}}>
-                      {p.description}
-                  </td>
-
-                  {/* 👇 CỘT THÔNG SỐ (Đã thêm lại) */}
-                  <td style={{maxWidth: '150px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '12px', color: '#666'}}>
-                      {p.specifications}
-                  </td>
-
+                  <td style={{maxWidth: '150px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '13px', color: '#666'}}>{p.description}</td>
+                  <td style={{maxWidth: '150px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '12px', color: '#666'}}>{p.specifications}</td>
                   <td>
                     <div style={{display: 'flex', gap: '8px'}}>
-                        <button
-                        className="action-btn action-btn--edit"
-                        onClick={() => handleEditProduct(p.id)}
-                        >
-                        <Edit size={18} />
-                        </button>
-                        <button
-                        className="action-btn action-btn--delete"
-                        onClick={() => handleDeleteProduct(p.id)}
-                        >
-                        <Trash2 size={18} />
-                        </button>
+                        <button className="action-btn action-btn--edit" onClick={() => handleEditProduct(p.id)}> <Edit size={18} /> </button>
+                        <button className="action-btn action-btn--delete" onClick={() => handleDeleteProduct(p.id)}> <Trash2 size={18} /> </button>
                     </div>
                   </td>
                 </tr>
@@ -791,112 +722,67 @@ const ProductsPage = () => {
       {showModal && (
         <div className="modal-overlay" onClick={handleCloseModal}>
           <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-            
-            {/* Header */}
             <div className="modal-header">
               <h2>{editingProductId ? "Cập nhật sản phẩm" : "Thêm Sản Phẩm Mới"}</h2>
-              <button className="modal-close" onClick={handleCloseModal}>
-                <X size={26} />
-              </button>
+              <button className="modal-close" onClick={handleCloseModal}> <X size={26} /> </button>
             </div>
 
-            {/* Form */}
             <form className="modal-form" onSubmit={handleSubmit}>
               <div className="modal-grid">
-
-                <div className="form-group">
-                  <label>Tên Sản Phẩm *</label>
-                  <input className="modal-input" name="name" value={formData.name} onChange={handleInputChange} required />
-                </div>
-
-                <div className="form-group">
-                  <label>Slug *</label>
-                  <input className="modal-input" name="slug" value={formData.slug} onChange={handleInputChange} required />
-                </div>
-
-                <div className="form-group form-full">
-                  <label>Mô tả</label>
-                  <textarea className="modal-textarea" name="description" value={formData.description} onChange={handleInputChange} rows={3} />
-                </div>
-                
-                {/* Input thông số */}
-                <div className="form-group form-full">
-                  <label>Thông số kỹ thuật (JSON)</label>
-                  <textarea className="modal-textarea" name="specifications" value={formData.specifications} onChange={handleInputChange} rows={3} style={{fontFamily: 'monospace', fontSize: '13px'}} placeholder='[ {"label": "CPU", "value": "i7"} ]'/>
-                </div>
-
+                <div className="form-group"> <label>Tên Sản Phẩm *</label> <input className="modal-input" name="name" value={formData.name} onChange={handleInputChange} required /> </div>
+                <div className="form-group"> <label>Slug *</label> <input className="modal-input" name="slug" value={formData.slug} onChange={handleInputChange} required /> </div>
+                <div className="form-group form-full"> <label>Mô tả</label> <textarea className="modal-textarea" name="description" value={formData.description} onChange={handleInputChange} rows={3} /> </div>
+                <div className="form-group form-full"> <label>Thông số kỹ thuật (JSON)</label> <textarea className="modal-textarea" name="specifications" value={formData.specifications} onChange={handleInputChange} rows={3} style={{fontFamily: 'monospace', fontSize: '13px'}} placeholder='[ {"label": "CPU", "value": "i7"} ]'/> </div>
                 <div className="form-group"> <label>Giá (VND) *</label> <input type="number" className="modal-input" name="price" value={formData.price} onChange={handleInputChange} required /> </div>
                 <div className="form-group"> <label>Số lượng *</label> <input type="number" className="modal-input" name="stockQuantity" value={formData.stockQuantity} onChange={handleInputChange} required /> </div>
+                <div className="form-group"> <label>Thương hiệu</label> <select className="modal-select" name="brandId" value={formData.brandId} onChange={handleInputChange} required > <option value="">-- Chọn --</option> {brands.map((b) => (<option key={b.id} value={b.id}>{b.name}</option>))} </select> </div>
+                <div className="form-group"> <label>Mục đích</label> <select className="modal-select" name="usagePurposeId" value={formData.usagePurposeId} onChange={handleInputChange} required > <option value="">-- Chọn --</option> {usagePurposes.map((p) => (<option key={p.id} value={p.id}>{p.name}</option>))} </select> </div>
+                <div className="form-group"> <label>Màn hình</label> <select className="modal-select" name="screenSizeId" value={formData.screenSizeId} onChange={handleInputChange} required > <option value="">-- Chọn --</option> {screenSizes.map((s) => (<option key={s.id} value={s.id}>{s.value} inch</option>))} </select> </div>
 
-                <div className="form-group"> 
-                    <label>Thương hiệu *</label> 
-                    <select className="modal-select" name="brandId" value={formData.brandId} onChange={handleInputChange} required > 
-                        <option value="">-- Chọn thương hiệu --</option> {brands.map((b) => ( <option key={b.id} value={b.id}>{b.name}</option> ))} 
-                    </select> 
-                </div>
-                <div className="form-group"> 
-                    <label>Mục đích sử dụng *</label> 
-                    <select className="modal-select" name="usagePurposeId" value={formData.usagePurposeId} onChange={handleInputChange} required > 
-                        <option value="">-- Chọn mục đích --</option> {usagePurposes.map((p) => ( <option key={p.id} value={p.id}>{p.name}</option> ))} 
-                    </select> 
-                </div>
-                <div className="form-group"> 
-                    <label>Kích thước màn hình *</label> 
-                    <select className="modal-select" name="screenSizeId" value={formData.screenSizeId} onChange={handleInputChange} required > 
-                        <option value="">-- Chọn kích thước --</option> {screenSizes.map((s) => ( <option key={s.id} value={s.id}>{s.value} inch</option> ))} 
-                    </select> 
-                </div>
-
-                {/* 👇 SỬA: INPUT NHẬP NHIỀU ẢNH (TEXTAREA) */}
                 <div className="form-group form-full">
-                  <label>Link hình ảnh (Mỗi link một dòng)</label>
-                  <textarea
-                    className="modal-textarea"
-                    name="imageUrls" // Sử dụng field mới imageUrls
-                    value={formData.imageUrls}
-                    onChange={handleInputChange}
-                    rows={4}
-                    placeholder="/uploads/img1.jpg&#10;/uploads/img2.jpg&#10;https://example.com/img3.png"
-                  />
+                  <label style={{display: 'flex', justifyContent: 'space-between'}}>
+                      Link hình ảnh (Mỗi link một dòng)
+                      {/* 👇 3. NÚT BẤM ĐỂ CHUYỂN ĐỔI ẢNH ONLINE THÀNH LOCAL */}
+                      <button 
+                        type="button" 
+                        onClick={handleAutoUploadImages}
+                        disabled={isUploading}
+                        style={{
+                            fontSize: '12px', 
+                            padding: '2px 8px', 
+                            cursor: 'pointer',
+                            backgroundColor: isUploading ? '#ccc' : '#2563eb',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '5px'
+                        }}
+                      >
+                        <UploadCloud size={14}/>
+                        {isUploading ? "Đang tải..." : "Tải ảnh về Server"}
+                      </button>
+                  </label>
+                  <textarea className="modal-textarea" name="imageUrls" value={formData.imageUrls} onChange={handleInputChange} rows={4} placeholder="https://cdn.cellphones.com.vn/..." />
                   
-                  {/* 👇 PREVIEW NHIỀU ẢNH */}
                   {formData.imageUrls && (
                     <div className="image-preview" style={{ marginTop: "10px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                      {formData.imageUrls.split('\n').map((url, idx) => {
+                      {formData.imageUrls.split('\n').slice(0, 5).map((url, idx) => {
                           if(!url.trim()) return null;
-                          // Logic nối chuỗi URL
                           const fullUrl = url.trim().startsWith("http") ? url.trim() : `http://localhost:8080${url.trim()}`;
-                          return (
-                              <img 
-                                key={idx} 
-                                src={fullUrl} 
-                                alt={`Preview ${idx}`} 
-                                style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 4, border: "1px solid #ddd" }} 
-                                onError={(e) => e.target.style.display = "none"} 
-                              />
-                          )
+                          return <img key={idx} src={fullUrl} alt="Preview" style={{ width: 60, height: 60, objectFit: "cover", borderRadius: 4, border: "1px solid #ddd" }} onError={(e) => e.target.style.display = "none"} />
                       })}
                     </div>
                   )}
                 </div>
-
               </div>
 
-              {/* Footer */}
-              <div className="modal-actions">
-                <button type="button" className="btn-cancel" onClick={handleCloseModal}>
-                  Hủy
-                </button>
-                <button type="submit" className="btn-submit">
-                  {editingProductId ? "Cập nhật" : "Thêm Sản Phẩm"}
-                </button>
-              </div>
-
+              <div className="modal-actions"> <button type="button" className="btn-cancel" onClick={handleCloseModal}>Hủy</button> <button type="submit" className="btn-submit">Lưu</button> </div>
             </form>
           </div>
         </div>
       )}
-      
     </div>
   );
 };

@@ -333,6 +333,7 @@ $shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
 .data-table {
   width: 100%;
   border-collapse: collapse; // Quan trọng: Gộp viền để nét mảnh và liền mạch
+  table-layout: fixed;
 
   thead {
     background-color: #c1c4c7;
