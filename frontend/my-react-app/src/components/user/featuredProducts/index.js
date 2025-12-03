@@ -1,152 +1,5 @@
-// import { memo, useState, useEffect } from "react";
-// import { Link } from "react-router-dom";
-// import { AiOutlineShoppingCart, AiOutlineDown, AiOutlineUp } from "react-icons/ai";import apiClient from "api/axiosConfig"; 
-// import { addToCart } from "api/cart";    
-// import { useCart } from "context/index"; 
-// import { formatter } from "utils/formatter"; 
-// import "./style.scss";
-
-// const FeaturedProducts = () => {
-//   const [products, setProducts] = useState([]);
-//   const [loading, setLoading] = useState(true);
-  
-//   // Cấu hình số lượng hiển thị
-//   // Bạn có thể chỉnh lại thành 16 sau khi test xong
-//   const ITEMS_PER_BATCH = 8; 
-  
-//   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_BATCH);
-//   const { fetchCartCount } = useCart(); 
-
-//   // ... (Giữ nguyên phần hàm shuffleArray và useEffect fetchProducts) ...
-//   const shuffleArray = (array) => {
-//     let currentIndex = array.length, randomIndex;
-//     while (currentIndex !== 0) {
-//       randomIndex = Math.floor(Math.random() * currentIndex);
-//       currentIndex--;
-//       [array[currentIndex], array[randomIndex]] = [
-//         array[randomIndex], array[currentIndex]];
-//     }
-//     return array;
-//   };
-
-//   useEffect(() => {
-//     const fetchProducts = async () => {
-//       try {
-//         setLoading(true);
-//         const res = await apiClient.get("/products");
-//         const data = res.data; 
-//         const allProducts = Array.isArray(data) ? data : data.data || [];
-        
-//         // Giữ nguyên logic trộn mảng
-//         const shuffledList = shuffleArray([...allProducts]);
-//         setProducts(shuffledList);
-
-//       } catch (err) {
-//         console.error("Lỗi tải sản phẩm:", err);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     fetchProducts();
-//   }, []);
-
-//   const handleAddToCart = async (productId) => {
-//     // ... (Giữ nguyên logic thêm giỏ hàng) ...
-//     const token = localStorage.getItem("token"); 
-//     if (!token) { alert("Vui lòng đăng nhập"); return; }
-//     try {
-//       await addToCart(productId, 1); 
-//       fetchCartCount(); 
-//       alert("Đã thêm vào giỏ hàng!");
-//     } catch (err) { console.error(err); alert("Lỗi thêm giỏ hàng"); }
-//   };
-
-//   const formatPrice = (price) => {
-//     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
-//   };
-
-//   // --- 1. HÀM XỬ LÝ XEM THÊM ---
-//   const handleLoadMore = () => {
-//     setVisibleCount((prev) => prev + ITEMS_PER_BATCH);
-//   };
-
-//   // --- 2. HÀM XỬ LÝ THU GỌN (Mới thêm) ---
-//   const handleCollapse = () => {
-//     // Reset lại về số lượng ban đầu
-//     setVisibleCount(ITEMS_PER_BATCH);
-    
-//     // (Tùy chọn) Cuộn nhẹ lên đầu section để khách biết đã thu gọn
-//     const section = document.querySelector('.featured-products');
-//     if (section) {
-//         section.scrollIntoView({ behavior: 'smooth' });
-//     }
-//   };
-
-//   if (loading) return null;
-//   if (products.length === 0) return null; 
-
-//   return (
-//     <section className="featured-products">
-//       <div className="container">
-//         <h2 className="section-title">Có Thể Bạn Sẽ Thích</h2>
-        
-//         <div className="product-grid">
-//           {products.slice(0, visibleCount).map((item) => (
-//             <div key={item.id} className="product-card">
-//               <div className="product-card__image">
-//                  <Link to={`/product/${item.id}`}>
-//                     <img 
-//                       src={`http://localhost:8080${item.imageUrl || item.image}`} 
-//                       alt={item.name} 
-//                     />
-//                  </Link>
-//               </div>
-
-//               <div className="product-card__content">
-//                 <h3 className="product-name">
-//                   <Link to={`/product/${item.id}`}>{item.name}</Link>
-//                 </h3>
-//                 <div className="product-price">
-//                     {formatter ? formatter(item.price) : formatPrice(item.price)}
-//                 </div>
-//                 <button 
-//                     className="btn-add-cart"
-//                     onClick={() => handleAddToCart(item.id)}
-//                 >
-//                     <AiOutlineShoppingCart style={{marginRight: '5px'}}/>
-//                     Thêm vào giỏ hàng
-//                 </button>
-//               </div>
-//             </div>
-//           ))}
-//         </div>
-
-//         {/* --- 3. LOGIC NÚT BẤM (Đã sửa đổi) --- */}
-//         <div className="view-more-container">
-//             {visibleCount < products.length ? (
-//                 // Trường hợp 1: Vẫn còn sản phẩm -> Hiện nút Xem Thêm
-//                 <button className="btn-view-more" onClick={handleLoadMore}>
-//                     Xem thêm sản phẩm <AiOutlineDown />
-//                 </button>
-//             ) : (
-//                 // Trường hợp 2: Đã hiện hết VÀ tổng sản phẩm nhiều hơn mức ban đầu -> Hiện nút Thu Gọn
-//                 products.length > ITEMS_PER_BATCH && (
-//                     <button className="btn-view-more collapse-mode" onClick={handleCollapse}>
-//                         Thu gọn danh sách <AiOutlineUp />
-//                     </button>
-//                 )
-//             )}
-//         </div>
-        
-//       </div>
-//     </section>
-//   );
-// };
-
-// export default memo(FeaturedProducts);
 import { memo, useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom"; // Import thêm hook điều hướng
 import { AiOutlineShoppingCart, AiOutlineDown, AiOutlineUp } from "react-icons/ai";
 import apiClient from "api/axiosConfig"; 
 import { addToCart } from "api/cart";    
@@ -160,10 +13,15 @@ const FeaturedProducts = ({ filterBrandId, filterUsageId }) => {
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState("Có Thể Bạn Sẽ Thích");
   
-  const ITEMS_PER_BATCH = 8; 
-  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_BATCH);
+  // Hook
+  const location = useLocation();
+  const navigate = useNavigate();
   const { fetchCartCount } = useCart(); 
 
+  const ITEMS_PER_BATCH = 8; 
+  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_BATCH);
+
+  // Hàm trộn mảng
   const shuffleArray = (array) => {
     let currentIndex = array.length, randomIndex;
     while (currentIndex !== 0) {
@@ -199,7 +57,6 @@ const FeaturedProducts = ({ filterBrandId, filterUsageId }) => {
              isFiltering = true;
         }
         else {
-             // TRƯỜNG HỢP MẶC ĐỊNH
              res = await apiClient.get("/products");
              setTitle("Có Thể Bạn Sẽ Thích");
              isFiltering = false;
@@ -209,12 +66,8 @@ const FeaturedProducts = ({ filterBrandId, filterUsageId }) => {
         const allProducts = Array.isArray(data) ? data : data.data || [];
         
         if (isFiltering) {
-            // Đang lọc: Giữ nguyên thứ tự
             setProducts(allProducts);
         } else {
-            // Mặc định: TRỘN TẤT CẢ (Không cắt bớt gì cả)
-            // Trước đây bạn dùng .slice(4) nên nó bị mất 4 cái đầu
-            // Giờ bỏ .slice(4) đi là hiện đủ
             const shuffledList = shuffleArray([...allProducts]); 
             setProducts(shuffledList);
         }
@@ -230,11 +83,26 @@ const FeaturedProducts = ({ filterBrandId, filterUsageId }) => {
     fetchProducts();
   }, [filterBrandId, filterUsageId]); 
 
+  // --- 1. XỬ LÝ THÊM VÀO GIỎ (ĐÃ UPDATE) ---
   const handleAddToCart = async (productId) => {
     const token = localStorage.getItem("token"); 
-    if (!token) { alert("Vui lòng đăng nhập"); return; }
-    try { await addToCart(productId, 1); fetchCartCount(); alert("Đã thêm vào giỏ hàng!"); } 
-    catch (err) { console.error(err); }
+    
+    if (!token) { 
+        const confirmLogin = window.confirm("Vui lòng đăng nhập để thêm vào giỏ hàng. Bạn có muốn đăng nhập ngay không?");
+        if (confirmLogin) {
+            navigate(ROUTERS.USER.LOGIN);
+        }
+        return; 
+    }
+
+    try { 
+        await addToCart(productId, 1); 
+        fetchCartCount(); 
+        alert("Đã thêm vào giỏ hàng thành công!"); 
+    } catch (err) { 
+        console.error(err);
+        alert("Thêm vào giỏ hàng thất bại!");
+    }
   };
 
   const handleLoadMore = () => setVisibleCount(prev => prev + ITEMS_PER_BATCH);
@@ -243,6 +111,28 @@ const FeaturedProducts = ({ filterBrandId, filterUsageId }) => {
     setVisibleCount(ITEMS_PER_BATCH);
     const section = document.querySelector('.featured-products');
     if (section) section.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // --- 2. LOGIC LINK ĐỘNG (ĐÃ UPDATE) ---
+  const getProductLink = (id) => {
+    const isCustomerPage = location.pathname.includes("/customer");
+    if (isCustomerPage) {
+        return ROUTERS.CUSTOMER.PRODUCTDETAIL.replace(":id", id);
+    }
+    return ROUTERS.USER.PRODUCTDETAIL.replace(":id", id);
+  };
+
+  // --- 3. LOGIC LẤY ẢNH (ĐÃ UPDATE) ---
+  const getProductImage = (item) => {
+    if (item.images && item.images.length > 0) {
+        const firstImg = item.images[0];
+        const url = firstImg.urlImage || firstImg;
+        return `http://localhost:8080${url}`;
+    }
+    if (item.imageUrl) {
+        return `http://localhost:8080${item.imageUrl}`;
+    }
+    return "https://via.placeholder.com/300x300?text=No+Image";
   };
 
   if (loading) return <div style={{textAlign: 'center', padding: '20px'}}>Đang tải...</div>;
@@ -265,8 +155,12 @@ const FeaturedProducts = ({ filterBrandId, filterUsageId }) => {
           {products.slice(0, visibleCount).map((item) => (
             <div key={item.id} className="product-card">
               <div className="product-card__image">
-                 <Link to={ROUTERS.USER.PRODUCTDETAIL.replace(":id", item.id)}>
-                    <img src={`http://localhost:8080${item.imageUrl || item.image}`} alt={item.name} />
+                 {/* Link và Ảnh đã dùng hàm dynamic */}
+                 <Link to={getProductLink(item.id)}>
+                    <img 
+                        src={getProductImage(item)} 
+                        alt={item.name} 
+                    />
                  </Link>
               </div>
               <div className="product-card__content">
@@ -274,7 +168,7 @@ const FeaturedProducts = ({ filterBrandId, filterUsageId }) => {
                     {item.brand?.name}
                 </div>
                 <h3 className="product-name">
-                  <Link to={ROUTERS.USER.PRODUCTDETAIL.replace(":id", item.id)}>{item.name}</Link>
+                  <Link to={getProductLink(item.id)}>{item.name}</Link>
                 </h3>
                 <div className="product-price">{formatter(item.price)}</div>
                 <button className="btn-add-cart" onClick={() => handleAddToCart(item.id)}>

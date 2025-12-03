@@ -23,6 +23,7 @@ export const ROUTERS = {
     MYORDER: "/customer/home/don-mua",
     ORDERDETAIL: "/customer/home/don-mua/:id",                  // Đơn mua
     CART: "/customer/home/gio-hang",
+    CHECKOUT: "/customer/home/thanh-toan",
     LAPTOP: "/customer/home/laptop",                  // Danh sách laptop
     SUPPORT: "/ho-tro",                 // Hỗ trợ
     PRODUCTDETAIL: "/customer/home/product/:id",      // Chi tiết sản phẩm

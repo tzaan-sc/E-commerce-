@@ -468,10 +468,12 @@ const ProductsPage = () => {
     description: "",
     price: "",
     stockQuantity: "",
-    imageUrl: "",
+    // 👇 ĐỔI TÊN THÀNH imageUrls ĐỂ NHẬP NHIỀU DÒNG
+    imageUrls: "", 
     brandId: "",
     usagePurposeId: "",
     screenSizeId: "",
+    specifications: "",
   });
 
   // Dropdown data
@@ -501,30 +503,15 @@ const ProductsPage = () => {
   };
 
   const fetchBrands = async () => {
-    try {
-      const res = await fetch("http://localhost:8080/api/brands");
-      setBrands(await res.json());
-    } catch (err) {
-      console.log(err);
-    }
+    try { const res = await fetch("http://localhost:8080/api/brands"); setBrands(await res.json()); } catch (err) { console.log(err); }
   };
 
   const fetchUsagePurposes = async () => {
-    try {
-      const res = await fetch("http://localhost:8080/api/usage-purposes");
-      setUsagePurposes(await res.json());
-    } catch (err) {
-      console.log(err);
-    }
+    try { const res = await fetch("http://localhost:8080/api/usage-purposes"); setUsagePurposes(await res.json()); } catch (err) { console.log(err); }
   };
 
   const fetchScreenSizes = async () => {
-    try {
-      const res = await fetch("http://localhost:8080/api/screen-sizes");
-      setScreenSizes(await res.json());
-    } catch (err) {
-      console.log(err);
-    }
+    try { const res = await fetch("http://localhost:8080/api/screen-sizes"); setScreenSizes(await res.json()); } catch (err) { console.log(err); }
   };
 
   const resetForm = () => {
@@ -534,10 +521,11 @@ const ProductsPage = () => {
       description: "",
       price: "",
       stockQuantity: "",
-      imageUrl: "",
+      imageUrls: "", // Reset
       brandId: "",
       usagePurposeId: "",
       screenSizeId: "",
+      specifications: "",
     });
   };
 
@@ -555,11 +543,7 @@ const ProductsPage = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
 
     if (name === "name") {
       const slug = value
@@ -575,20 +559,47 @@ const ProductsPage = () => {
     }
   };
 
+  // --- HÀM MỚI: XỬ LÝ ẢNH HIỂN THỊ TRONG BẢNG ---
+  const getProductImage = (p) => {
+    // 1. Ưu tiên lấy từ danh sách images
+    if (p.images && p.images.length > 0) {
+        const img = p.images[0];
+        const url = img.urlImage || img;
+        return url.startsWith("http") ? url : `http://localhost:8080${url}`;
+    }
+    // 2. Fallback imageUrl cũ
+    if (p.imageUrl) {
+        return p.imageUrl.startsWith("http") ? p.imageUrl : `http://localhost:8080${p.imageUrl}`;
+    }
+    return "https://via.placeholder.com/80x60?text=No+Img";
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
+      // 👇 TÁCH CHUỖI TEXTAREA THÀNH MẢNG URL
+      const imageList = formData.imageUrls
+        .split('\n')
+        .map(url => url.trim())
+        .filter(url => url !== "");
+
       const payload = {
         name: formData.name,
         slug: formData.slug,
         description: formData.description,
         price: parseFloat(formData.price),
         stockQuantity: parseInt(formData.stockQuantity),
-        imageUrl: formData.imageUrl, // Lấy trực tiếp URL
+        
+        // Gửi danh sách ảnh lên backend (Backend cần nhận List<String> imageUrls)
+        imageUrls: imageList,
+        // Fallback: gửi ảnh đầu tiên vào field cũ để tránh lỗi
+        imageUrl: imageList.length > 0 ? imageList[0] : "",
+
         brandId: parseInt(formData.brandId),
         usagePurposeId: parseInt(formData.usagePurposeId),
         screenSizeId: parseInt(formData.screenSizeId),
+        specifications: formData.specifications,
       };
 
       let res;
@@ -631,16 +642,26 @@ const ProductsPage = () => {
     setEditingProductId(productId);
     setShowModal(true);
 
+    // 👇 LOGIC LẤY NHIỀU ẢNH ĐỂ ĐIỀN VÀO FORM
+    let imagesString = "";
+    if (product.images && product.images.length > 0) {
+        // Nối các url lại bằng dấu xuống dòng
+        imagesString = product.images.map(img => img.urlImage || img).join("\n");
+    } else if (product.imageUrl) {
+        imagesString = product.imageUrl;
+    }
+
     setFormData({
       name: product.name,
       slug: product.slug,
-      description: product.description,
+      description: product.description || "",
       price: product.price,
       stockQuantity: product.stockQuantity,
-      imageUrl: product.imageUrl,
+      imageUrls: imagesString, // Load vào textarea
       brandId: product.brand?.id || "",
       usagePurposeId: product.usagePurpose?.id || "",
       screenSizeId: product.screenSize?.id || "",
+      specifications: product.specifications || "",
     });
   };
 
@@ -682,245 +703,199 @@ const ProductsPage = () => {
           />
         </div>
         <button className="btn btn--primary" onClick={handleAddProduct}>
-          <Plus size={0} /> ➕ Thêm sản phẩm
+          <Plus size={20} /> ➕ Thêm sản phẩm
         </button>
       </div>
 
       {/* TABLE LIST */}
-   <div className="table-container">
-  {filteredProducts.length === 0 ? (
-    <p>Không có sản phẩm phù hợp</p>
-  ) : (
-    <table className="data-table">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Ảnh</th>
-          <th>Tên</th>
-          <th>Thương hiệu</th>
-          <th>Giá</th>
-          <th>Kho</th>
-          <th>Màn hình</th>
-          <th>Mục đích</th>
-          <th>Mô tả</th> {/* Thêm cột mô tả */}
-          <th>Hành động</th>
-        </tr>
-      </thead>
+      <div className="table-container">
+        {filteredProducts.length === 0 ? (
+          <p>Không có sản phẩm phù hợp</p>
+        ) : (
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Ảnh</th>
+                <th>Tên</th>
+                <th>Thương hiệu</th>
+                <th>Giá</th>
+                <th>Kho</th>
+                <th>Màn hình</th>
+                <th>Mục đích</th>
+                <th>Mô tả</th>
+                <th>Thông số</th>
+                <th>Hành động</th>
+              </tr>
+            </thead>
 
-      <tbody>
-        {filteredProducts.map((p) => (
-          <tr key={p.id}>
-            <td>{p.id}</td>
-            <td>
-              {p.imageUrl && (
-                <img
-                  src={
-                    p.imageUrl.startsWith("http")
-                      ? p.imageUrl
-                      : `http://localhost:8080${p.imageUrl}`
-                  }
-                  alt={p.name}
-                  style={{
-                    width: 80,
-                    height: 60,
-                    objectFit: "cover",
-                    borderRadius: 4,
-                  }}
-                />
-              )}
-            </td>
-            <td>{p.name}</td>
-            <td>{p.brand?.name}</td>
-            <td>{p.price.toLocaleString()} đ</td>
-            <td>{p.stockQuantity}</td>
-            <td>{p.screenSize?.value} inch</td>
-            <td>{p.usagePurpose?.name}</td>
-            <td>{p.description}</td> {/* Hiển thị mô tả */}
-            <td>
-              <button
-                className="action-btn action-btn--edit"
-                onClick={() => handleEditProduct(p.id)}
-              >
-                <Edit size={18} />
-              </button>
-              <button
-                className="action-btn action-btn--delete"
-                onClick={() => handleDeleteProduct(p.id)}
-              >
-                <Trash2 size={18} />
-              </button>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  )}
-</div>
+           <tbody>
+              {filteredProducts.map((p) => (
+                <tr key={p.id}>
+                  <td>{p.id}</td>
+                  <td>
+                    <img
+                      src={getProductImage(p)}
+                      alt={p.name}
+                      style={{
+                        width: 80,
+                        height: 60,
+                        objectFit: "cover",
+                        borderRadius: 4,
+                        border: "1px solid #ddd"
+                      }}
+                      onError={(e) => { e.target.src = "https://via.placeholder.com/80x60?text=Error"; }}
+                    />
+                  </td>
+                  <td style={{fontWeight: 500}}>{p.name}</td>
+                  <td>{p.brand?.name}</td>
+                  <td style={{ fontWeight: 'bold'}}>{p.price.toLocaleString()} đ</td>
+                  <td>{p.stockQuantity}</td>
+                  <td>{p.screenSize?.value} inch</td>
+                  <td>{p.usagePurpose?.name}</td>
+                  
+                  {/* Cột Mô tả */}
+                  <td style={{maxWidth: '150px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '13px', color: '#666'}}>
+                      {p.description}
+                  </td>
 
+                  {/* 👇 CỘT THÔNG SỐ (Đã thêm lại) */}
+                  <td style={{maxWidth: '150px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '12px', color: '#666'}}>
+                      {p.specifications}
+                  </td>
 
-      {/* MODAL */}
-    {showModal && (
-  <div className="modal-overlay" onClick={handleCloseModal}>
-    <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-      
-      {/* Header */}
-      <div className="modal-header">
-        <h2>{editingProductId ? "Cập nhật sản phẩm" : "Thêm Sản Phẩm Mới"}</h2>
-        <button className="modal-close" onClick={handleCloseModal}>
-          <X size={26} />
-        </button>
+                  <td>
+                    <div style={{display: 'flex', gap: '8px'}}>
+                        <button
+                        className="action-btn action-btn--edit"
+                        onClick={() => handleEditProduct(p.id)}
+                        >
+                        <Edit size={18} />
+                        </button>
+                        <button
+                        className="action-btn action-btn--delete"
+                        onClick={() => handleDeleteProduct(p.id)}
+                        >
+                        <Trash2 size={18} />
+                        </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
-      {/* Form */}
-      <form className="modal-form" onSubmit={handleSubmit}>
-        <div className="modal-grid">
+      {/* MODAL */}
+      {showModal && (
+        <div className="modal-overlay" onClick={handleCloseModal}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            
+            {/* Header */}
+            <div className="modal-header">
+              <h2>{editingProductId ? "Cập nhật sản phẩm" : "Thêm Sản Phẩm Mới"}</h2>
+              <button className="modal-close" onClick={handleCloseModal}>
+                <X size={26} />
+              </button>
+            </div>
 
-          <div className="form-group">
-            <label>Tên Sản Phẩm *</label>
-            <input
-              className="modal-input"
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              placeholder="VD: Dell XPS 13"
-              required
-            />
-          </div>
+            {/* Form */}
+            <form className="modal-form" onSubmit={handleSubmit}>
+              <div className="modal-grid">
 
-          <div className="form-group">
-            <label>Slug *</label>
-            <input
-              className="modal-input"
-              name="slug"
-              value={formData.slug}
-              onChange={handleInputChange}
-              placeholder="dell-xps-13"
-              required
-            />
-          </div>
+                <div className="form-group">
+                  <label>Tên Sản Phẩm *</label>
+                  <input className="modal-input" name="name" value={formData.name} onChange={handleInputChange} required />
+                </div>
 
-          <div className="form-group form-full">
-            <label>Mô tả</label>
-            <textarea
-              className="modal-textarea"
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              placeholder="Mô tả chi tiết..."
-            />
-          </div>
+                <div className="form-group">
+                  <label>Slug *</label>
+                  <input className="modal-input" name="slug" value={formData.slug} onChange={handleInputChange} required />
+                </div>
 
-          <div className="form-group">
-            <label>Giá (VND) *</label>
-            <input
-              type="number"
-              className="modal-input"
-              name="price"
-              value={formData.price}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
+                <div className="form-group form-full">
+                  <label>Mô tả</label>
+                  <textarea className="modal-textarea" name="description" value={formData.description} onChange={handleInputChange} rows={3} />
+                </div>
+                
+                {/* Input thông số */}
+                <div className="form-group form-full">
+                  <label>Thông số kỹ thuật (JSON)</label>
+                  <textarea className="modal-textarea" name="specifications" value={formData.specifications} onChange={handleInputChange} rows={3} style={{fontFamily: 'monospace', fontSize: '13px'}} placeholder='[ {"label": "CPU", "value": "i7"} ]'/>
+                </div>
 
-          <div className="form-group">
-            <label>Số lượng *</label>
-            <input
-              type="number"
-              className="modal-input"
-              name="stockQuantity"
-              value={formData.stockQuantity}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
+                <div className="form-group"> <label>Giá (VND) *</label> <input type="number" className="modal-input" name="price" value={formData.price} onChange={handleInputChange} required /> </div>
+                <div className="form-group"> <label>Số lượng *</label> <input type="number" className="modal-input" name="stockQuantity" value={formData.stockQuantity} onChange={handleInputChange} required /> </div>
 
-          <div className="form-group">
-            <label>Thương hiệu *</label>
-            <select
-              className="modal-select"
-              name="brandId"
-              value={formData.brandId}
-              onChange={handleInputChange}
-              required
-            >
-              <option value="">-- Chọn thương hiệu --</option>
-              {brands.map((b) => (
-                <option key={b.id} value={b.id}>{b.name}</option>
-              ))}
-            </select>
-          </div>
+                <div className="form-group"> 
+                    <label>Thương hiệu *</label> 
+                    <select className="modal-select" name="brandId" value={formData.brandId} onChange={handleInputChange} required > 
+                        <option value="">-- Chọn thương hiệu --</option> {brands.map((b) => ( <option key={b.id} value={b.id}>{b.name}</option> ))} 
+                    </select> 
+                </div>
+                <div className="form-group"> 
+                    <label>Mục đích sử dụng *</label> 
+                    <select className="modal-select" name="usagePurposeId" value={formData.usagePurposeId} onChange={handleInputChange} required > 
+                        <option value="">-- Chọn mục đích --</option> {usagePurposes.map((p) => ( <option key={p.id} value={p.id}>{p.name}</option> ))} 
+                    </select> 
+                </div>
+                <div className="form-group"> 
+                    <label>Kích thước màn hình *</label> 
+                    <select className="modal-select" name="screenSizeId" value={formData.screenSizeId} onChange={handleInputChange} required > 
+                        <option value="">-- Chọn kích thước --</option> {screenSizes.map((s) => ( <option key={s.id} value={s.id}>{s.value} inch</option> ))} 
+                    </select> 
+                </div>
 
-          <div className="form-group">
-            <label>Mục đích sử dụng *</label>
-            <select
-              className="modal-select"
-              name="usagePurposeId"
-              value={formData.usagePurposeId}
-              onChange={handleInputChange}
-              required
-            >
-              <option value="">-- Chọn mục đích --</option>
-              {usagePurposes.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-          </div>
+                {/* 👇 SỬA: INPUT NHẬP NHIỀU ẢNH (TEXTAREA) */}
+                <div className="form-group form-full">
+                  <label>Link hình ảnh (Mỗi link một dòng)</label>
+                  <textarea
+                    className="modal-textarea"
+                    name="imageUrls" // Sử dụng field mới imageUrls
+                    value={formData.imageUrls}
+                    onChange={handleInputChange}
+                    rows={4}
+                    placeholder="/uploads/img1.jpg&#10;/uploads/img2.jpg&#10;https://example.com/img3.png"
+                  />
+                  
+                  {/* 👇 PREVIEW NHIỀU ẢNH */}
+                  {formData.imageUrls && (
+                    <div className="image-preview" style={{ marginTop: "10px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                      {formData.imageUrls.split('\n').map((url, idx) => {
+                          if(!url.trim()) return null;
+                          // Logic nối chuỗi URL
+                          const fullUrl = url.trim().startsWith("http") ? url.trim() : `http://localhost:8080${url.trim()}`;
+                          return (
+                              <img 
+                                key={idx} 
+                                src={fullUrl} 
+                                alt={`Preview ${idx}`} 
+                                style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 4, border: "1px solid #ddd" }} 
+                                onError={(e) => e.target.style.display = "none"} 
+                              />
+                          )
+                      })}
+                    </div>
+                  )}
+                </div>
 
-          <div className="form-group">
-            <label>Kích thước màn hình *</label>
-            <select
-              className="modal-select"
-              name="screenSizeId"
-              value={formData.screenSizeId}
-              onChange={handleInputChange}
-              required
-            >
-              <option value="">-- Chọn kích thước --</option>
-              {screenSizes.map((s) => (
-                <option key={s.id} value={s.id}>{s.value} inch</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="form-group form-full">
-            <label>Hình ảnh (Path từ server)</label>
-            <input
-              type="text"
-              className="modal-input"
-              name="imageUrl"
-              value={formData.imageUrl}
-              onChange={handleInputChange}
-              placeholder="/uploads/images/abc.jpg"
-            />
-            {formData.imageUrl && (
-              <div className="image-preview">
-                <img
-                  src={`http://localhost:8080${formData.imageUrl}`}
-                  alt="Preview"
-                  style={{ width: 120, height: 90, objectFit: "cover", borderRadius: 4 }}
-                  onError={(e) => e.target.style.display = "none"}
-                />
               </div>
-            )}
+
+              {/* Footer */}
+              <div className="modal-actions">
+                <button type="button" className="btn-cancel" onClick={handleCloseModal}>
+                  Hủy
+                </button>
+                <button type="submit" className="btn-submit">
+                  {editingProductId ? "Cập nhật" : "Thêm Sản Phẩm"}
+                </button>
+              </div>
+
+            </form>
           </div>
-
         </div>
-
-        {/* Footer */}
-        <div className="modal-actions">
-          <button type="button" className="btn-cancel" onClick={handleCloseModal}>
-            Hủy
-          </button>
-          <button type="submit" className="btn-submit">
-            {editingProductId ? "Cập nhật" : "Thêm Sản Phẩm"}
-          </button>
-        </div>
-
-      </form>
-    </div>
-  </div>
-)}
-
+      )}
       
     </div>
   );

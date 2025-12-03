@@ -155,15 +155,14 @@ import { memo, useState, useEffect } from "react";
 import "./style.scss";
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-const Carousel = () => {
+// 1. Nhận props 'images' từ cha truyền xuống
+const Carousel = ({ images }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  const slides = [
-    "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=1200&q=80", // Laptop 1
-    "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=1200&q=80", // Laptop 2
-    "https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?w=1200&q=80", // Laptop 3
-    "https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=1200&q=80", // Laptop 4 (Thêm để test layout 4 ô)
-  ];
+  // 2. Kiểm tra: Nếu có ảnh từ DB thì dùng, nếu không thì dùng ảnh placeholder mặc định
+  const slides = (images && images.length > 0) 
+    ? images 
+    : ["https://via.placeholder.com/800x600?text=No+Image"];
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % slides.length);
@@ -177,18 +176,22 @@ const Carousel = () => {
     setCurrentSlide(slideIndex);
   };
 
-  // Auto-play (Tùy chọn: thường trang sản phẩm ít khi auto-play, nếu không cần bạn có thể bỏ đoạn này)
+  // Auto-play: Reset interval khi currentSlide hoặc slides thay đổi
   useEffect(() => {
+    // Chỉ auto-play nếu có nhiều hơn 1 ảnh
+    if (slides.length <= 1) return;
+
     const slideInterval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 5000); // Để 5s cho chậm hơn chút để khách xem hàng
+    }, 5000);
+    
     return () => clearInterval(slideInterval);
-  }, [slides.length]);
+  }, [slides.length, currentSlide]);
 
   return (
     <div className="product-carousel-wrapper">
       
-      {/* --- PHẦN 1: ẢNH LỚN (MAIN STAGE) --- */}
+      {/* --- PHẦN 1: ẢNH LỚN --- */}
       <div className="main-stage">
         <div
           className="carousel-track"
@@ -196,32 +199,40 @@ const Carousel = () => {
         >
           {slides.map((slide, index) => (
             <div key={index} className="carousel-slide">
+              {/* slide ở đây là đường dẫn URL ảnh (String) */}
               <img src={slide} alt={`Product View ${index + 1}`} />
             </div>
           ))}
         </div>
 
-        {/* Nút điều hướng trên ảnh lớn */}
-        <button className="carousel-nav prev" onClick={prevSlide}>
-          <ChevronLeft size={24} />
-        </button>
-        <button className="carousel-nav next" onClick={nextSlide}>
-          <ChevronRight size={24} />
-        </button>
+        {/* Chỉ hiện nút điều hướng nếu có > 1 ảnh */}
+        {slides.length > 1 && (
+          <>
+            <button className="carousel-nav prev" onClick={prevSlide}>
+              <ChevronLeft size={24} />
+            </button>
+            <button className="carousel-nav next" onClick={nextSlide}>
+              <ChevronRight size={24} />
+            </button>
+          </>
+        )}
       </div>
 
-      {/* --- PHẦN 2: THUMBNAILS (HÀNG ẢNH NHỎ BÊN DƯỚI) --- */}
-      <div className="thumbnail-list">
-        {slides.map((slide, index) => (
-          <div
-            key={index}
-            className={`thumbnail-item ${index === currentSlide ? 'active' : ''}`}
-            onClick={() => goToSlide(index)}
-          >
-            <img src={slide} alt={`Thumbnail ${index + 1}`} />
-          </div>
-        ))}
-      </div>
+      {/* --- PHẦN 2: THUMBNAILS --- */}
+      {/* Chỉ hiện thumbnails nếu có > 1 ảnh */}
+      {slides.length > 1 && (
+        <div className="thumbnail-list">
+            {slides.map((slide, index) => (
+            <div
+                key={index}
+                className={`thumbnail-item ${index === currentSlide ? 'active' : ''}`}
+                onClick={() => goToSlide(index)}
+            >
+                <img src={slide} alt={`Thumbnail ${index + 1}`} />
+            </div>
+            ))}
+        </div>
+      )}
 
     </div>
   );
