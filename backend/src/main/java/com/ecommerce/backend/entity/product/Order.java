@@ -64,6 +64,9 @@ public class Order {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
+    @Column(columnDefinition = "TEXT")
+    private String note;
+
     // 👇 3. THÊM LIÊN KẾT BẢO MẬT VỚI USER
     // (Để kiểm tra đơn hàng này của ai)
     @ManyToOne(fetch = FetchType.LAZY)

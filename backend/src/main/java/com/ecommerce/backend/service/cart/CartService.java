@@ -1,6 +1,7 @@
 package com.ecommerce.backend.service.cart;
 
 import com.ecommerce.backend.entity.cart.CartItem;
+import com.ecommerce.backend.dto.cart.CheckoutRequest;
 import com.ecommerce.backend.entity.product.Order;
 import java.util.List;
 
@@ -13,7 +14,8 @@ public interface CartService {
     List<CartItem> getCartItems(String username);
 
     // Hàm checkout các món đã chọn
-    Order checkoutSelected(String username, List<Long> cartItemIds);
+//    Order checkoutSelected(String username, List<Long> cartItemIds);
+    Order checkoutSelected(String email, CheckoutRequest request);
 
     // Hàm cập nhật số lượng
     CartItem updateItemQuantity(String username, Long cartItemId, Integer quantity);

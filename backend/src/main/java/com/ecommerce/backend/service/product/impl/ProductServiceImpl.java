@@ -39,21 +39,20 @@ public class ProductServiceImpl implements ProductService {
         product.setPrice(request.getPrice());
         product.setStockQuantity(request.getStockQuantity());
         product.setSlug(SlugUtil.toSlug(request.getName()));
-
-        if (request.getImageUrl() != null && !request.getImageUrl().isEmpty()) {
-            ImageProduct image = ImageProduct.builder()
-                    .urlImage(request.getImageUrl()) // Lấy link từ request
-                    .name("Ảnh đại diện")            // Đặt tên mặc định
-                    .product(product)                // Gán sản phẩm chủ sở hữu
-                    .build();
-
-            // Khởi tạo list nếu chưa có
-            if (product.getImages() == null) {
-                product.setImages(new ArrayList<>());
+        product.setSpecifications(request.getSpecifications());
+        if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
+            List<ImageProduct> images = new ArrayList<>();
+            for (String url : request.getImageUrls()) {
+                if (url != null && !url.trim().isEmpty()) {
+                    ImageProduct img = ImageProduct.builder()
+                            .urlImage(url.trim())
+                            .name("Ảnh sản phẩm")
+                            .product(product)
+                            .build();
+                    images.add(img);
+                }
             }
-
-            // Thêm ảnh vào danh sách
-            product.getImages().add(image);
+            product.setImages(images);
         }
         if (request.getBrandId() != null) {
             Brand brand = brandRepository.findById(request.getBrandId())
@@ -88,22 +87,26 @@ public class ProductServiceImpl implements ProductService {
         product.setPrice(request.getPrice());
         product.setStockQuantity(request.getStockQuantity());
         product.setSlug(SlugUtil.toSlug(request.getName()));
-
-        if (request.getImageUrl() != null && !request.getImageUrl().isEmpty()) {
-            // Cách 1: Xóa hết ảnh cũ, thay bằng ảnh mới (Reset ảnh)
+        product.setSpecifications(request.getSpecifications());
+        if (request.getImageUrls() != null) {
+            // Xóa ảnh cũ
             if (product.getImages() != null) {
                 product.getImages().clear();
             } else {
                 product.setImages(new ArrayList<>());
             }
 
-            ImageProduct image = ImageProduct.builder()
-                    .urlImage(request.getImageUrl())
-                    .name("Ảnh cập nhật")
-                    .product(product)
-                    .build();
-
-            product.getImages().add(image);
+            // Thêm ảnh mới
+            for (String url : request.getImageUrls()) {
+                if (url != null && !url.trim().isEmpty()) {
+                    ImageProduct img = ImageProduct.builder()
+                            .urlImage(url.trim())
+                            .name("Ảnh cập nhật")
+                            .product(product)
+                            .build();
+                    product.getImages().add(img);
+                }
+            }
         }
 
         if (request.getBrandId() != null) {

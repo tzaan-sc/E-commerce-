@@ -6,6 +6,8 @@ import com.ecommerce.backend.repository.auth.UserRepository; // ✅ FIX 1: THÊM
 import org.springframework.http.ResponseEntity; // ✅ FIX 2: THÊM IMPORT RESPONSE ENTITY
 import org.springframework.security.access.prepost.PreAuthorize; // ✅ Cần cho @PreAuthorize
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.List;
 
@@ -72,4 +74,39 @@ public class UserController {
     public ResponseEntity<Long> getTotalUserCount() {
         return ResponseEntity.ok(userRepository.count());
     }
+
+    @GetMapping("/my-info")
+    public ResponseEntity<User> getMyInfo(@AuthenticationPrincipal UserDetails userDetails) {
+        // Kiểm tra đăng nhập
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        // Lấy email từ token
+        String email = userDetails.getUsername();
+
+        // Gọi service lấy thông tin
+        User user = userService.getUserByEmail(email);
+
+        return ResponseEntity.ok(user);
+    }
+
+    // 5️⃣ Đổi mật khẩu
+//    @PostMapping("/{id}/change-password")
+//    public ResponseEntity<String> changePassword(@PathVariable Long id, @RequestBody PasswordChangeRequest request) {
+//        @PutMapping("/change-password/{id}") // ✅ khớp với frontend: PUT http://localhost:8080/api/auth/change-password/{id}
+//        public ResponseEntity<?> changePassword (
+//                @PathVariable Long id,
+//                @RequestBody PasswordChangeRequest request){
+//            try {
+//                String result = userService.changePassword(id, request.getOldPassword(), request.getNewPassword());
+//                return ResponseEntity.ok(result);
+//                String message = userService.changePassword(id, request.getCurrentPassword(), request.getNewPassword());
+//                return ResponseEntity.ok(Map.of("message", message));
+//            } catch (RuntimeException e) {
+//                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+//                return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+//            }
+//        }
+//    }
 }

@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.Map;
+import com.ecommerce.backend.dto.auth.ChangePasswordRequest;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -91,3 +93,14 @@ public class AuthController {
         return ResponseEntity.ok(new MessageResponse("Token is valid"));
     }
 }
+//@PutMapping("/change-password/{userId}")
+//public ResponseEntity<?> changePassword(
+//        @PathVariable Long userId,
+//        @RequestBody ChangePasswordRequest request) {
+//    try {
+//        authService.changePassword(userId, request);
+//        return ResponseEntity.ok(Map.of("message", "Đổi mật khẩu thành công!"));
+//    } catch (RuntimeException e) {
+//        return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+//    }
+//}

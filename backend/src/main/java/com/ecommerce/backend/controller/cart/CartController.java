@@ -1,6 +1,7 @@
 package com.ecommerce.backend.controller.cart;
 
 import com.ecommerce.backend.entity.cart.CartItem;
+import com.ecommerce.backend.dto.cart.CheckoutRequest;
 import com.ecommerce.backend.entity.product.Order;
 import com.ecommerce.backend.service.cart.CartService;
 import lombok.RequiredArgsConstructor;
@@ -68,17 +69,29 @@ public class CartController {
 //        return ResponseEntity.ok(cartService.checkout(username));
 //    }
 
-    @PostMapping("/checkout-selected")
-    public ResponseEntity<Order> checkoutSelected(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody List<Long> cartItemIds // <-- Nhận mảng ID đã chọn
-    ) {
-        if (userDetails == null) return ResponseEntity.status(401).build();
-        String username = userDetails.getUsername();
+//    @PostMapping("/checkout-selected")
+//    public ResponseEntity<Order> checkoutSelected(
+//            @AuthenticationPrincipal UserDetails userDetails,
+//            @RequestBody List<Long> cartItemIds // <-- Nhận mảng ID đã chọn
+//    ) {
+//        if (userDetails == null) return ResponseEntity.status(401).build();
+//        String username = userDetails.getUsername();
+//
+//        Order order = cartService.checkoutSelected(username, cartItemIds);
+//        return ResponseEntity.ok(order);
+//    }
+        @PostMapping("/checkout-selected")
+        public ResponseEntity<Order> checkoutSelected(
+                @AuthenticationPrincipal UserDetails userDetails,
+                @RequestBody CheckoutRequest request // 👈 Sửa ở đây
+        ) {
+            if (userDetails == null) return ResponseEntity.status(401).build();
+            String username = userDetails.getUsername();
 
-        Order order = cartService.checkoutSelected(username, cartItemIds);
-        return ResponseEntity.ok(order);
-    }
+            // Truyền cả object request vào service
+            Order order = cartService.checkoutSelected(username, request);
+            return ResponseEntity.ok(order);
+        }
     @PutMapping("/update/{cartItemId}")
     public ResponseEntity<CartItem> updateCartItem(
             @AuthenticationPrincipal UserDetails userDetails,
