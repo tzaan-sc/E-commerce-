@@ -45,4 +45,4 @@ coverage/
 *.ear
 
 # Backup files
-*~
+*~.env
