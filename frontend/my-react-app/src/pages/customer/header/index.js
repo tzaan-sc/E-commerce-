@@ -151,7 +151,7 @@ const Header = () => {
       <div className="header__top">
         <div className="container">
           <div className="header__top_content">
-            Freeship đơn từ {formatter(100000)}, vận chuyển toàn quốc
+             Sản phẩm chính hãng - Đảm bảo chất lượng - Giao hàng toàn quốc
           </div>
         </div>
       </div>
@@ -162,7 +162,7 @@ const Header = () => {
             
             <div className="header__logo">
               <Link to={currentUser ? ROUTERS.CUSTOMER.HOME : ROUTERS.USER.HOME}>
-                <h1>LOGO</h1>
+                <h1>HTV</h1>
               </Link>
             </div>
 
