@@ -436,9 +436,23 @@ public class ProductServiceImpl implements ProductService {
             // Trả về tất cả sản phẩm nếu từ khóa trống
             return productRepository.findAll();
         }
-        // Gọi phương thức FULL-TEXT SEARCH mới
-        return productRepository.fullTextSearch(keyword);
+
+        // BƯỚC MỚI: Loại bỏ dấu khỏi từ khóa người dùng nhập vào
+        // Ví dụ: Người dùng nhập "dien thoai" -> chuyển thành "dien thoai"
+        // Người dùng nhập "Điện thoại" -> chuyển thành "Dien thoai"
+        String searchKeyword = SlugUtil.removeDiacritics(keyword.trim());
+
+        // Để FULLTEXT Search hiệu quả và bao gồm tìm kiếm không dấu,
+        // chúng ta sẽ cần thay thế khoảng trắng bằng ký tự wildcard của FULLTEXT (Dấu +)
+        // và thêm chế độ * (Wildcard) cho mỗi từ.
+
+        // Xây dựng cú pháp tìm kiếm BOOLEAN MODE của MySQL
+        String fullTextSearchQuery = "+" + searchKeyword.replaceAll("\\s+", "* +") + "*";
+
+        // Gọi phương thức FULL-TEXT SEARCH với từ khóa đã xử lý
+        return productRepository.fullTextSearch(fullTextSearchQuery);
     }
+
     @Override
     public List<Product> advancedFilter(
             String keyword,

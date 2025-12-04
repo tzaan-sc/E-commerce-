@@ -36,9 +36,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     // Trong ProductRepository.java
     @Query(value = "SELECT * FROM products p WHERE " +
             "MATCH(p.name, p.description) AGAINST (:keyword IN BOOLEAN MODE)",
-            nativeQuery = true) // Cần nativeQuery = true vì cú pháp MATCH AGAINST là SQL native
+            nativeQuery = true)
     List<Product> fullTextSearch(@Param("keyword") String keyword);
-
 
 
 //    // Trong ProductRepository.java, THÊM PHƯƠNG THỨC NÀY
@@ -62,7 +61,10 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             "LEFT JOIN p.brand b " +
             "LEFT JOIN p.usagePurpose up " +
             "LEFT JOIN p.screenSize ss " +
-            "WHERE (:keyword IS NULL OR :keyword = '' OR LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+            "WHERE (:keyword IS NULL OR :keyword = '' OR " +
+            "   LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "   LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%'))" + // <== THÊM DÒNG NÀY
+            ") " +
             "AND (:brandIds IS NULL OR b.id IN :brandIds) " +
             "AND (:purposeId IS NULL OR up.id = :purposeId) " +
             "AND (:screenSizeId IS NULL OR ss.id = :screenSizeId) " +
