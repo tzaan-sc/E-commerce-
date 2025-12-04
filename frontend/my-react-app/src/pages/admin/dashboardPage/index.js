@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef,useMemo } from 'react';
 // import axios from 'axios'; // You can remove axios if you use apiClient
 import apiClient from "../../../api/axiosConfig"; // 👈 FIXED IMPORT PATH
 
@@ -18,6 +18,7 @@ import {
   Edit,
   Trash2,
   Search,
+   ChevronLeft, ChevronRight, UploadCloud,
 } from 'lucide-react';
 import useGenericApi from 'hooks/useGenericApi';
 import './style.scss';
@@ -457,237 +458,196 @@ const ProductsPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-
-  // Khi sửa → lưu ID sản phẩm
   const [editingProductId, setEditingProductId] = useState(null);
+
+  // State loading khi upload ảnh
+  const [isUploading, setIsUploading] = useState(false);
+
+  // State cho phân trang & tìm kiếm
+  const [debouncedSearch, setDebouncedSearch] = useState(""); 
+  const [currentPage, setCurrentPage] = useState(1);          
+  const itemsPerPage = 10;                                    
 
   // Form state
   const [formData, setFormData] = useState({
-    name: "",
-    slug: "",
-    description: "",
-    price: "",
-    stockQuantity: "",
-    // 👇 ĐỔI TÊN THÀNH imageUrls ĐỂ NHẬP NHIỀU DÒNG
-    imageUrls: "", 
-    brandId: "",
-    usagePurposeId: "",
-    screenSizeId: "",
-    specifications: "",
+    name: "", slug: "", description: "", price: "", stockQuantity: "", 
+    imageUrls: "", brandId: "", usagePurposeId: "", screenSizeId: "", specifications: "",
   });
 
-  // Dropdown data
   const [brands, setBrands] = useState([]);
   const [usagePurposes, setUsagePurposes] = useState([]);
   const [screenSizes, setScreenSizes] = useState([]);
 
+  // 1. Fetch dữ liệu ban đầu
   useEffect(() => {
-    fetchProducts();
-    fetchBrands();
-    fetchUsagePurposes();
-    fetchScreenSizes();
+    const fetchAllData = async () => {
+      setLoading(true);
+      try {
+        const [resP, resB, resU, resS] = await Promise.all([
+          fetch("http://localhost:8080/api/products"),
+          fetch("http://localhost:8080/api/brands"),
+          fetch("http://localhost:8080/api/usage-purposes"),
+          fetch("http://localhost:8080/api/screen-sizes")
+        ]);
+        const [dataP, dataB, dataU, dataS] = await Promise.all([
+          resP.json(), resB.json(), resU.json(), resS.json()
+        ]);
+        setProducts(dataP);
+        setBrands(dataB);
+        setUsagePurposes(dataU);
+        setScreenSizes(dataS);
+      } catch (error) { console.error(error); } finally { setLoading(false); }
+    };
+    fetchAllData();
   }, []);
 
-  const fetchProducts = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch("http://localhost:8080/api/products");
-      const data = await response.json();
-      setProducts(data);
-    } catch (error) {
-      console.error("❌ Error fetching products:", error);
-      alert("Không thể tải danh sách sản phẩm!");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchBrands = async () => {
-    try { const res = await fetch("http://localhost:8080/api/brands"); setBrands(await res.json()); } catch (err) { console.log(err); }
-  };
-
-  const fetchUsagePurposes = async () => {
-    try { const res = await fetch("http://localhost:8080/api/usage-purposes"); setUsagePurposes(await res.json()); } catch (err) { console.log(err); }
-  };
-
-  const fetchScreenSizes = async () => {
-    try { const res = await fetch("http://localhost:8080/api/screen-sizes"); setScreenSizes(await res.json()); } catch (err) { console.log(err); }
-  };
+  // 2. Debounce Search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setCurrentPage(1); 
+    }, 500); 
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   const resetForm = () => {
-    setFormData({
-      name: "",
-      slug: "",
-      description: "",
-      price: "",
-      stockQuantity: "",
-      imageUrls: "", // Reset
-      brandId: "",
-      usagePurposeId: "",
-      screenSizeId: "",
-      specifications: "",
-    });
+    setFormData({ name: "", slug: "", description: "", price: "", stockQuantity: "", imageUrls: "", brandId: "", usagePurposeId: "", screenSizeId: "", specifications: "" });
   };
 
-  const handleAddProduct = () => {
-    resetForm();
-    setEditingProductId(null);
-    setShowModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-    resetForm();
-    setEditingProductId(null);
-  };
+  const handleAddProduct = () => { resetForm(); setEditingProductId(null); setShowModal(true); };
+  const handleCloseModal = () => { setShowModal(false); resetForm(); setEditingProductId(null); };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-
     if (name === "name") {
-      const slug = value
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/đ/g, "d")
-        .replace(/[^a-z0-9\s-]/g, "")
-        .replace(/\s+/g, "-")
-        .replace(/-+/g, "-")
-        .trim();
+      const slug = value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-").trim();
       setFormData((prev) => ({ ...prev, slug }));
     }
   };
 
-  // --- HÀM MỚI: XỬ LÝ ẢNH HIỂN THỊ TRONG BẢNG ---
   const getProductImage = (p) => {
-    // 1. Ưu tiên lấy từ danh sách images
     if (p.images && p.images.length > 0) {
         const img = p.images[0];
         const url = img.urlImage || img;
         return url.startsWith("http") ? url : `http://localhost:8080${url}`;
     }
-    // 2. Fallback imageUrl cũ
     if (p.imageUrl) {
         return p.imageUrl.startsWith("http") ? p.imageUrl : `http://localhost:8080${p.imageUrl}`;
     }
     return "https://via.placeholder.com/80x60?text=No+Img";
   };
 
+  // --- HÀM GỌI API UPLOAD TỪ URL ---
+  const uploadFromUrl = async (urlOnline) => {
+    try {
+        const res = await fetch("http://localhost:8080/api/uploads/image-from-url", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: urlOnline })
+        });
+        const data = await res.json();
+        if (res.ok) return data.url;
+        else { console.error("Lỗi tải ảnh:", data.error); return null; }
+    } catch (err) { console.error("Lỗi kết nối:", err); return null; }
+  };
+
+  // --- XỬ LÝ NÚT TỰ ĐỘNG TẢI ẢNH ---
+  const handleAutoUploadImages = async () => {
+    if (!formData.imageUrls.trim()) return;
+    setIsUploading(true);
+    const lines = formData.imageUrls.split('\n');
+    const newLines = [];
+    let hasChange = false;
+
+    for (let line of lines) {
+        const trimmedLine = line.trim();
+        if (trimmedLine.startsWith("http") && !trimmedLine.includes("/uploads/products/")) {
+            const newUrl = await uploadFromUrl(trimmedLine);
+            if (newUrl) { newLines.push(newUrl); hasChange = true; } 
+            else { newLines.push(trimmedLine); }
+        } else {
+            newLines.push(trimmedLine);
+        }
+    }
+    setFormData(prev => ({ ...prev, imageUrls: newLines.join('\n') }));
+    setIsUploading(false);
+    if (hasChange) alert("Đã tải ảnh về server thành công!");
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
-      // 👇 TÁCH CHUỖI TEXTAREA THÀNH MẢNG URL
-      const imageList = formData.imageUrls
-        .split('\n')
-        .map(url => url.trim())
-        .filter(url => url !== "");
-
+      const imageList = formData.imageUrls.split('\n').map(url => url.trim()).filter(url => url !== "");
       const payload = {
-        name: formData.name,
-        slug: formData.slug,
-        description: formData.description,
-        price: parseFloat(formData.price),
-        stockQuantity: parseInt(formData.stockQuantity),
-        
-        // Gửi danh sách ảnh lên backend (Backend cần nhận List<String> imageUrls)
-        imageUrls: imageList,
-        // Fallback: gửi ảnh đầu tiên vào field cũ để tránh lỗi
-        imageUrl: imageList.length > 0 ? imageList[0] : "",
-
-        brandId: parseInt(formData.brandId),
-        usagePurposeId: parseInt(formData.usagePurposeId),
-        screenSizeId: parseInt(formData.screenSizeId),
+        name: formData.name, slug: formData.slug, description: formData.description,
+        price: parseFloat(formData.price), stockQuantity: parseInt(formData.stockQuantity),
+        imageUrls: imageList, imageUrl: imageList.length > 0 ? imageList[0] : "",
+        brandId: parseInt(formData.brandId), usagePurposeId: parseInt(formData.usagePurposeId), screenSizeId: parseInt(formData.screenSizeId),
         specifications: formData.specifications,
       };
 
       let res;
+      const url = editingProductId ? `http://localhost:8080/api/products/${editingProductId}` : "http://localhost:8080/api/products";
+      const method = editingProductId ? "PUT" : "POST";
 
-      if (editingProductId) {
-        // UPDATE PRODUCT
-        res = await fetch(
-          `http://localhost:8080/api/products/${editingProductId}`,
-          {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          }
-        );
-      } else {
-        // CREATE PRODUCT
-        res = await fetch("http://localhost:8080/api/products", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-      }
+      res = await fetch(url, { method: method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
 
-      if (!res.ok) throw new Error("Không thể lưu sản phẩm!");
+      if (!res.ok) throw new Error("Lỗi lưu sản phẩm!");
+      
+      // Refresh list
+      const resP = await fetch("http://localhost:8080/api/products");
+      const dataP = await resP.json();
+      setProducts(dataP);
 
-      await fetchProducts();
       handleCloseModal();
-
       alert(editingProductId ? "Cập nhật thành công!" : "Thêm sản phẩm thành công!");
-    } catch (err) {
-      console.error(err);
-      alert("Lỗi: " + err.message);
-    }
+    } catch (err) { console.error(err); alert("Lỗi: " + err.message); }
   };
 
   const handleEditProduct = (productId) => {
     const product = products.find((p) => p.id === productId);
     if (!product) return;
-
     setEditingProductId(productId);
     setShowModal(true);
 
-    // 👇 LOGIC LẤY NHIỀU ẢNH ĐỂ ĐIỀN VÀO FORM
     let imagesString = "";
     if (product.images && product.images.length > 0) {
-        // Nối các url lại bằng dấu xuống dòng
         imagesString = product.images.map(img => img.urlImage || img).join("\n");
     } else if (product.imageUrl) {
         imagesString = product.imageUrl;
     }
 
     setFormData({
-      name: product.name,
-      slug: product.slug,
-      description: product.description || "",
-      price: product.price,
-      stockQuantity: product.stockQuantity,
-      imageUrls: imagesString, // Load vào textarea
-      brandId: product.brand?.id || "",
-      usagePurposeId: product.usagePurpose?.id || "",
-      screenSizeId: product.screenSize?.id || "",
+      name: product.name, slug: product.slug, description: product.description || "",
+      price: product.price, stockQuantity: product.stockQuantity,
+      imageUrls: imagesString, 
+      brandId: product.brand?.id || "", usagePurposeId: product.usagePurpose?.id || "", screenSizeId: product.screenSize?.id || "",
       specifications: product.specifications || "",
     });
   };
 
   const handleDeleteProduct = async (id) => {
     if (!window.confirm("Bạn chắc chắn muốn xóa?")) return;
-
     try {
-      const res = await fetch(`http://localhost:8080/api/products/${id}`, {
-        method: "DELETE",
-      });
-
+      const res = await fetch(`http://localhost:8080/api/products/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Xóa thất bại!");
-
       setProducts(products.filter((p) => p.id !== id));
       alert("Xóa thành công!");
-    } catch (err) {
-      console.error(err);
-      alert("Lỗi khi xóa sản phẩm!");
-    }
+    } catch (err) { console.error(err); alert("Lỗi khi xóa sản phẩm!"); }
   };
 
-  const filteredProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // --- LOGIC LỌC VÀ PHÂN TRANG ---
+  const filteredProducts = useMemo(() => 
+    products.filter((p) => p.name.toLowerCase().includes(debouncedSearch.toLowerCase())), 
+  [products, debouncedSearch]);
 
-  if (loading) return <div>Đang tải dữ liệu...</div>;
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredProducts.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+
+  if (loading) return <div style={{padding: '20px', textAlign: 'center'}}>Đang tải dữ liệu...</div>;
 
   return (
     <div className="page-card">
@@ -707,83 +667,88 @@ const ProductsPage = () => {
         </button>
       </div>
 
-      {/* TABLE LIST */}
+      {/* TABLE LIST - GIỮ NGUYÊN ĐỊNH DẠNG CHUẨN, KHÔNG GIẬT */}
       <div className="table-container">
         {filteredProducts.length === 0 ? (
-          <p>Không có sản phẩm phù hợp</p>
+          <p style={{padding: '20px', textAlign: 'center'}}>Không có sản phẩm phù hợp</p>
         ) : (
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Ảnh</th>
-                <th>Tên</th>
-                <th>Thương hiệu</th>
-                <th>Giá</th>
-                <th>Kho</th>
-                <th>Màn hình</th>
-                <th>Mục đích</th>
-                <th>Mô tả</th>
-                <th>Thông số</th>
-                <th>Hành động</th>
-              </tr>
-            </thead>
-
-           <tbody>
-              {filteredProducts.map((p) => (
-                <tr key={p.id}>
-                  <td>{p.id}</td>
-                  <td>
-                    <img
-                      src={getProductImage(p)}
-                      alt={p.name}
-                      style={{
-                        width: 80,
-                        height: 60,
-                        objectFit: "cover",
-                        borderRadius: 4,
-                        border: "1px solid #ddd"
-                      }}
-                      onError={(e) => { e.target.src = "https://via.placeholder.com/80x60?text=Error"; }}
-                    />
-                  </td>
-                  <td style={{fontWeight: 500}}>{p.name}</td>
-                  <td>{p.brand?.name}</td>
-                  <td style={{ fontWeight: 'bold'}}>{p.price.toLocaleString()} đ</td>
-                  <td>{p.stockQuantity}</td>
-                  <td>{p.screenSize?.value} inch</td>
-                  <td>{p.usagePurpose?.name}</td>
-                  
-                  {/* Cột Mô tả */}
-                  <td style={{maxWidth: '150px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '13px', color: '#666'}}>
-                      {p.description}
-                  </td>
-
-                  {/* 👇 CỘT THÔNG SỐ (Đã thêm lại) */}
-                  <td style={{maxWidth: '150px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '12px', color: '#666'}}>
-                      {p.specifications}
-                  </td>
-
-                  <td>
-                    <div style={{display: 'flex', gap: '8px'}}>
-                        <button
-                        className="action-btn action-btn--edit"
-                        onClick={() => handleEditProduct(p.id)}
-                        >
-                        <Edit size={18} />
-                        </button>
-                        <button
-                        className="action-btn action-btn--delete"
-                        onClick={() => handleDeleteProduct(p.id)}
-                        >
-                        <Trash2 size={18} />
-                        </button>
-                    </div>
-                  </td>
+          <>
+            <table 
+                className="data-table" 
+                // 👇 Style cố định để tránh giật layout
+                style={{width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed'}}
+            >
+              <thead>
+                <tr style={{background: '#f4f4f4', height: '50px', textAlign: 'left'}}>
+                  <th style={{width: '50px', padding: '10px'}}>ID</th> 
+                  <th style={{width: '100px', padding: '10px'}}>Ảnh</th> 
+                  <th style={{minWidth: '200px', padding: '10px'}}>Tên</th> 
+                  <th style={{width: '120px', padding: '10px'}}>Thương hiệu</th> 
+                  <th style={{width: '120px', padding: '10px'}}>Giá</th> 
+                  <th style={{width: '70px', padding: '10px'}}>Kho</th> 
+                  <th style={{width: '90px', padding: '10px'}}>Màn hình</th> 
+                  <th style={{width: '100px', padding: '10px'}}>Mục đích</th> 
+                  <th style={{width: '150px', padding: '10px'}}>Mô tả</th> 
+                  <th style={{width: '150px', padding: '10px'}}>Thông số</th> 
+                  <th style={{width: '100px', padding: '10px'}}>Hành động</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {currentItems.map((p) => (
+                  // 👇 Khóa chiều cao dòng để tránh giật dọc
+                  <tr key={p.id} style={{height: '90px', borderBottom: '1px solid #eee'}}>
+                    <td style={{padding: '10px'}}>{p.id}</td>
+                    <td style={{padding: '10px'}}>
+                      <div style={{width: '80px', height: '60px', background: '#f9f9f9', borderRadius: '4px', overflow: 'hidden'}}>
+                          <img
+                            src={getProductImage(p)}
+                            loading="lazy"
+                            alt={p.name}
+                            style={{ width: '100%', height: '100%', objectFit: "contain" }}
+                            onError={(e) => { e.target.src = "https://via.placeholder.com/80x60?text=Error"; }}
+                          />
+                      </div>
+                    </td>
+                    <td style={{padding: '10px', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}} title={p.name}>{p.name}</td>
+                    <td style={{padding: '10px'}}>{p.brand?.name}</td>
+                    <td style={{padding: '10px', color: '#d70018', fontWeight: 'bold'}}>{new Intl.NumberFormat('vi-VN').format(p.price)} đ</td>
+                    <td style={{padding: '10px', textAlign: 'center'}}>{p.stockQuantity}</td>
+                    <td style={{padding: '10px'}}>{p.screenSize?.value} inch</td>
+                    <td style={{padding: '10px'}}>{p.usagePurpose?.name}</td>
+                    <td style={{padding: '10px', maxWidth: '150px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '13px', color: '#666'}} title={p.description}>{p.description}</td>
+                    <td style={{padding: '10px', maxWidth: '150px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '12px', color: '#666'}} title={p.specifications}>{p.specifications}</td>
+                    <td style={{padding: '10px'}}>
+                      <div style={{display: 'flex', gap: '8px'}}>
+                          <button className="action-btn action-btn--edit" onClick={() => handleEditProduct(p.id)}> <Edit size={18} /> </button>
+                          <button className="action-btn action-btn--delete" onClick={() => handleDeleteProduct(p.id)}> <Trash2 size={18} /> </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            
+            {/* 👇 PHẦN NÚT PHÂN TRANG (ĐÃ THÊM CHEVRON) */}
+            <div className="pagination-controls" style={{ display: 'flex', justifyContent: 'center', gap: '10px', padding: '20px' }}>
+                <button 
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    style={{ padding: '5px 10px', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', opacity: currentPage === 1 ? 0.5 : 1 }}
+                >
+                    <ChevronLeft size={20} />
+                </button>
+                
+                <span style={{ alignSelf: 'center' }}>Trang {currentPage} / {totalPages}</span>
+
+                <button 
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    style={{ padding: '5px 10px', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', opacity: currentPage === totalPages ? 0.5 : 1 }}
+                >
+                    <ChevronRight size={20} />
+                </button>
+            </div>
+          </>
         )}
       </div>
 
@@ -791,112 +756,70 @@ const ProductsPage = () => {
       {showModal && (
         <div className="modal-overlay" onClick={handleCloseModal}>
           <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-            
-            {/* Header */}
             <div className="modal-header">
               <h2>{editingProductId ? "Cập nhật sản phẩm" : "Thêm Sản Phẩm Mới"}</h2>
-              <button className="modal-close" onClick={handleCloseModal}>
-                <X size={26} />
-              </button>
+              <button className="modal-close" onClick={handleCloseModal}> <X size={26} /> </button>
             </div>
 
-            {/* Form */}
             <form className="modal-form" onSubmit={handleSubmit}>
               <div className="modal-grid">
-
-                <div className="form-group">
-                  <label>Tên Sản Phẩm *</label>
-                  <input className="modal-input" name="name" value={formData.name} onChange={handleInputChange} required />
-                </div>
-
-                <div className="form-group">
-                  <label>Slug *</label>
-                  <input className="modal-input" name="slug" value={formData.slug} onChange={handleInputChange} required />
-                </div>
-
-                <div className="form-group form-full">
-                  <label>Mô tả</label>
-                  <textarea className="modal-textarea" name="description" value={formData.description} onChange={handleInputChange} rows={3} />
-                </div>
+                <div className="form-group"> <label>Tên Sản Phẩm *</label> <input className="modal-input" name="name" value={formData.name} onChange={handleInputChange} required /> </div>
+                <div className="form-group"> <label>Slug *</label> <input className="modal-input" name="slug" value={formData.slug} onChange={handleInputChange} required /> </div>
+                <div className="form-group form-full"> <label>Mô tả</label> <textarea className="modal-textarea" name="description" value={formData.description} onChange={handleInputChange} rows={3} /> </div>
                 
-                {/* Input thông số */}
-                <div className="form-group form-full">
-                  <label>Thông số kỹ thuật (JSON)</label>
-                  <textarea className="modal-textarea" name="specifications" value={formData.specifications} onChange={handleInputChange} rows={3} style={{fontFamily: 'monospace', fontSize: '13px'}} placeholder='[ {"label": "CPU", "value": "i7"} ]'/>
-                </div>
-
+                <div className="form-group form-full"> <label>Thông số kỹ thuật (JSON)</label> <textarea className="modal-textarea" name="specifications" value={formData.specifications} onChange={handleInputChange} rows={3} style={{fontFamily: 'monospace', fontSize: '13px'}} placeholder='[ {"label": "CPU", "value": "i7"} ]'/> </div>
+                
                 <div className="form-group"> <label>Giá (VND) *</label> <input type="number" className="modal-input" name="price" value={formData.price} onChange={handleInputChange} required /> </div>
                 <div className="form-group"> <label>Số lượng *</label> <input type="number" className="modal-input" name="stockQuantity" value={formData.stockQuantity} onChange={handleInputChange} required /> </div>
+                <div className="form-group"> <label>Thương hiệu</label> <select className="modal-select" name="brandId" value={formData.brandId} onChange={handleInputChange} required > <option value="">-- Chọn --</option> {brands.map((b) => (<option key={b.id} value={b.id}>{b.name}</option>))} </select> </div>
+                <div className="form-group"> <label>Mục đích</label> <select className="modal-select" name="usagePurposeId" value={formData.usagePurposeId} onChange={handleInputChange} required > <option value="">-- Chọn --</option> {usagePurposes.map((p) => (<option key={p.id} value={p.id}>{p.name}</option>))} </select> </div>
+                <div className="form-group"> <label>Màn hình</label> <select className="modal-select" name="screenSizeId" value={formData.screenSizeId} onChange={handleInputChange} required > <option value="">-- Chọn --</option> {screenSizes.map((s) => (<option key={s.id} value={s.id}>{s.value} inch</option>))} </select> </div>
 
-                <div className="form-group"> 
-                    <label>Thương hiệu *</label> 
-                    <select className="modal-select" name="brandId" value={formData.brandId} onChange={handleInputChange} required > 
-                        <option value="">-- Chọn thương hiệu --</option> {brands.map((b) => ( <option key={b.id} value={b.id}>{b.name}</option> ))} 
-                    </select> 
-                </div>
-                <div className="form-group"> 
-                    <label>Mục đích sử dụng *</label> 
-                    <select className="modal-select" name="usagePurposeId" value={formData.usagePurposeId} onChange={handleInputChange} required > 
-                        <option value="">-- Chọn mục đích --</option> {usagePurposes.map((p) => ( <option key={p.id} value={p.id}>{p.name}</option> ))} 
-                    </select> 
-                </div>
-                <div className="form-group"> 
-                    <label>Kích thước màn hình *</label> 
-                    <select className="modal-select" name="screenSizeId" value={formData.screenSizeId} onChange={handleInputChange} required > 
-                        <option value="">-- Chọn kích thước --</option> {screenSizes.map((s) => ( <option key={s.id} value={s.id}>{s.value} inch</option> ))} 
-                    </select> 
-                </div>
-
-                {/* 👇 SỬA: INPUT NHẬP NHIỀU ẢNH (TEXTAREA) */}
                 <div className="form-group form-full">
-                  <label>Link hình ảnh (Mỗi link một dòng)</label>
-                  <textarea
-                    className="modal-textarea"
-                    name="imageUrls" // Sử dụng field mới imageUrls
-                    value={formData.imageUrls}
-                    onChange={handleInputChange}
-                    rows={4}
-                    placeholder="/uploads/img1.jpg&#10;/uploads/img2.jpg&#10;https://example.com/img3.png"
-                  />
+                  <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px'}}>
+                      <label>Link hình ảnh (Mỗi link một dòng)</label>
+                      {/* 👇 NÚT BẤM TẢI ẢNH */}
+                      <button 
+                        type="button" 
+                        onClick={handleAutoUploadImages}
+                        disabled={isUploading}
+                        style={{
+                            fontSize: '12px', 
+                            padding: '4px 12px', 
+                            cursor: 'pointer',
+                            backgroundColor: isUploading ? '#9ca3af' : '#2563eb',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            transition: 'background-color 0.2s'
+                        }}
+                      >
+                        <UploadCloud size={16}/>
+                        {isUploading ? "Đang tải..." : "Tải ảnh online về Server"}
+                      </button>
+                  </div>
+                  <textarea className="modal-textarea" name="imageUrls" value={formData.imageUrls} onChange={handleInputChange} rows={4} placeholder="https://cdn.cellphones.com.vn/..." />
                   
-                  {/* 👇 PREVIEW NHIỀU ẢNH */}
                   {formData.imageUrls && (
                     <div className="image-preview" style={{ marginTop: "10px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                      {formData.imageUrls.split('\n').map((url, idx) => {
+                      {formData.imageUrls.split('\n').slice(0, 5).map((url, idx) => {
                           if(!url.trim()) return null;
-                          // Logic nối chuỗi URL
                           const fullUrl = url.trim().startsWith("http") ? url.trim() : `http://localhost:8080${url.trim()}`;
-                          return (
-                              <img 
-                                key={idx} 
-                                src={fullUrl} 
-                                alt={`Preview ${idx}`} 
-                                style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 4, border: "1px solid #ddd" }} 
-                                onError={(e) => e.target.style.display = "none"} 
-                              />
-                          )
+                          return <img key={idx} src={fullUrl} alt="Preview" style={{ width: 60, height: 60, objectFit: "cover", borderRadius: 4, border: "1px solid #ddd" }} onError={(e) => e.target.style.display = "none"} />
                       })}
                     </div>
                   )}
                 </div>
-
               </div>
 
-              {/* Footer */}
-              <div className="modal-actions">
-                <button type="button" className="btn-cancel" onClick={handleCloseModal}>
-                  Hủy
-                </button>
-                <button type="submit" className="btn-submit">
-                  {editingProductId ? "Cập nhật" : "Thêm Sản Phẩm"}
-                </button>
-              </div>
-
+              <div className="modal-actions"> <button type="button" className="btn-cancel" onClick={handleCloseModal}>Hủy</button> <button type="submit" className="btn-submit">Lưu</button> </div>
             </form>
           </div>
         </div>
       )}
-      
     </div>
   );
 };
@@ -911,14 +834,14 @@ const OrdersPage = () => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [editingStatus, setEditingStatus] = useState(""); 
 
-  // --- HÀM TẠO MÃ ĐƠN HÀNG MỚI (VÍ DỤ: #ORD001) ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10; 
+
   const formatOrderId = (id) => {
     if (!id) return '#N/A';
-    // Chuyển ID sang chuỗi, đệm số 0 vào trước (Ví dụ: 1 -> 001)
     return `#ORD${String(id).padStart(3, '0')}`;
   };
 
-  // Helper: Hàm dịch trạng thái sang tiếng Việt
   const translateStatus = (status) => {
     if (!status) return 'Không rõ';
     const map = {
@@ -932,7 +855,6 @@ const OrdersPage = () => {
     return map[status.toUpperCase()] || status;
   };
 
-  // Helper: Hàm lấy màu sắc cho badge
   const getStatusClass = (status) => {
     if (!status) return 'secondary';
     const statusUpper = status.toUpperCase();
@@ -945,6 +867,7 @@ const OrdersPage = () => {
 
   useEffect(() => {
     fetchOrders();
+    setCurrentPage(1); 
   }, [statusFilter]);
 
   const fetchOrders = async () => {
@@ -955,8 +878,7 @@ const OrdersPage = () => {
       const res = await apiClient.get(url);
 
       if (Array.isArray(res.data)) {
-        // Sắp xếp đơn hàng cũ nhất lên trên (Tăng dần ID)
-        const sortedOrders = res.data.sort((a, b) => a.id - b.id);
+        const sortedOrders = res.data.sort((a, b) => b.id - a.id);
         setOrders(sortedOrders);
       } else {
         setOrders([]);
@@ -1005,8 +927,13 @@ const OrdersPage = () => {
     }
   };
 
-  if (loading && !showDetailModal) return <div className="loading">Đang tải...</div>;
-  if (error) return <div className="error">Lỗi: {error}</div>;
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentOrders = orders.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(orders.length / itemsPerPage);
+
+  if (loading && !showDetailModal) return <div className="loading" style={{padding: '20px', textAlign: 'center'}}>Đang tải...</div>;
+  if (error) return <div className="error" style={{padding: '20px', color: 'red'}}>Lỗi: {error}</div>;
 
   return (
     <div className="page-card">
@@ -1023,47 +950,81 @@ const OrdersPage = () => {
       </div>
 
       <div className="table-container">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Mã đơn</th> {/* Tiêu đề cột Mã đơn */}
-              <th>Khách hàng</th>
-              <th>Ngày tạo</th>
-              <th>Tổng tiền</th>
-              <th>Trạng thái</th>
-              <th>Hành động</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orders.map((order, index) => (
-              <tr key={order.id}>
-                {/* 👇 SỬ DỤNG HÀM MỚI ĐỂ HIỂN THỊ MÃ ĐƠN HÀNG */}
-                <td className="font-medium">{formatOrderId(order.id)}</td> 
-                
-                <td>
-                  <div style={{fontWeight: 500}}>{order.customerName}</div>
-                  <small className="text-muted">{order.phone}</small>
-                </td>
-                <td>{order.createdAt ? new Date(order.createdAt).toLocaleDateString('vi-VN') : '-'}</td>
-                <td>{order.totalAmount?.toLocaleString('vi-VN')}đ</td>
-                <td>
-                  <span className={`badge ${getStatusClass(order.status)}`}>
-                    {translateStatus(order.status)}
-                  </span>
-                </td>
-                <td>
-                  <button className="link-btn" onClick={() => handleViewOrderDetail(order.id)}>
-                    Chi tiết
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {orders.length === 0 && <div className="no-data">Chưa có đơn hàng nào.</div>}
+        {orders.length === 0 ? (
+             <div className="no-data" style={{padding: '20px', textAlign: 'center'}}>Chưa có đơn hàng nào.</div>
+        ) : (
+            <>
+                {/* 👇 1. THÊM table-layout: fixed ĐỂ CỐ ĐỊNH CỘT */}
+                <table className="data-table" style={{width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed'}}>
+                  <thead>
+                    <tr style={{background: '#f4f4f4', height: '50px', textAlign: 'left'}}>
+                      <th style={{width: '100px', padding: '10px'}}>Mã đơn</th>
+                      {/* 👇 2. SỬA Ở ĐÂY: Đổi minWidth thành width cố định (160px) */}
+                      <th style={{width: '160px', padding: '10px'}}>Khách hàng</th>
+                      <th style={{width: '120px', padding: '10px'}}>Ngày tạo</th>
+                      <th style={{width: '120px', padding: '10px'}}>Tổng tiền</th>
+                      <th style={{width: '130px', padding: '10px'}}>Trạng thái</th>
+                      <th style={{width: '100px', padding: '10px'}}>Hành động</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currentOrders.map((order) => (
+                      <tr key={order.id} style={{height: '60px', borderBottom: '1px solid #eee'}}>
+                        <td className="font-medium" style={{padding: '10px'}}>{formatOrderId(order.id)}</td>
+                        
+                        {/* 👇 3. Cắt ngắn tên khách hàng nếu quá dài */}
+                        <td style={{padding: '10px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis'}}>
+                          <div style={{fontWeight: 500}}>{order.customerName}</div>
+                          <small className="text-muted" style={{color: '#666'}}>{order.phone}</small>
+                        </td>
+                        <td style={{padding: '10px'}}>{order.createdAt ? new Date(order.createdAt).toLocaleDateString('vi-VN') : '-'}</td>
+                        <td style={{padding: '10px', fontWeight: 'bold', color: '#d70018'}}>{order.totalAmount?.toLocaleString('vi-VN')}đ</td>
+                        <td style={{padding: '10px'}}>
+                          <span className={`badge ${getStatusClass(order.status)}`}>
+                            {translateStatus(order.status)}
+                          </span>
+                        </td>
+                        <td style={{padding: '10px'}}>
+                          <button className="link-btn" onClick={() => handleViewOrderDetail(order.id)}>
+                            Chi tiết
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {totalPages > 1 && (
+                    <div className="pagination-controls" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '15px', padding: '20px' }}>
+                        <button 
+                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                            disabled={currentPage === 1}
+                            style={{ 
+                                padding: '5px 10px', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', 
+                                opacity: currentPage === 1 ? 0.5 : 1, border: '1px solid #ddd', borderRadius: '4px', background: '#fff' 
+                            }}
+                        >
+                            <ChevronLeft size={20} />
+                        </button>
+                        
+                        <span style={{ fontSize: '14px', fontWeight: '600' }}>Trang {currentPage} / {totalPages}</span>
+
+                        <button 
+                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                            disabled={currentPage === totalPages}
+                            style={{ 
+                                padding: '5px 10px', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', 
+                                opacity: currentPage === totalPages ? 0.5 : 1, border: '1px solid #ddd', borderRadius: '4px', background: '#fff'
+                            }}
+                        >
+                            <ChevronRight size={20} />
+                        </button>
+                    </div>
+                )}
+            </>
+        )}
       </div>
 
-      {/* --- MODAL CHI TIẾT ĐƠN HÀNG (ADMIN) --- */}
       {showDetailModal && selectedOrder && (
         <div className="modal-overlay" onClick={handleCloseDetailModal}>
           <div className="modal-container" onClick={(e) => e.stopPropagation()} style={{maxWidth: '800px', width: '90%'}}>
@@ -1083,10 +1044,11 @@ const OrdersPage = () => {
                   <p style={{marginBottom: '5px'}}><strong>Người nhận:</strong> {selectedOrder.customerName}</p>
                   <p style={{marginBottom: '5px'}}><strong>SĐT:</strong> {selectedOrder.phone}</p>
                   <p style={{marginBottom: '5px'}}><strong>Địa chỉ:</strong> {selectedOrder.shippingAddress}</p>
+                  {selectedOrder.note && <p style={{marginBottom: '5px'}}><strong>Ghi chú:</strong> {selectedOrder.note}</p>}
                 </div>
 
-                <div style={{flex: 1, minWidth: '300px', background: '#f9fafb', padding: '15px', borderRadius: '8px', border: '1px solid #eee'}}>
-                  <h4 style={{marginBottom: '15px', color: '#555'}}>Cập nhật trạng thái</h4>
+                <div className="status-update-box">
+                  <h4>Cập nhật trạng thái</h4>
                   
                   <div style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
                     <select 
@@ -1118,21 +1080,27 @@ const OrdersPage = () => {
               </div>
 
               <h4 style={{marginBottom: '10px', color: '#555'}}>Sản phẩm</h4>
-              <table className="data-table" style={{width: '100%', border: '1px solid #eee'}}>
+              <table className="data-table" style={{width: '100%', border: '1px solid #eee', tableLayout: 'fixed'}}>
                 <thead style={{background: '#f3f4f6'}}>
                   <tr>
                     <th style={{padding: '10px'}}>Sản phẩm</th>
-                    <th style={{padding: '10px'}}>Đơn giá</th>
-                    <th style={{padding: '10px'}}>SL</th>
-                    <th style={{padding: '10px', textAlign: 'right'}}>Thành tiền</th>
+                    <th style={{padding: '10px', width: '120px'}}>Đơn giá</th>
+                    <th style={{padding: '10px', width: '60px'}}>SL</th>
+                    <th style={{padding: '10px', width: '120px', textAlign: 'right'}}>Thành tiền</th>
                   </tr>
                 </thead>
                 <tbody>
                   {selectedOrder.items?.map((item, index) => (
-                    <tr key={index} style={{borderBottom: '1px solid #eee'}}>
+                    <tr key={index} style={{borderBottom: '1px solid #eee', height: '60px'}}>
                       <td style={{padding: '10px', display: 'flex', alignItems: 'center', gap: '10px'}}>
-                        <img src={item.imageUrl ? `http://localhost:8080${item.imageUrl}` : 'https://via.placeholder.com/50'} alt="" style={{width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ddd'}}/>
-                        <span>{item.productName}</span>
+                        <div style={{width: '40px', height: '40px', flexShrink: 0}}>
+                            <img 
+                                src={item.imageUrl ? (item.imageUrl.startsWith('http') ? item.imageUrl : `http://localhost:8080${item.imageUrl}`) : 'https://via.placeholder.com/50'} 
+                                alt="" 
+                                style={{width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ddd'}}
+                            />
+                        </div>
+                        <span style={{whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}} title={item.productName}>{item.productName}</span>
                       </td>
                       <td style={{padding: '10px'}}>{item.price?.toLocaleString('vi-VN')}đ</td>
                       <td style={{padding: '10px'}}>x{item.quantity}</td>
@@ -1311,7 +1279,12 @@ const AccountsPage = () => {
     status: 'Hoạt động',
   });
 
-  const formRef = useRef(null); // 👈 Dùng để scroll tới form
+  // 👇 2. STATE PHÂN TRANG
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10; // Số tài khoản mỗi trang
+
+  const formRef = useRef(null);
+  const API_BASE = "http://localhost:8080/api/users"; // Đảm bảo đường dẫn API đúng
 
   // ================== LẤY DANH SÁCH TÀI KHOẢN ==================
   useEffect(() => {
@@ -1379,7 +1352,7 @@ const AccountsPage = () => {
   const handleEditAccount = (account) => {
     setEditingAccount(account);
     setNewAccount({ ...account });
-    formRef.current?.scrollIntoView({ behavior: 'smooth' }); // 👈 Scroll xuống form
+    formRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const handleUpdateAccount = async () => {
@@ -1415,12 +1388,17 @@ const AccountsPage = () => {
     }
   };
 
-  // ================== CUỘN XUỐNG FORM ==================
   const scrollToForm = () => {
     formRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  //if (loading) return <div className="loading">Đang tải dữ liệu...</div>;
+  // 👇 3. LOGIC TÍNH TOÁN PHÂN TRANG
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentAccounts = accounts.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(accounts.length / itemsPerPage);
+
+  // if (loading) return <div className="loading">Đang tải dữ liệu...</div>;
 
   return (
     <div className="page-card">
@@ -1434,24 +1412,25 @@ const AccountsPage = () => {
 
       {/* ======= BẢNG DỮ LIỆU ======= */}
       <div className="table-container">
-        <table className="data-table">
+        <table className="data-table" style={{width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed'}}>
           <thead>
-            <tr>
-              <th>ID</th>
-              <th>Tên</th>
-              <th>Email</th>
-              <th>Vai trò</th>
-              <th>Trạng thái</th>
-              <th>Hành động</th>
+            <tr style={{background: '#f4f4f4', height: '50px', textAlign: 'left'}}>
+              <th style={{width: '50px', padding: '10px'}}>ID</th>
+              <th style={{padding: '10px'}}>Tên</th>
+              <th style={{padding: '10px'}}>Email</th>
+              <th style={{width: '120px', padding: '10px'}}>Vai trò</th>
+              <th style={{width: '120px', padding: '10px'}}>Trạng thái</th>
+              <th style={{width: '100px', padding: '10px'}}>Hành động</th>
             </tr>
           </thead>
           <tbody>
-            {accounts.map((account) => (
-              <tr key={account.id}>
-                <td>{account.id}</td>
-                <td className="font-medium">{account.username}</td>
-                <td>{account.email}</td>
-                <td>
+            {/* 👇 Render currentAccounts thay vì accounts */}
+            {currentAccounts.map((account) => (
+              <tr key={account.id} style={{height: '60px', borderBottom: '1px solid #eee'}}>
+                <td style={{padding: '10px'}}>{account.id}</td>
+                <td className="font-medium" style={{padding: '10px'}}>{account.username}</td>
+                <td style={{padding: '10px'}}>{account.email}</td>
+                <td style={{padding: '10px'}}>
                   <span
                     className={`badge ${
                       account.role === 'Admin'
@@ -1462,7 +1441,7 @@ const AccountsPage = () => {
                     {account.role}
                   </span>
                 </td>
-                <td>
+                <td style={{padding: '10px'}}>
                   <span
                     className={`badge ${
                       account.status === 'Hoạt động'
@@ -1473,20 +1452,43 @@ const AccountsPage = () => {
                     {account.status}
                   </span>
                 </td>
-                <td>
-                  <td className="action-buttons text-center">
+                <td style={{padding: '10px'}}>
+                  <div className="action-buttons text-center">
                     <button
                       className="action-btn action-btn--edit"
                       onClick={() => handleEditAccount(account)}
                     >
                       <Edit size={18} />
                     </button>
-                  </td>
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+        
+        {/* 👇 4. UI PHÂN TRANG */}
+        {totalPages > 1 && (
+            <div className="pagination-controls" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '15px', padding: '20px' }}>
+                <button 
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    style={{ padding: '5px 10px', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', opacity: currentPage === 1 ? 0.5 : 1, border: '1px solid #ddd', borderRadius: '4px', background: '#fff' }}
+                >
+                    <ChevronLeft size={20} />
+                </button>
+                
+                <span style={{ fontSize: '14px', fontWeight: '600' }}>Trang {currentPage} / {totalPages}</span>
+
+                <button 
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    style={{ padding: '5px 10px', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', opacity: currentPage === totalPages ? 0.5 : 1, border: '1px solid #ddd', borderRadius: '4px', background: '#fff' }}
+                >
+                    <ChevronRight size={20} />
+                </button>
+            </div>
+        )}
       </div>
 
       {/* ======= FORM THÊM / SỬA ======= */}
@@ -1594,7 +1596,6 @@ const AccountsPage = () => {
     </div>
   );
 };
-
 // Brands Page
 
 // const BrandsPage = () => {

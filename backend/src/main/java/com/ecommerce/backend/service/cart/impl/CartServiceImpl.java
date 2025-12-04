@@ -32,14 +32,17 @@ public class CartServiceImpl implements CartService {
     public CartItem addToCart(String email, Long productId, Integer quantity) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
+
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", productId));
+
         CartItem cartItem = cartItemRepository.findByUserAndProduct(user, product)
                 .orElse(CartItem.builder()
                         .user(user)
                         .product(product)
                         .quantity(0)
                         .build());
+
         cartItem.setQuantity(cartItem.getQuantity() + quantity);
         return cartItemRepository.save(cartItem);
     }
@@ -52,7 +55,7 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class) // Rollback nếu lỗi trừ kho
     public Order checkoutSelected(String username, CheckoutRequest request) {
         User user = userRepository.findByEmail(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -63,13 +66,15 @@ public class CartServiceImpl implements CartService {
             throw new RuntimeException("No items selected");
         }
 
-        // 1. Tính tổng tiền & Kiểm tra tồn kho trước khi trừ
+        // 👇 1. SỬA: Tính tổng tiền & KIỂM TRA TỒN KHO TRƯỚC
         double totalAmount = 0;
-        for (CartItem ci : selectedItems) {
-            if (ci.getProduct().getStockQuantity() < ci.getQuantity()) {
-                throw new RuntimeException("Sản phẩm " + ci.getProduct().getName() + " không đủ hàng!");
+        for (CartItem item : selectedItems) {
+            Product product = item.getProduct();
+            // Kiểm tra xem đủ hàng không
+            if (product.getStockQuantity() < item.getQuantity()) {
+                throw new RuntimeException("Sản phẩm " + product.getName() + " không đủ số lượng trong kho (Còn: " + product.getStockQuantity() + ")");
             }
-            totalAmount += ci.getProduct().getPrice() * ci.getQuantity();
+            totalAmount += product.getPrice() * item.getQuantity();
         }
 
         // 2. Tạo đơn hàng mới
@@ -85,15 +90,15 @@ public class CartServiceImpl implements CartService {
         long currentOrderCount = orderRepository.countByUser(user);
         order.setUserOrderNumber((int) currentOrderCount + 1);
 
-        // 3. CHUYỂN TỪ GIỎ HÀNG SANG CHI TIẾT ĐƠN HÀNG & TRỪ KHO
+        // 3. CHUYỂN TỪ GIỎ HÀNG SANG CHI TIẾT ĐƠN HÀNG
         for (CartItem ci : selectedItems) {
             Product product = ci.getProduct();
 
-            // --- LOGIC TRỪ KHO (-) ---
+            // 👇 LOGIC TRỪ KHO (-) TẠI ĐÂY
             int newStock = product.getStockQuantity() - ci.getQuantity();
             product.setStockQuantity(newStock);
-            productRepository.save(product); // Lưu số lượng mới
-            // ------------------------
+            productRepository.save(product); // Lưu số lượng mới vào DB
+            // ---------------------------------------
 
             OrderItem oi = OrderItem.builder()
                     .productName(product.getName())
@@ -101,6 +106,7 @@ public class CartServiceImpl implements CartService {
                     .price(product.getPrice())
                     .product(product)
                     .build();
+
             order.addItem(oi);
         }
 
@@ -118,11 +124,14 @@ public class CartServiceImpl implements CartService {
     public CartItem updateItemQuantity(String email, Long cartItemId, Integer quantity) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
+
         CartItem cartItem = cartItemRepository.findById(cartItemId)
                 .orElseThrow(() -> new ResourceNotFoundException("CartItem", "id", cartItemId));
+
         if (!cartItem.getUser().getId().equals(user.getId())) {
             throw new SecurityException("User does not own this cart item");
         }
+
         cartItem.setQuantity(quantity);
         return cartItemRepository.save(cartItem);
     }
@@ -132,11 +141,14 @@ public class CartServiceImpl implements CartService {
     public void removeItemFromCart(String email, Long cartItemId) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
+
         CartItem cartItem = cartItemRepository.findById(cartItemId)
                 .orElseThrow(() -> new ResourceNotFoundException("CartItem", "id", cartItemId));
+
         if (!cartItem.getUser().getId().equals(user.getId())) {
             throw new SecurityException("User does not own this cart item");
         }
+
         cartItemRepository.delete(cartItem);
     }
 
@@ -145,6 +157,7 @@ public class CartServiceImpl implements CartService {
     public void removeItemsFromCart(String email, List<Long> cartItemIds) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
+
         List<CartItem> itemsToDelete = cartItemRepository.findAllByIdInAndUser(cartItemIds, user);
         cartItemRepository.deleteAll(itemsToDelete);
     }

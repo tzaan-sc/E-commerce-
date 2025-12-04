@@ -91,22 +91,4 @@ public class UserController {
         return ResponseEntity.ok(user);
     }
 
-    // 5️⃣ Đổi mật khẩu
-//    @PostMapping("/{id}/change-password")
-//    public ResponseEntity<String> changePassword(@PathVariable Long id, @RequestBody PasswordChangeRequest request) {
-//        @PutMapping("/change-password/{id}") // ✅ khớp với frontend: PUT http://localhost:8080/api/auth/change-password/{id}
-//        public ResponseEntity<?> changePassword (
-//                @PathVariable Long id,
-//                @RequestBody PasswordChangeRequest request){
-//            try {
-//                String result = userService.changePassword(id, request.getOldPassword(), request.getNewPassword());
-//                return ResponseEntity.ok(result);
-//                String message = userService.changePassword(id, request.getCurrentPassword(), request.getNewPassword());
-//                return ResponseEntity.ok(Map.of("message", message));
-//            } catch (RuntimeException e) {
-//                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-//                return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-//            }
-//        }
-//    }
 }

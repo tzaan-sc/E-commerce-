@@ -1,36 +1,34 @@
 package com.ecommerce.backend.service.auth;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.RequiredArgsConstructor;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class EmailService {
 
-    @Autowired
-    private JavaMailSender mailSender;
+    // ✅ Đã bật lại JavaMailSender
+    private final JavaMailSender javaMailSender;
 
-    @Value("${spring.mail.from}")  // email đã verify trên SendGrid
-    private String fromEmail;
+    public void sendEmail(String to, String subject, String text) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom("nthiencntt2311089@student.ctuet.edu.vn"); // Email người gửi (chỉ để hiển thị)
+            message.setTo(to);
+            message.setSubject(subject);
+            message.setText(text);
 
-    public void sendPasswordResetEmail(String toEmail, String token) {
-        String subject = "Đặt lại mật khẩu của bạn";
-        String resetLink = "http://localhost:3000/reset-password?token=" + token;
+            // Gửi mail thật
+            javaMailSender.send(message);
+            System.out.println("✅ Đã gửi email thành công đến: " + to);
 
-        String body = "Xin chào,\n\n"
-                + "Bạn vừa yêu cầu đặt lại mật khẩu.\n"
-                + "Vui lòng nhấp vào liên kết sau để đặt lại mật khẩu của bạn:\n"
-                + resetLink + "\n\n"
-                + "Nếu bạn không yêu cầu, vui lòng bỏ qua email này.";
-
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(fromEmail);
-        message.setTo(toEmail);
-        message.setSubject(subject);
-        message.setText(body);
-
-        mailSender.send(message);
+        } catch (Exception e) {
+            System.err.println("❌ Lỗi khi gửi email: " + e.getMessage());
+            e.printStackTrace();
+            // Ném lỗi ra để Controller biết đường trả về 400
+            throw new RuntimeException("Không thể gửi email, vui lòng kiểm tra lại cấu hình!");
+        }
     }
 }

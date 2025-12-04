@@ -323,30 +323,38 @@ $shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
 }
 
 // Table Styles
-// --- CẬP NHẬT PHẦN TABLE ---
+// --- CẬP NHẬT PHẦN TABLE: QUAN TRỌNG CHO FIXED LAYOUT ---
 .table-container {
   overflow-x: auto;
-  border: 1px solid #c1c4c7; // Viền bao quanh container
+  border: 1px solid #c1c4c7;
   border-radius: 0.5rem;
+  background-color: #fff;
 }
 
 .data-table {
   width: 100%;
-  border-collapse: collapse; // Quan trọng: Gộp viền để nét mảnh và liền mạch
+  border-collapse: collapse;
+  
+  // 👇 QUAN TRỌNG: Khóa layout bảng, giúp cột trên dưới thẳng hàng
+  table-layout: fixed; 
 
   thead {
-    background-color: #c1c4c7;
-    border-bottom: 3px solid #d1d5db; // Viền đậm dưới header
+    background-color: #e5e7eb; // Màu header đậm hơn chút
+    border-bottom: 2px solid #d1d5db;
+
+    tr {
+      height: 50px; // Cố định chiều cao header
+    }
 
     tr th {
-      padding: 0.85rem 1rem;
-      text-align: center; // (Cũ là left) Căn giữa chiều ngang
+      padding: 0 1rem;
+      text-align: center;
       vertical-align: middle;
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: #374151;
-      white-space: nowrap;
-      border-right: 1px solid #c1c4c7; // Viền ngăn cách cột (tùy chọn)
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #1f2937;
+      white-space: nowrap; // Không xuống dòng tiêu đề
+      border-right: 1px solid #d1d5db;
 
       &:last-child {
         border-right: none;
@@ -356,33 +364,58 @@ $shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
 
   tbody {
     tr {
-      border-bottom: 1px solid #c1c4c7; // Viền ngăn cách các hàng
-      transition: all 0.2s ease;
+      border-bottom: 1px solid #e5e7eb;
+      transition: background-color 0.2s ease;
+      
+      // 👇 QUAN TRỌNG: Khóa chiều cao dòng để không bị giật layout
+      height: 90px; 
 
       &:last-child {
         border-bottom: none;
       }
 
       &:hover {
-        background-color: #f3f4f6; // Màu nền khi di chuột vào
+        background-color: #f9fafb;
       }
 
       td {
-        padding: 0.85rem 1rem;
-        color: #1f2937;
-        border-right: 1px solid #c1c4c7; // Viền ngăn cách cột (mờ hơn header)
-        text-align: center; // Căn giữa chiều ngang
-        vertical-align: middle; // Căn giữa chiều dọc
+        padding: 0.5rem 1rem;
+        color: #374151;
+        border-right: 1px solid #e5e7eb;
+        text-align: center;
+        vertical-align: middle;
+        font-size: 0.9rem;
+        
+        // Tự động cắt chữ nếu quá dài (kết hợp với width cứng ở JS)
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+
         &:last-child {
           border-right: none;
-        }
-
-        &.font-medium {
-          font-weight: 500;
+          overflow: visible; // Để nút bấm không bị cắt
         }
       }
     }
   }
+}
+
+// --- Class cho khung chứa ảnh trong bảng ---
+.table-img-wrapper {
+    width: 80px;
+    height: 60px;
+    background: #f3f4f6;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 0 auto; // Căn giữa
+    border: 1px solid #e5e7eb;
+    
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain; // Giữ tỉ lệ ảnh
+        display: block;
+    }
 }
 
 // --- THÊM CLASS CHO KHUNG CẬP NHẬT TRẠNG THÁI TRONG MODAL ---
@@ -392,7 +425,7 @@ $shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
   background: #f9fafb;
   padding: 1.25rem;
   border-radius: 0.5rem;
-  border: 1px solid #d1d5db; // Viền đậm hơn cho khung trạng thái
+  border: 1px solid #d1d5db;
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 
   h4 {
@@ -430,15 +463,19 @@ $shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
 .action-buttons {
   display: flex;
   gap: 0.5rem;
+  justify-content: center; // Căn giữa nút hành động
 }
 
 .action-btn {
   padding: 0.5rem;
-  border: none;
+  border: 1px solid transparent; // Tránh nhảy size khi hover
   background: transparent;
   border-radius: $border-radius;
   cursor: pointer;
   transition: $transition;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 
   &--sm {
     padding: 0.25rem;
@@ -446,17 +483,19 @@ $shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
 
   &--edit {
     color: $primary-color;
-
+    background-color: #eff6ff;
     &:hover {
-      background-color: rgba($primary-color, 0.1);
+      background-color: $primary-color;
+      color: white;
     }
   }
 
   &--delete {
     color: $danger-color;
-
+    background-color: #fef2f2;
     &:hover {
-      background-color: rgba($danger-color, 0.1);
+      background-color: $danger-color;
+      color: white;
     }
   }
 }
@@ -474,8 +513,6 @@ $shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
 }
 
 // Badge Styles
-// --- Thay thế đoạn .badge cũ bằng đoạn này ---
-
 .badge {
   display: inline-flex; 
   align-items: center;
@@ -488,42 +525,31 @@ $shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
   line-height: 1;
   min-width: 100px; 
 
-  // 1. COMPLETED (Xanh Lá - Success)
   &--success {
     background-color: #d1fae5 !important; 
     color: #065f46 !important; 
     border: 1px solid #34d399; 
   }
-
-  // 2. PENDING (Vàng Cam - Warning)
   &--warning {
     background-color: #fef3c7 !important; 
     color: #92400e !important; 
     border: 1px solid #f59e0b; 
   }
-
-  // 3. CANCELLED (Đỏ - Danger)
   &--danger {
     background-color: #fee2e2 !important;
     color: #991b1b !important; 
     border: 1px solid #f87171; 
   }
-
-  // 4. SHIPPING (Xanh Dương - Info)
   &--info {
     background-color: #dbeafe !important;
     color: #1e40af !important; 
     border: 1px solid #60a5fa; 
   }
-
-  // 5. PROCESSING (Tím/Chàm - Primary)
   &--primary {
     background-color: #e0e7ff !important; 
     color: #3730a3 !important; 
     border: 1px solid #818cf8; 
   }
-
-  // 6. SECONDARY (Mặc định/Xám - CONFIRMED)
   &--secondary {
     background-color: $bg-gray-100 !important;
     color: $text-gray-800 !important;
@@ -532,7 +558,6 @@ $shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
 }
 
 // Search Box Styles
-// --- KHUNG TÌM KIẾM (ĐẬM ĐÀ HƠN) ---
 .search-box {
   position: relative;
   flex: 1;
@@ -540,44 +565,38 @@ $shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
 
   &__icon {
     position: absolute;
-    left: 1rem; // Đẩy icon vào sâu hơn chút
+    left: 1rem;
     top: 50%;
     transform: translateY(-50%);
-    color: #4b5563; // 🟢 Màu icon đậm hơn (Gray-600) thay vì màu nhạt cũ
-    pointer-events: none; // Cho phép bấm xuyên qua icon
+    color: #4b5563;
+    pointer-events: none;
     z-index: 1;
   }
 
   &__input {
     width: 100%;
-    // Tăng padding-left để chữ không đè lên icon
     padding: 0.65rem 1rem 0.65rem 3rem; 
-    
-    // 🟢 VIỀN ĐẬM: Dày 2px và màu xám rõ (#d1d5db)
     border: 2px solid #d1d5db; 
-    border-radius: 0.5rem; // Bo góc vừa phải
-    
+    border-radius: 0.5rem; 
     font-size: 0.9rem;
-    font-weight: 500; // Chữ nhập vào đậm hơn
-    color: #111827; // Màu chữ đen gần như tuyệt đối
+    font-weight: 500;
+    color: #111827;
     background-color: #fff;
     transition: all 0.2s ease-in-out;
 
     &::placeholder {
-      color: #9ca3af; // Màu placeholder xám vừa phải
+      color: #9ca3af;
       font-weight: 400;
     }
 
-    // Khi di chuột vào -> Viền tối hơn nữa
     &:hover {
       border-color: #9ca3af; 
     }
 
-    // Khi bấm vào nhập liệu -> Viền xanh và bóng đổ
     &:focus {
       outline: none;
-      border-color: $primary-color; // Màu xanh chủ đạo (biến $primary-color của bạn)
-      box-shadow: 0 0 0 4px rgba($primary-color, 0.15); // Hiệu ứng "glow" quanh viền
+      border-color: $primary-color;
+      box-shadow: 0 0 0 4px rgba($primary-color, 0.15);
     }
   }
 }
@@ -673,12 +692,19 @@ $shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
   .search-box {
     max-width: 100%;
   }
+  
+  // Responsive Table
+  .table-container {
+    overflow-x: scroll;
+  }
+  .data-table {
+     min-width: 800px; // Đảm bảo bảng không bị bóp quá nhỏ trên mobile
+  }
 }
 
 @media (max-width: 480px) {
   .data-table {
     font-size: 0.75rem;
-
     thead tr th,
     tbody tr td {
       padding: 0.5rem;
@@ -689,9 +715,10 @@ $shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
     font-size: 1.5rem;
   }
 }
-//product
+
+// Product Page Specific
 .btn.btn--primary {
-  background-color: #1e90ff !important;  /* bắt buộc override */
+  background-color: #1e90ff !important; 
   color: #fff !important;
   border: none;
   padding: 0.6rem 1.2rem;
@@ -712,7 +739,7 @@ $shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.45); // nền mờ
+  background: rgba(0, 0, 0, 0.45); 
   display: flex;
   justify-content: center;
   align-items: center;
@@ -726,8 +753,8 @@ $shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
   max-height: 90vh;
   overflow-y: auto;
   background: white;
-  border-radius: $border-radius-xl;   // dùng biến của bạn
-  box-shadow: $shadow-xl; // bóng lớn
+  border-radius: $border-radius-xl;
+  box-shadow: $shadow-xl;
   padding: 2rem;
   animation: popup 0.25s ease-out;
 
@@ -742,39 +769,32 @@ $shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
   }
 
   .modal-header {
-  display: flex;
-  justify-content: space-between; // tiêu đề bên trái, X bên phải
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    
+    h2 { margin: 0; }
+  }
 
-.modal-header h2 {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: $text-gray-800;
-  margin: 0;
-}
+  .close-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    color: $text-gray-600;
+    transition: $transition;
 
-.close-btn {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  color: $text-gray-600;
-  transition: $transition;
-
-  &:hover {
-    color: $danger-color;
-    transform: scale(1.2);
+    &:hover {
+      color: $danger-color;
+      transform: scale(1.2);
+    }
   }
 }
 
-}
-
-// Input styling đồng bộ hệ thống
 .modal-input,
 .modal-select,
 .modal-textarea {
@@ -786,6 +806,7 @@ $shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
   background: white;
   color: $text-gray-800;
   transition: $transition;
+  box-sizing: border-box; // Quan trọng
 
   &:focus {
     outline: none;
@@ -803,23 +824,34 @@ $shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
   resize: vertical;
 }
 
-// Form layout
 .modal-form {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
 }
 
-.modal-row {
-  display: flex;
-  gap: 1rem;
+.modal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; // Chia 2 cột
+    gap: 1.25rem;
 
-  .modal-col {
-    flex: 1;
-  }
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        
+        label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: $text-gray-800;
+        }
+    }
+
+    .form-full {
+        grid-column: 1 / -1; // Chiếm hết dòng
+    }
 }
 
-// Buttons
 .modal-actions {
   margin-top: 1.5rem;
   display: flex;
@@ -834,6 +866,7 @@ $shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
     border: 1px solid $border-gray;
     font-weight: 500;
     transition: $transition;
+    cursor: pointer;
 
     &:hover {
       background: $bg-gray-50;
@@ -847,6 +880,8 @@ $shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
     border-radius: $border-radius-lg;
     font-weight: 500;
     transition: $transition;
+    border: none;
+    cursor: pointer;
 
     &:hover {
       background: $primary-hover;
@@ -854,7 +889,6 @@ $shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
   }
 }
 
-// Animations
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }

@@ -1,14 +1,16 @@
-// =========================================
-// 1. VARIABLES & MIXINS
-// =========================================
-$primary-color: #0066cc;
-$secondary-color: #005bb5; // Màu đậm hơn chút cho gradient đẹp
-$text-dark: #1a202c;
-$text-gray: #4a5568;
-$text-light: #6b7280;
-$border-color: #e5e7eb;
-$bg-light: #f9fafb;
+@use "sass:map";
 
+// =========================================
+// 1. VARIABLES
+// =========================================
+$primary-color: #2563eb;     // Màu xanh chủ đạo (cho icon, viền)
+$price-color: #d70018;       // Màu đỏ nổi bật (cho Giá & Nút Mua ngay)
+$text-dark: #333333;         // Màu chữ chính
+$text-gray: #707070;         // Màu chữ phụ
+$bg-light: #f9fafb;
+$border-color: #e5e7eb;
+
+// Mixins
 @mixin flex-center {
   display: flex;
   align-items: center;
@@ -16,343 +18,243 @@ $bg-light: #f9fafb;
 }
 
 @mixin transition($property: all) {
-  transition: $property 0.3s ease;
-}
-
-@mixin gradient-bg {
-  background: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%);
+  transition: $property 0.2s ease;
 }
 
 // =========================================
-// 2. MAIN SECTION
+// 2. MAIN STYLES
 // =========================================
 .info-section {
-  padding: 20px 0;
+  padding: 0;
   width: 100%;
-  max-width: 1300px;
-  margin: 40px auto;
-  padding-left: 20px; // Padding an toàn cho mobile
-  padding-right: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 
-  // --- Product Title ---
+  // --- Product Title (Tên sản phẩm) ---
   .product-title {
-    font-size: 32px;
-    font-weight: 700;
+    font-size: 26px;       
+    font-weight: 700;      
     color: $text-dark;
-    margin-bottom: 16px;
-    line-height: 1.2;
-
-    @media (max-width: 768px) {
-      font-size: 24px;
-    }
+    margin-bottom: 15px;
+    line-height: 1.4;
+    text-transform: capitalize; 
   }
 
-  // --- Price Section ---
+  // --- Price Section (Giá tiền) ---
   .price-section {
-    @include gradient-bg;
-    padding: 20px;
-    border-radius: 12px;
-    margin-bottom: 32px;
-    color: white;
-    box-shadow: 0 4px 12px rgba($primary-color, 0.3);
+    display: flex;
+    align-items: flex-end;
+    margin-bottom: 25px;
+    background: transparent; 
+    padding: 0;
+    box-shadow: none;
+    border-radius: 0;
+    border-bottom: 1px solid #eee; 
+    padding-bottom: 15px;
 
     .current-price {
-      font-size: 36px;
-      font-weight: 700;
-      margin-bottom: 8px;
-      @media (max-width: 768px) {
-        font-size: 28px;
-      }
-    }
-
-    .original-price {
-      font-size: 20px;
-      opacity: 0.8;
-      text-decoration: line-through;
-    }
-
-    .stock-status {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: rgba(255, 255, 255, 0.2);
-      padding: 8px 16px;
-      border-radius: 20px;
-      font-size: 14px;
-      font-weight: 600;
-      margin-top: 12px;
-
-      .stock-dot {
-        width: 8px;
-        height: 8px;
-        background: #4ade80;
-        border-radius: 50%;
-        animation: pulse 2s infinite;
-      }
+      font-size: 32px;      
+      font-weight: 700;     
+      color: $price-color;  // ✅ Đã sửa thành biến $price-color
+      line-height: 1;
     }
   }
 
-  // --- Quantity Section ---
+  // --- Quantity Section (Số lượng) ---
   .quantity-section {
     display: flex;
     align-items: center;
-    gap: 16px;
-    margin-bottom: 32px;
+    margin-bottom: 30px;
 
     .quantity-label {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 600;
-      color: $text-gray;
+      color: $text-dark;
+      margin-right: 20px;
+      min-width: 70px;
     }
 
     .quantity-control {
       display: flex;
-      border: 2px solid $border-color;
-      border-radius: 8px;
-      overflow: hidden;
+      align-items: center;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      height: 36px;
+      background: #fff;
 
       .quantity-btn {
-        width: 40px;
-        height: 40px;
+        width: 36px;
+        height: 100%;
         border: none;
-        background: white;
+        background: transparent;
         cursor: pointer;
         font-size: 18px;
-        font-weight: 600;
-        color: $text-dark;
-        @include transition(all);
+        color: #333;
+        @include flex-center;
+        @include transition(background);
 
         &:hover:not(:disabled) {
-          background: $bg-light;
+          background: #f5f5f5;
         }
         &:disabled {
-          opacity: 0.5;
+          color: #ccc;
           cursor: not-allowed;
         }
       }
 
       .quantity-value {
-        width: 60px;
+        width: 50px;
         text-align: center;
-        line-height: 40px;
         font-weight: 600;
-        border-left: 2px solid $border-color;
-        border-right: 2px solid $border-color;
+        font-size: 15px;
+        line-height: 36px;
+        border-left: 1px solid #ddd;
+        border-right: 1px solid #ddd;
+        color: $text-dark;
       }
+    }
+
+    .stock-info {
+      margin-left: 15px;
+      font-size: 14px;
+      color: $text-gray;
+      font-style: italic;
     }
   }
 
-  // --- Action Buttons ---
+  // --- Action Buttons (Nút bấm) ---
   .action-buttons {
     display: flex;
-    gap: 12px;
+    gap: 15px;
     margin-bottom: 40px;
-
-    @media (max-width: 768px) {
-      flex-direction: column;
-    }
+    flex-wrap: wrap;
 
     .btn {
-      flex: 1;
-      padding: 16px 24px;
-      border: none;
-      border-radius: 8px;
+      height: 50px;        
+      padding: 0 20px;
+      border-radius: 6px;   
       font-size: 16px;
-      font-weight: 600;
+      font-weight: 700;     
       cursor: pointer;
       @include flex-center;
       gap: 8px;
+      text-transform: uppercase; 
       @include transition(all);
 
+      // Nút Thêm vào giỏ (Viền xanh, nền trắng)
       &.btn-primary {
-        @include gradient-bg;
-        color: white;
-        box-shadow: 0 4px 12px rgba($primary-color, 0.3);
-        &:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 20px rgba($primary-color, 0.4);
-        }
-      }
-
-      &.btn-secondary {
-        background: white;
+        background: #fff;
+        border: 2px solid $primary-color; // ✅ Đã sửa thành $primary-color
         color: $primary-color;
-        border: 2px solid $primary-color;
-        &:hover {
-          background: rgba($primary-color, 0.05);
-        }
-      }
-
-      &.icon-btn {
-        width: 48px;
-        padding: 0;
-        flex: none;
-      }
-    }
-  }
-
-  // =========================================
-  // 3. TABS SYSTEM (Mô tả & Thông số)
-  // =========================================
-  .product-tabs-container {
-    margin-top: 20px;
-    border-top: 1px solid #e5e7eb;
-    padding-top: 20px;
-
-    // Header Tabs
-    .tabs-header {
-      display: flex;
-      gap: 30px;
-      border-bottom: 1px solid #e5e7eb;
-      margin-bottom: 24px;
-
-      .tab-item {
-        padding: 12px 0;
-        font-size: 18px;
-        font-weight: 600;
-        color: $text-light;
-        cursor: pointer;
-        position: relative;
-        transition: color 0.3s ease;
+        min-width: 220px;
 
         &:hover {
-          color: $primary-color;
+          background-color: #f0f7ff; 
         }
-
-        &.active {
-          color: $primary-color;
-          &::after {
-            content: '';
-            position: absolute;
-            bottom: -1px;
-            left: 0;
-            width: 100%;
-            height: 3px;
-            background-color: $primary-color;
-            border-radius: 3px 3px 0 0;
-          }
-        }
-      }
-    }
-
-    // Nội dung Tabs
-    .tabs-content-area {
-      animation: fadeIn 0.3s ease;
-
-      // --- Tab 1: Mô tả văn bản ---
-      .description-box {
-        color: #333;
-        line-height: 1.8;
-        font-size: 16px;
-
-        h3 {
-          font-size: 20px;
-          font-weight: 700;
-          margin-bottom: 16px;
-          color: $text-dark;
-        }
-        p {
-          margin-bottom: 16px;
-          color: #4b5563;
-          text-align: justify;
+        
+        &:disabled {
+           border-color: #ccc;
+           color: #999;
+           background: #fafafa;
         }
       }
 
-      // --- Tab 2: Card Thông số kỹ thuật (STYLE ĐẸP) ---
+      // Nút Mua ngay (Nền đỏ, chữ trắng)
+      &.btn-secondary {
+        background: $price-color; // ✅ Đã sửa thành $price-color
+        color: white;
+        border: none;
+        flex: 1; 
+        min-width: 180px;
+        box-shadow: 0 4px 8px rgba(215, 0, 24, 0.2);
 
-      .specs-grid {
-        display: flex; // Thay đổi sang flexbox
-        flex-direction: column; // Sắp xếp các item theo chiều dọc
-        gap: 12px; // Khoảng cách giữa các hàng
-        margin-top: 10px; // Điều chỉnh khoảng cách với header tab
+        &:hover {
+          background-color: #b00013; 
+          transform: translateY(-1px);
+        }
 
-        .spec-row {
-          position: relative;
-          display: flex;
-          align-items: center;
-          // justify-content: space-between; // Bỏ cái này để label và value không bị giãn xa nhau
-          padding: 10px 15px; // Giảm padding để nhỏ gọn hơn
-          background: #ffffff; // Nền trắng
-          border-radius: 8px; // Bo góc nhỏ hơn
-          // box-shadow: none; // Bỏ đổ bóng
-          border: 1px solid #f0f0f0; // Viền nhẹ
-          overflow: hidden;
-          // transition: none; // Bỏ hiệu ứng transition
-
-          // Vạch xanh bên trái (bo tròn góc dưới)
-          &::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            left: 0;
-            width: 6px;
-            background-color: $primary-color;
-            // Thêm bo tròn góc dưới bên trái của vạch
-            border-top-left-radius: 8px;
-            border-bottom-left-radius: 8px;
-          }
-
-          // Label (CPU, RAM...)
-          .spec-label {
-            font-weight: 600; // Giảm độ đậm một chút
-            color: #555; // Màu xám đậm vừa
-            // text-transform: none; // Bỏ in hoa nếu bạn không muốn nữa
-            font-size: 0.9rem; // Nhỏ hơn chút
-            letter-spacing: normal; // Bỏ khoảng cách chữ
-            padding-left: 15px; // Khoảng cách với vạch xanh
-            flex-basis: 120px; // Giới hạn độ rộng cho label
-            flex-shrink: 0; // Không cho label bị co lại
-          }
-
-          // Value (Apple M3, 32GB...)
-          .spec-value {
-            font-weight: 500; // Giảm độ đậm một chút
-            color: #333; // Màu đen vừa
-            font-size: 0.9rem; // Nhỏ hơn chút
-            text-align: left; // Căn trái
-            flex-grow: 1; // Cho value chiếm phần còn lại
-          }
-
-          // Bỏ hết hiệu ứng Hover
-          &:hover {
-            transform: none;
+        // Nút Share nhỏ bên cạnh
+        &.icon-btn {
+            flex: 0;
+            min-width: 50px;
+            width: 50px;
+            padding: 0;
+            background: $primary-color; // ✅ Đã sửa thành $primary-color
             box-shadow: none;
-            border-color: #f0f0f0; // Trở lại màu viền ban đầu
-
-            &::before {
-              width: 6px; // Giữ nguyên độ dày
-              background-color: $primary-color; // Giữ nguyên màu
-            }
-
-            .spec-label {
-              color: #555; // Giữ nguyên màu
-            }
-          }
+            &:hover { background-color: #1d4ed8; }
+        }
+        
+        &:disabled {
+           background: #ccc;
+           cursor: not-allowed;
+           box-shadow: none;
+           transform: none;
         }
       }
     }
   }
 }
 
-// Animation
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
+// =========================================
+// 3. TABS SYSTEM
+// =========================================
+.product-tabs-container {
+  margin-top: 30px;
+  border: 1px solid $border-color;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
+  .tabs-header {
+    display: flex;
+    background-color: #f9fafb;
+    border-bottom: 1px solid $border-color;
+    
+    .tab-item {
+      padding: 14px 24px;
+      font-size: 15px;
+      font-weight: 600;
+      color: $text-gray;
+      cursor: pointer;
+      transition: all 0.2s;
+      border-right: 1px solid transparent;
+      border-top: 3px solid transparent;
+
+      &:hover {
+        color: $text-dark;
+        background: rgba(0,0,0,0.02);
+      }
+
+      &.active {
+        background: #fff;
+        color: $primary-color; // ✅ Đã sửa thành $primary-color
+        border-top-color: $primary-color; 
+        border-right-color: $border-color;
+        font-weight: 700;
+      }
+    }
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  .tabs-content-area {
+    padding: 25px;
+
+    .description-box {
+      color: $text-dark;
+      line-height: 1.6;
+      font-size: 15px;
+      text-align: justify;
+      white-space: pre-line;
+    }
+
+    .specs-text-block {
+      .specs-list {
+         p {
+             margin-bottom: 10px;
+             font-size: 14px;
+             line-height: 1.5;
+             color: $text-dark;
+             strong { color: #555; margin-right: 5px; }
+         }
+      }
+    }
   }
 }

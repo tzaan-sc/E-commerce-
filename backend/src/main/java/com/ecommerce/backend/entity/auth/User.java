@@ -2,6 +2,7 @@ package com.ecommerce.backend.entity.auth;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
@@ -40,4 +41,9 @@ public class User {
     @Column(nullable = false)
     @Builder.Default
     private boolean isActive = true;
+    @Column(name = "otp_code")
+    private String otpCode;
+
+    @Column(name = "otp_expiration")
+    private LocalDateTime otpExpiration;
 }

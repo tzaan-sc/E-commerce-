@@ -107,12 +107,12 @@ import com.ecommerce.backend.dto.product.order.OrderDTO;
 import com.ecommerce.backend.dto.product.order.OrderItemDTO;
 import com.ecommerce.backend.entity.auth.User;
 import com.ecommerce.backend.entity.product.Order;
-import com.ecommerce.backend.entity.product.OrderItem; // Import
-import com.ecommerce.backend.entity.product.Product;   // Import
+import com.ecommerce.backend.entity.product.OrderItem;
+import com.ecommerce.backend.entity.product.Product;
 import com.ecommerce.backend.exception.ResourceNotFoundException;
 import com.ecommerce.backend.repository.auth.UserRepository;
 import com.ecommerce.backend.repository.product.OrderRepository;
-import com.ecommerce.backend.repository.product.ProductRepository; // Import Repository
+import com.ecommerce.backend.repository.product.ProductRepository; // Import
 import com.ecommerce.backend.service.product.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -127,9 +127,7 @@ public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
-
-    // 👇 BỔ SUNG ĐỂ CỘNG KHO
-    private final ProductRepository productRepository;
+    private final ProductRepository productRepository; // Inject để thao tác với kho
 
     @Override
     public List<OrderDTO> getOrdersByUsername(String email) {
@@ -139,6 +137,9 @@ public class OrderServiceImpl implements OrderService {
         return orders.stream().map(this::mapOrderToDTO).collect(Collectors.toList());
     }
 
+    // ==============================================================
+    // 1. TRƯỜNG HỢP KHÁCH HÀNG HỦY ĐƠN
+    // ==============================================================
     @Override
     @Transactional
     public OrderDTO cancelOrder(String email, Long orderId) {
@@ -156,21 +157,8 @@ public class OrderServiceImpl implements OrderService {
             throw new IllegalStateException("Order cannot be cancelled in its current state: " + order.getStatus());
         }
 
-        // --- LOGIC CỘNG LẠI KHO (+) ---
-        for (OrderItem item : order.getOrderItems()) {
-            Product product = item.getProduct();
-            if (product != null) {
-                int oldStock = product.getStockQuantity();
-                int quantityToRestore = item.getQuantity();
-
-                // Cộng dồn lại kho
-                product.setStockQuantity(oldStock + quantityToRestore);
-
-                // Lưu xuống DB
-                productRepository.save(product);
-            }
-        }
-        // ------------------------------
+        // 👇 CỘNG LẠI KHO
+        restoreStock(order);
 
         order.setStatus("CANCELLED");
         Order savedOrder = orderRepository.save(order);
@@ -194,7 +182,60 @@ public class OrderServiceImpl implements OrderService {
         return mapOrderToDTO(order);
     }
 
-    // Các hàm bên dưới giữ nguyên
+    // ==============================================================
+    // 2. TRƯỜNG HỢP ADMIN CẬP NHẬT TRẠNG THÁI (BAO GỒM HỦY)
+    // ==============================================================
+    @Override
+    @Transactional
+    public OrderDTO updateOrderStatus(Long orderId, String status) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
+
+        String newStatus = status.toUpperCase();
+        String oldStatus = order.getStatus();
+
+        // 👇 Nếu Admin chuyển sang "CANCELLED" và đơn hàng chưa bị hủy trước đó -> CỘNG LẠI KHO
+        if ("CANCELLED".equals(newStatus) && !"CANCELLED".equals(oldStatus)) {
+            restoreStock(order);
+        }
+
+        order.setStatus(newStatus);
+        Order savedOrder = orderRepository.save(order);
+        return mapOrderToDTO(savedOrder);
+    }
+
+    @Override
+    public List<OrderDTO> getAllOrdersForAdmin(String status) {
+        List<Order> orders;
+        if (status == null || status.equals("all") || status.isEmpty()) {
+            orders = orderRepository.findAllByOrderByCreatedAtDesc();
+        } else {
+            orders = orderRepository.findByStatusOrderByCreatedAtDesc(status.toUpperCase());
+        }
+        return orders.stream().map(this::mapOrderToDTO).collect(Collectors.toList());
+    }
+
+    // ==============================================================
+    // HÀM PHỤ TRỢ
+    // ==============================================================
+
+    // Hàm cộng lại kho (Dùng chung cho cả Admin và Customer)
+    private void restoreStock(Order order) {
+        for (OrderItem item : order.getOrderItems()) {
+            Product product = item.getProduct();
+            if (product != null) {
+                int currentStock = product.getStockQuantity();
+                int quantityToRestore = item.getQuantity();
+
+                // Cộng dồn số lượng
+                product.setStockQuantity(currentStock + quantityToRestore);
+
+                // Lưu xuống DB
+                productRepository.save(product);
+            }
+        }
+    }
+
     private OrderDTO mapOrderToDTO(Order order) {
         List<OrderItemDTO> itemDTOs = order.getOrderItems().stream()
                 .map(item -> {
@@ -225,48 +266,5 @@ public class OrderServiceImpl implements OrderService {
                 .phone(order.getPhone())
                 .shippingAddress(order.getShippingAddress())
                 .build();
-    }
-
-    @Override
-    public List<OrderDTO> getAllOrdersForAdmin(String status) {
-        List<Order> orders;
-        if (status == null || status.equals("all") || status.isEmpty()) {
-            orders = orderRepository.findAllByOrderByCreatedAtDesc();
-        } else {
-            orders = orderRepository.findByStatusOrderByCreatedAtDesc(status.toUpperCase());
-        }
-        return orders.stream().map(this::mapOrderToDTO).collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional // Bắt buộc có để đảm bảo dữ liệu đồng nhất
-    public OrderDTO updateOrderStatus(Long orderId, String status) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
-
-        String newStatus = status.toUpperCase();
-        String oldStatus = order.getStatus();
-
-        // 👇 LOGIC CỘNG KHO KHI ADMIN HỦY ĐƠN
-        // Chỉ thực hiện khi trạng thái MỚI là CANCELLED và trạng thái CŨ CHƯA PHẢI là CANCELLED
-        if ("CANCELLED".equals(newStatus) && !"CANCELLED".equals(oldStatus)) {
-            for (OrderItem item : order.getOrderItems()) {
-                Product product = item.getProduct();
-                if (product != null) {
-                    int currentStock = product.getStockQuantity();
-                    int quantityToRestore = item.getQuantity();
-
-                    // Cộng lại số lượng vào kho
-                    product.setStockQuantity(currentStock + quantityToRestore);
-                    productRepository.save(product);
-                }
-            }
-        }
-
-        // Cập nhật trạng thái đơn hàng
-        order.setStatus(newStatus);
-        Order savedOrder = orderRepository.save(order);
-
-        return mapOrderToDTO(savedOrder);
     }
 }

@@ -2,7 +2,6 @@ package com.ecommerce.backend.entity.auth;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.LocalDateTime;
 
 @Entity
@@ -12,7 +11,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class PasswordResetToken {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -20,15 +18,15 @@ public class PasswordResetToken {
     @Column(nullable = false, unique = true)
     private String token;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @Column(nullable = false)
+    private String otp; // 👇 Lưu mã 6 số (VD: "123456")
+
+    @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @Column(nullable = false)
     private LocalDateTime expiryDate;
-
-    @Column(nullable = false)
-    private boolean used = false;
 
     public boolean isExpired() {
         return LocalDateTime.now().isAfter(expiryDate);
