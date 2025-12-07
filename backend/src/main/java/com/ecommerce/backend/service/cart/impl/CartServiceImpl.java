@@ -30,23 +30,57 @@ public class CartServiceImpl implements CartService {
     @Override
     @Transactional
     public CartItem addToCart(String email, Long productId, Integer quantity) {
+        // 1. Tìm User
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
 
+        // 2. Tìm Product
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", productId));
 
+        // 3. Kiểm tra xem sản phẩm đã có trong giỏ của user chưa
         CartItem cartItem = cartItemRepository.findByUserAndProduct(user, product)
-                .orElse(CartItem.builder()
-                        .user(user)
-                        .product(product)
-                        .quantity(0)
-                        .build());
+                .orElse(null);
 
-        cartItem.setQuantity(cartItem.getQuantity() + quantity);
+        if (cartItem != null) {
+            // === TRƯỜNG HỢP 1: SẢN PHẨM ĐÃ CÓ TRONG GIỎ ===
+            // Logic cộng dồn: Số lượng cũ + Số lượng mới thêm
+            int newQuantity = cartItem.getQuantity() + quantity;
+
+            // Kiểm tra tồn kho trước khi cộng dồn
+            if (newQuantity > product.getStockQuantity()) {
+                throw new RuntimeException("Số lượng yêu cầu vượt quá tồn kho (Còn lại: " + product.getStockQuantity() + ")");
+            }
+
+            cartItem.setQuantity(newQuantity);
+        } else {
+            // === TRƯỜNG HỢP 2: SẢN PHẨM CHƯA CÓ ===
+            // Kiểm tra tồn kho cho lần thêm đầu tiên
+            if (quantity > product.getStockQuantity()) {
+                throw new RuntimeException("Số lượng yêu cầu vượt quá tồn kho (Còn lại: " + product.getStockQuantity() + ")");
+            }
+
+            // Tạo item mới
+            cartItem = CartItem.builder()
+                    .user(user)
+                    .product(product)
+                    .quantity(quantity)
+                    .build();
+        }
+
+        // 4. Lưu vào Database
         return cartItemRepository.save(cartItem);
     }
+    @Override
+    public Long countCartItems(String username) {
+        // 1. Tìm User
+        User user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", username));
 
+        // 2. Gọi Repository để đếm số dòng (SELECT COUNT(*))
+        // Hàm này trả về số loại sản phẩm (VD: 2 dòng), KHÔNG cộng dồn quantity
+        return cartItemRepository.countByUser(user);
+    }
     @Override
     public List<CartItem> getCartItems(String email) {
         User user = userRepository.findByEmail(email)

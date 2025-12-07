@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
-
+    boolean existsBySlug(String slug);
     @Modifying
     @Query("UPDATE Product p SET p.brand = NULL WHERE p.brand.id = :brandId")
     void setBrandToNullByBrandId(Long brandId);

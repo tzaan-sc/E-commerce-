@@ -1,5 +1,4 @@
-// };
- import axios from "axios";
+import axios from "axios";
 
 // Cấu hình base URL cho API
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080/api";
@@ -70,7 +69,7 @@ export const DEFAULT_MENU = [
           { id: 4, name: "Lenovo", path: "/brand/4" },
           { id: 5, name: "Acer", path: "/brand/5" },
           { id: 6, name: "MSI", path: "/brand/6" },
-          { id: 7, name: "Apple", path: "/brand/7" },
+          { id: 7, name: "Mac book", path: "/brand/7" },
         ],
       },
       {
@@ -82,14 +81,20 @@ export const DEFAULT_MENU = [
           { id: 4, name: "Học tập", path: "/usage-purpose/4" },
         ],
       },
+      // 👇👇👇 ĐÃ CẬP NHẬT ID CHO KÍCH THƯỚC MÀN HÌNH 👇👇👇
       {
         name: "KÍCH THƯỚC MÀN HÌNH",
         subchild: [
-          { name: "13-14 inch", path: "#" },
-          { name: "15-16 inch", path: "#" },
-          { name: "17 inch trở lên", path: "#" },
+          { id: 1, name: "13.3 inch", path: "#" },
+          { id: 2, name: "14.0 inch", path: "#" },
+          { id: 3, name: "14.2 inch", path: "#" },
+          { id: 4, name: "15.3 inch", path: "#" },
+          { id: 5, name: "15.6 inch", path: "#" },
+          { id: 6, name: "16.0 inch", path: "#" },
+          { id: 7, name: "17.3 inch", path: "#" },
         ],
       },
+      // 👆👆👆 --------------------------------------- 👆👆👆
     ],
   },
   {
@@ -124,7 +129,7 @@ export const DEFAULT_CUSTOMER_MENU = [
           { id: 4, name: "Lenovo", path: "/customer/home/brand/4" },
           { id: 5, name: "Acer", path: "/customer/home/brand/5" },
           { id: 6, name: "MSI", path: "/customer/home/brand/6" },
-          { id: 7, name: "Apple", path: "/customer/home/brand/7" },
+          { id: 7, name: "Mac book", path: "/customer/home/brand/7" },
         ],
       },
       {
@@ -136,14 +141,20 @@ export const DEFAULT_CUSTOMER_MENU = [
           { id: 4, name: "Học tập", path: "/customer/home/usage-purpose/4" },
         ],
       },
+      // 👇👇👇 ĐÃ CẬP NHẬT ID CHO CUSTOMER MENU 👇👇👇
       {
         name: "KÍCH THƯỚC MÀN HÌNH",
         subchild: [
-          { name: "13-14 inch", path: "#" },
-          { name: "15-16 inch", path: "#" },
-          { name: "17 inch trở lên", path: "#" },
+          { id: 1, name: "13.3 inch", path: "#" },
+          { id: 2, name: "14.0 inch", path: "#" },
+          { id: 3, name: "14.2 inch", path: "#" },
+          { id: 4, name: "15.3 inch", path: "#" },
+          { id: 5, name: "15.6 inch", path: "#" },
+          { id: 6, name: "16.0 inch", path: "#" },
+          { id: 7, name: "17.3 inch", path: "#" },
         ],
       },
+      // 👆👆👆 --------------------------------- 👆👆👆
     ],
   },
   {

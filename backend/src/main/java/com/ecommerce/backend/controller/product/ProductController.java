@@ -4,9 +4,11 @@ import com.ecommerce.backend.dto.product.CreateProductRequest;
 import com.ecommerce.backend.dto.product.UpdateProductRequest;
 import com.ecommerce.backend.entity.product.Product;
 import com.ecommerce.backend.service.product.impl.ProductServiceImpl;
+import com.ecommerce.backend.service.product.impl.ProductImportService; // 👈 1. Import Service Import
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile; // 👈 2. Import MultipartFile
 
 import java.util.List;
 
@@ -16,7 +18,44 @@ import java.util.List;
 public class ProductController {
 
     @Autowired
-    private ProductServiceImpl productService; // DÙNG TRỰC TIẾP IMPL
+    private ProductServiceImpl productService;
+
+    @Autowired
+    private ProductImportService productImportService; // 👈 3. Inject thêm Service Import
+
+    // ==========================================
+    // 👇👇👇 TÍNH NĂNG MỚI: NHẬP EXCEL 👇👇👇
+    // ==========================================
+
+    // API: POST /api/products/import
+    @PostMapping("/import")
+    public ResponseEntity<?> importExcel(@RequestParam("file") MultipartFile file) {
+        // Kiểm tra file có phải Excel không
+        if (!hasExcelFormat(file)) {
+            return ResponseEntity.badRequest().body("Vui lòng upload file Excel (.xlsx)!");
+        }
+
+        try {
+            productImportService.importProducts(file);
+            return ResponseEntity.ok("✅ Nhập sản phẩm thành công!");
+        } catch (Exception e) {
+            e.printStackTrace(); // In lỗi ra console để debug
+            return ResponseEntity.badRequest().body("❌ Lỗi: " + e.getMessage());
+        }
+    }
+
+    // Hàm kiểm tra định dạng file (chỉ chấp nhận .xlsx hoặc .xls)
+    private boolean hasExcelFormat(MultipartFile file) {
+        String contentType = file.getContentType();
+        return contentType != null &&
+                (contentType.equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") ||
+                        contentType.equals("application/vnd.ms-excel"));
+    }
+
+    // ==========================================
+    // 👆👆👆 HẾT PHẦN TÍNH NĂNG MỚI 👆👆👆
+    // ==========================================
+
 
     // 1. GET ALL
     @GetMapping
@@ -24,8 +63,7 @@ public class ProductController {
         return ResponseEntity.ok(productService.getAllProducts());
     }
 
-    // 2. TÌM KIẾM THEO TỪ KHÓA (NEW - ĐƯA LÊN TRƯỚC {id})
-    // GET /api/products/search?keyword=dell
+    // 2. TÌM KIẾM THEO TỪ KHÓA
     @GetMapping("/search")
     public ResponseEntity<List<Product>> searchProducts(
             @RequestParam("keyword") String keyword
@@ -34,13 +72,13 @@ public class ProductController {
         return ResponseEntity.ok(products);
     }
 
-    // 3. GET BY ID (CŨ - BÂY GIỜ ĐÃ NẰM DƯỚI /search VÀ KHÔNG GÂY XUNG ĐỘT)
+    // 3. GET BY ID
     @GetMapping("/{id}")
     public ResponseEntity<?> getById(@PathVariable Long id) {
         return ResponseEntity.ok(productService.getProductById(id));
     }
 
-    // 4. POST
+    // 4. POST (Tạo mới thủ công)
     @PostMapping
     public ResponseEntity<?> create(@RequestBody CreateProductRequest request) {
         return ResponseEntity.ok(productService.createProduct(request));
@@ -73,32 +111,15 @@ public class ProductController {
     }
 
     // 9. FILTER
-    // API: GET /api/products/filter?purpose=4&brand=2
     @GetMapping("/filter")
     public ResponseEntity<List<Product>> filterProducts(
             @RequestParam("purpose") Long purpose,
             @RequestParam("brand") Long brand
     ) {
-        // Gọi service
         return ResponseEntity.ok(productService.filterProducts(purpose, brand));
     }
-    //
-//    @GetMapping("/advanced-filter")
-//    public ResponseEntity<List<Product>> advancedFilter(
-//            @RequestParam(required = false) String keyword,
-//            // ✅ FIX: Sửa List<Long> brandIds
-//            @RequestParam(value = "brandIds", required = false) List<Long> brandIds,
-//            @RequestParam(required = false) Long purposeId,
-//            @RequestParam(required = false) Long screenSizeId,
-//            @RequestParam(required = false) Double minPrice,
-//            @RequestParam(required = false) Double maxPrice,
-//            @RequestParam(required = false) String sortBy
-//    ) {
-//        List<Product> products = productService.advancedFilter(
-//                keyword, brandIds, purposeId, screenSizeId, minPrice, maxPrice, sortBy
-//        );
-//        return ResponseEntity.ok(products);
-//    }
+
+    // 10. ADVANCED FILTER
     @GetMapping("/advanced-filter")
     public ResponseEntity<List<Product>> advancedFilter(
             @RequestParam(required = false) String keyword,

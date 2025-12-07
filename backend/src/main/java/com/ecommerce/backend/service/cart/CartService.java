@@ -25,4 +25,5 @@ public interface CartService {
 
     // Hàm xóa nhiều món
     void removeItemsFromCart(String username, List<Long> cartItemIds);
+    Long countCartItems(String username);
 }

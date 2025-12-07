@@ -1,17 +1,17 @@
-import React, { memo, useState } from "react";
-import { Link } from "react-router-dom";
-import { useAuth } from "../../../hooks/useAuth";
-import "./style.scss";
+import React, { memo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../../../hooks/useAuth';
+import './style.scss';
 
 const RegistrationPage = () => {
   const { register, loading } = useAuth();
   const [formData, setFormData] = useState({
-    username: "",
-    phone: "",
-    email: "",
-    address: "",
-    password: "",
-    confirmPassword: "",
+    username: '',
+    phone: '',
+    email: '',
+    address: '',
+    password: '',
+    confirmPassword: '',
   });
 
   const handleChange = (e) =>
@@ -20,7 +20,7 @@ const RegistrationPage = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
-      alert("❌ Mật khẩu không khớp!");
+      alert('❌ Mật khẩu không khớp!');
       return;
     }
     register(formData);
@@ -32,17 +32,19 @@ const RegistrationPage = () => {
         <div className="col-lg-6 col-md-12 registration-left-panel d-none d-lg-flex">
           <div className="intro-content">
             <h1>Chào mừng bạn đến với chúng tôi!</h1>
-            <p>Đăng kí ngay để khám phá những điều tuyệt vời.</p>
+            <p>Đăng ký ngay để khám phá những điều tuyệt vời.</p>
           </div>
         </div>
 
         <div className="col-lg-6 col-md-12 registration-right-panel d-flex justify-content-center align-items-center">
           <div className="registration-form-container">
-            <h2 className="mb-4 text-center">Đăng Kí Tài Khoản</h2>
+            <h2 className="mb-4 text-center">Đăng Ký Tài Khoản</h2>
 
             <form onSubmit={handleSubmit}>
               <div className="mb-3">
-                <label htmlFor="username" className="form-label">Tên đăng nhập</label>
+                <label htmlFor="username" className="form-label">
+                  Tên đăng nhập
+                </label>
                 <input
                   type="text"
                   className="form-control"
@@ -55,7 +57,9 @@ const RegistrationPage = () => {
               </div>
 
               <div className="mb-3">
-                <label htmlFor="phone" className="form-label">Số điện thoại</label>
+                <label htmlFor="phone" className="form-label">
+                  Số điện thoại
+                </label>
                 <input
                   type="tel"
                   className="form-control"
@@ -68,7 +72,9 @@ const RegistrationPage = () => {
               </div>
 
               <div className="mb-3">
-                <label htmlFor="email" className="form-label">Email</label>
+                <label htmlFor="email" className="form-label">
+                  Email
+                </label>
                 <input
                   type="email"
                   className="form-control"
@@ -81,7 +87,9 @@ const RegistrationPage = () => {
               </div>
 
               <div className="mb-3">
-                <label htmlFor="address" className="form-label">Địa chỉ</label>
+                <label htmlFor="address" className="form-label">
+                  Địa chỉ
+                </label>
                 <input
                   type="text"
                   className="form-control"
@@ -94,7 +102,9 @@ const RegistrationPage = () => {
               </div>
 
               <div className="mb-3">
-                <label htmlFor="password" className="form-label">Mật khẩu</label>
+                <label htmlFor="password" className="form-label">
+                  Mật khẩu
+                </label>
                 <input
                   type="password"
                   className="form-control"
@@ -107,7 +117,9 @@ const RegistrationPage = () => {
               </div>
 
               <div className="mb-4">
-                <label htmlFor="confirmPassword" className="form-label">Nhập lại mật khẩu</label>
+                <label htmlFor="confirmPassword" className="form-label">
+                  Nhập lại mật khẩu
+                </label>
                 <input
                   type="password"
                   className="form-control"
