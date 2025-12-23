@@ -5,6 +5,9 @@ import './style.scss';
 
 const RegistrationPage = () => {
   const { register, loading } = useAuth();
+
+  const [errors, setErrors] = useState({});
+
   const [formData, setFormData] = useState({
     username: '',
     phone: '',
@@ -14,16 +17,46 @@ const RegistrationPage = () => {
     confirmPassword: '',
   });
 
-  const handleChange = (e) =>
+  const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (errors[e.target.name]) {
+      setErrors({ ...errors, [e.target.name]: '' });
+    }
+  };
+
+  // --- CẬP NHẬT HÀM VALIDATE ---
+  const validateForm = () => {
+    const newErrors = {};
+    const { phone, password, confirmPassword } = formData;
+
+    // 1. Validate Số điện thoại
+    const phoneRegex = /^(03|05|07|08|09)+([0-9]{8})$/; // Regex check đầu số VN
+
+    if (!phone.trim()) {
+      newErrors.phone = 'Vui lòng nhập số điện thoại.';
+    } else if (!/^\d+$/.test(phone)) {
+      newErrors.phone = 'Số điện thoại chỉ được chứa số.';
+    } else if (phone.length !== 10) {
+      newErrors.phone = 'Số điện thoại phải có đúng 10 chữ số.';
+    } else if (!phoneRegex.test(phone)) {
+      // 👇 THÔNG BÁO BẠN MUỐN THÊM NẰM Ở ĐÂY
+      newErrors.phone = 'Số điện thoại không hợp lệ (VD: 0912345678).';
+    }
+
+    // 2. Validate Mật khẩu
+    if (password !== confirmPassword) {
+      newErrors.confirmPassword = 'Mật khẩu không khớp!';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
-      alert('❌ Mật khẩu không khớp!');
-      return;
+    if (validateForm()) {
+      register(formData);
     }
-    register(formData);
   };
 
   return (
@@ -56,19 +89,32 @@ const RegistrationPage = () => {
                 />
               </div>
 
+              {/* Input Số điện thoại */}
               <div className="mb-3">
                 <label htmlFor="phone" className="form-label">
                   Số điện thoại
                 </label>
                 <input
                   type="tel"
-                  className="form-control"
+                  className={`form-control ${errors.phone ? 'is-invalid' : ''}`}
                   id="phone"
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
-                  required
                 />
+                {errors.phone && (
+                  <div
+                    className="invalid-feedback"
+                    style={{
+                      display: 'block',
+                      color: 'red',
+                      fontSize: '0.875rem',
+                      marginTop: '0.25rem',
+                    }}
+                  >
+                    {errors.phone}
+                  </div>
+                )}
               </div>
 
               <div className="mb-3">
@@ -122,17 +168,31 @@ const RegistrationPage = () => {
                 </label>
                 <input
                   type="password"
-                  className="form-control"
+                  className={`form-control ${
+                    errors.confirmPassword ? 'is-invalid' : ''
+                  }`}
                   id="confirmPassword"
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   required
                 />
+                {errors.confirmPassword && (
+                  <div
+                    className="invalid-feedback"
+                    style={{ display: 'block', color: 'red' }}
+                  >
+                    {errors.confirmPassword}
+                  </div>
+                )}
               </div>
 
-              <button type="submit" className="btn btn-primary w-100 mb-3">
-                Đăng Kí
+              <button
+                type="submit"
+                className="btn btn-primary w-100 mb-3"
+                disabled={loading}
+              >
+                {loading ? 'Đang xử lý...' : 'Đăng Kí'}
               </button>
 
               <p className="text-center mt-3">
