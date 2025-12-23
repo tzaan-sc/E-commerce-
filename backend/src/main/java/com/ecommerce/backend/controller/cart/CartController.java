@@ -55,31 +55,6 @@ public class CartController {
         return ResponseEntity.ok(cartService.getCartItems(username));
     }
 
-//    @PostMapping("/checkout")
-//    public ResponseEntity<Order> checkout(
-//            @AuthenticationPrincipal UserDetails userDetails // <-- Sửa: Lấy user đã login
-//            // @RequestParam Long userId <-- Xóa
-//    ) {
-//        if (userDetails == null) {
-//            return ResponseEntity.status(401).build();
-//        }
-//        String username = userDetails.getUsername();
-//
-//        // Sửa: Gọi service bằng username
-//        return ResponseEntity.ok(cartService.checkout(username));
-//    }
-
-//    @PostMapping("/checkout-selected")
-//    public ResponseEntity<Order> checkoutSelected(
-//            @AuthenticationPrincipal UserDetails userDetails,
-//            @RequestBody List<Long> cartItemIds // <-- Nhận mảng ID đã chọn
-//    ) {
-//        if (userDetails == null) return ResponseEntity.status(401).build();
-//        String username = userDetails.getUsername();
-//
-//        Order order = cartService.checkoutSelected(username, cartItemIds);
-//        return ResponseEntity.ok(order);
-//    }
         @PostMapping("/checkout-selected")
         public ResponseEntity<Order> checkoutSelected(
                 @AuthenticationPrincipal UserDetails userDetails,
@@ -126,6 +101,18 @@ public class CartController {
         String username = userDetails.getUsername();
         cartService.removeItemsFromCart(username, cartItemIds); // Gọi service
         return ResponseEntity.ok("Items removed");
+    }
+    @GetMapping("/count")
+    public ResponseEntity<Long> countCartItems(
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        // Nếu chưa đăng nhập -> Trả về 0
+        if (userDetails == null) {
+            return ResponseEntity.ok(0L);
+        }
+
+        String username = userDetails.getUsername();
+        return ResponseEntity.ok(cartService.countCartItems(username));
     }
 
 }

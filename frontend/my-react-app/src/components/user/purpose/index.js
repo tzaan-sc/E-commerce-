@@ -1,111 +1,3 @@
-// import { memo, useState } from "react";
-// import { Link } from "react-router-dom";
-// import "./style.scss"
-
-// const Purpose = () => {
-
-// const [categories] = useState([
-//     { id: 1, name: "Laptop Gaming", icon: "🎮", count: "150+" },
-//     { id: 2, name: "Laptop Văn Phòng", icon: "💼", count: "200+" },
-//     { id: 3, name: "Laptop Đồ Họa", icon: "🎨", count: "80+" },
-//     { id: 4, name: "Laptop Sinh Viên", icon: "📚", count: "180+" },
-//     { id: 5, name: "Workstation", icon: "🖥️", count: "50+" }
-//   ]);
-//   return (
-  
-//       <section className="categories">
-//         <div className="container">
-//           <h2 className="section-title">Danh Mục Nổi Bật</h2>
-//           <div className="categories__grid">
-//             {categories.map(cat => (
-//               <Link key={cat.id} to={`/category/${cat.id}`} className="category-card">
-//                 <div className="category-card__icon">{cat.icon}</div>
-//                 <h3>{cat.name}</h3>
-//                 <span>{cat.count} sản phẩm</span>
-//               </Link>
-//             ))}
-//           </div>
-//         </div>
-//       </section>
-      
-//   );
-//   };
-  
-
-
-// export default memo(Purpose);
-// import { memo, useState, useEffect } from "react";
-// import { Link, useSearchParams, useLocation } from "react-router-dom"; 
-// import apiClient from "api/axiosConfig"; 
-// import "./style.scss";
-
-// const Purpose = () => {
-//   const [categories, setCategories] = useState([]);
-//   const [loading, setLoading] = useState(true);
-  
-//   const [searchParams] = useSearchParams();
-//   const activeUsageId = searchParams.get("usage"); // Lấy ID nhu cầu từ URL
-//   const location = useLocation();
-
-//   const isCustomerPage = location.pathname.includes("/customer/home");
-//   const basePath = isCustomerPage ? "/customer/home/laptop" : "/laptop";
-
-//   const getIconByName = (name) => {
-//     const lowerName = name?.toLowerCase() || "";
-//     if (lowerName.includes("gaming")) return "🎮";
-//     if (lowerName.includes("văn phòng")) return "💼";
-//     if (lowerName.includes("đồ họa")) return "🎨";
-//     if (lowerName.includes("học tập")) return "📚";
-//     return "💻"; 
-//   };
-
-//   useEffect(() => {
-//     const fetchPurposes = async () => {
-//       try {
-//         setLoading(true);
-//         const response = await apiClient.get("/usage-purposes");
-//         const mappedData = response.data.map(item => ({
-//             id: item.id,
-//             name: item.name,
-//             icon: getIconByName(item.name),
-//             count: "Xem ngay" 
-//         }));
-//         setCategories(mappedData);
-//       } catch (error) { console.error(error); } 
-//       finally { setLoading(false); }
-//     };
-//     fetchPurposes();
-//   }, []);
-
-//   if (loading) return null; 
-
-//   return (
-//     <section className="categories">
-//       <div className="container">
-//         <h2 className="section-title">Danh Mục Nổi Bật</h2>
-//         <div className="categories__grid">
-//           {categories.map(cat => {
-//              const isActive = activeUsageId && parseInt(activeUsageId) === cat.id;
-
-//              return (
-//               <Link 
-//                 key={cat.id} 
-//                 // Link dạng Query Param
-//                 to={`${basePath}?usage=${cat.id}`}
-//                 className={`category-card ${isActive ? "active" : ""}`}
-//               >
-//                 <div className="category-card__icon">{cat.icon}</div>
-//                 <h3>{cat.name}</h3>
-//                 <span>{cat.count}</span>  
-//               </Link>
-//              );
-//           })}
-//         </div>
-//       </div>
-//     </section>
-//   );
-// };
-
 // export default memo(Purpose);
 import { memo, useState, useEffect } from "react";
 import { Link, useSearchParams, useLocation } from "react-router-dom"; 
@@ -119,7 +11,7 @@ const Purpose = () => {
   // 1. Lấy URL params
   const [searchParams] = useSearchParams();
   const currentBrandId = searchParams.get("brand"); // Giữ lại brand nếu có
-  const currentUsageId = searchParams.get("usage"); // ID nhu cầu đang chọn
+ const currentUsageId = searchParams.get("purpose") || searchParams.get("usage");
 
   const location = useLocation();
   const isCustomerPage = location.pathname.includes("/customer/home");
@@ -201,7 +93,7 @@ const Purpose = () => {
 
              // Toggle Usage: Nếu chưa chọn thì thêm, chọn rồi thì bỏ
              if (!isActive) {
-                 nextPath += `usage=${cat.id}&`;
+                 nextPath += `purpose=${cat.id}&`;
              }
 
              // Giữ lại Brand nếu đang có

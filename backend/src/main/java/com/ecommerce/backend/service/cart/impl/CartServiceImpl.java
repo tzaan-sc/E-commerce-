@@ -30,23 +30,57 @@ public class CartServiceImpl implements CartService {
     @Override
     @Transactional
     public CartItem addToCart(String email, Long productId, Integer quantity) {
+        // 1. Tìm User
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
 
+        // 2. Tìm Product
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", productId));
 
+        // 3. Kiểm tra xem sản phẩm đã có trong giỏ của user chưa
         CartItem cartItem = cartItemRepository.findByUserAndProduct(user, product)
-                .orElse(CartItem.builder()
-                        .user(user)
-                        .product(product)
-                        .quantity(0)
-                        .build());
+                .orElse(null);
 
-        cartItem.setQuantity(cartItem.getQuantity() + quantity);
+        if (cartItem != null) {
+            // === TRƯỜNG HỢP 1: SẢN PHẨM ĐÃ CÓ TRONG GIỎ ===
+            // Logic cộng dồn: Số lượng cũ + Số lượng mới thêm
+            int newQuantity = cartItem.getQuantity() + quantity;
+
+            // Kiểm tra tồn kho trước khi cộng dồn
+            if (newQuantity > product.getStockQuantity()) {
+                throw new RuntimeException("Số lượng yêu cầu vượt quá tồn kho (Còn lại: " + product.getStockQuantity() + ")");
+            }
+
+            cartItem.setQuantity(newQuantity);
+        } else {
+            // === TRƯỜNG HỢP 2: SẢN PHẨM CHƯA CÓ ===
+            // Kiểm tra tồn kho cho lần thêm đầu tiên
+            if (quantity > product.getStockQuantity()) {
+                throw new RuntimeException("Số lượng yêu cầu vượt quá tồn kho (Còn lại: " + product.getStockQuantity() + ")");
+            }
+
+            // Tạo item mới
+            cartItem = CartItem.builder()
+                    .user(user)
+                    .product(product)
+                    .quantity(quantity)
+                    .build();
+        }
+
+        // 4. Lưu vào Database
         return cartItemRepository.save(cartItem);
     }
+    @Override
+    public Long countCartItems(String username) {
+        // 1. Tìm User
+        User user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", username));
 
+        // 2. Gọi Repository để đếm số dòng (SELECT COUNT(*))
+        // Hàm này trả về số loại sản phẩm (VD: 2 dòng), KHÔNG cộng dồn quantity
+        return cartItemRepository.countByUser(user);
+    }
     @Override
     public List<CartItem> getCartItems(String email) {
         User user = userRepository.findByEmail(email)
@@ -55,7 +89,7 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class) // Rollback nếu lỗi trừ kho
+    @Transactional(rollbackFor = Exception.class)
     public Order checkoutSelected(String username, CheckoutRequest request) {
         User user = userRepository.findByEmail(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -63,22 +97,41 @@ public class CartServiceImpl implements CartService {
         List<CartItem> selectedItems = cartItemRepository.findAllById(request.getSelectedItemIds());
 
         if (selectedItems.isEmpty()) {
-            throw new RuntimeException("No items selected");
+            throw new RuntimeException("Chưa có sản phẩm nào được chọn để thanh toán");
         }
 
-        // 👇 1. SỬA: Tính tổng tiền & KIỂM TRA TỒN KHO TRƯỚC
         double totalAmount = 0;
-        for (CartItem item : selectedItems) {
-            Product product = item.getProduct();
-            // Kiểm tra xem đủ hàng không
-            if (product.getStockQuantity() < item.getQuantity()) {
+        Order order = new Order(); // Khởi tạo trước để dùng addItem
+
+        // Duyệt qua từng item để kiểm tra và trừ kho ngay lập tức
+        for (CartItem ci : selectedItems) {
+            Product product = ci.getProduct();
+
+            // KIỂM TRA VÀ TRỪ KHO TỨC THỜI
+            int remainStock = product.getStockQuantity() - ci.getQuantity();
+            if (remainStock < 0) {
                 throw new RuntimeException("Sản phẩm " + product.getName() + " không đủ số lượng trong kho (Còn: " + product.getStockQuantity() + ")");
             }
-            totalAmount += product.getPrice() * item.getQuantity();
+
+            // Cập nhật số lượng mới vào sản phẩm
+            product.setStockQuantity(remainStock);
+            productRepository.save(product);
+
+            // Tính tổng tiền
+            totalAmount += product.getPrice() * ci.getQuantity();
+
+            // Tạo OrderItem
+            OrderItem oi = OrderItem.builder()
+                    .productName(product.getName())
+                    .quantity(ci.getQuantity())
+                    .price(product.getPrice())
+                    .product(product)
+                    .build();
+
+            order.addItem(oi);
         }
 
-        // 2. Tạo đơn hàng mới
-        Order order = new Order();
+        // Thiết lập thông tin đơn hàng
         order.setUser(user);
         order.setStatus("PENDING");
         order.setTotalAmount(totalAmount);
@@ -90,30 +143,7 @@ public class CartServiceImpl implements CartService {
         long currentOrderCount = orderRepository.countByUser(user);
         order.setUserOrderNumber((int) currentOrderCount + 1);
 
-        // 3. CHUYỂN TỪ GIỎ HÀNG SANG CHI TIẾT ĐƠN HÀNG
-        for (CartItem ci : selectedItems) {
-            Product product = ci.getProduct();
-
-            // 👇 LOGIC TRỪ KHO (-) TẠI ĐÂY
-            int newStock = product.getStockQuantity() - ci.getQuantity();
-            product.setStockQuantity(newStock);
-            productRepository.save(product); // Lưu số lượng mới vào DB
-            // ---------------------------------------
-
-            OrderItem oi = OrderItem.builder()
-                    .productName(product.getName())
-                    .quantity(ci.getQuantity())
-                    .price(product.getPrice())
-                    .product(product)
-                    .build();
-
-            order.addItem(oi);
-        }
-
-        // 4. Lưu đơn hàng
         Order savedOrder = orderRepository.save(order);
-
-        // 5. Xóa các món đã mua khỏi giỏ hàng
         cartItemRepository.deleteAll(selectedItems);
 
         return savedOrder;

@@ -22,6 +22,7 @@ import AdminDashboard from "pages/admin/dashboardPage";
 import SearchPage from "./components/page/searchPage";  
 import ForgotPasswordPage from "./components/page/forgotPasswordPage";
 import ResetPasswordPage from "./components/page/forgotPasswordPage"; 
+import ProtectedRoute from "./components/ProtectedRoute"; // 1. Import cái này vào
 // ROUTER CHÍNH
 // ========================
 const RouterCustom = () => {
@@ -44,12 +45,29 @@ const RouterCustom = () => {
       {/* ====================== ADMIN ROUTES ====================== */}
 
       {/* Các route admin cần layout */}
-      <Route
+      {/* <Route
         path={ROUTERS.ADMIN.DASHBOARD}
         element={<AdminDashboard />}
-      ></Route>
+      ></Route> */}
+      <Route
+        path={ROUTERS.ADMIN.DASHBOARD}
+        element={
+          <ProtectedRoute roles={["ADMIN"]}> {/* 2. Bọc lại và quy định Role là ADMIN */}
+            <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
 
-      <Route path="/customer/home" element={<CustomerLayout />}>
+
+      {/* <Route path="/customer/home" element={<CustomerLayout />}> */}
+      <Route 
+        path="/customer/home" 
+        element={
+          <ProtectedRoute roles={["CUSTOMER"]}> {/* Quy định Role là CUSTOMER */}
+            <CustomerLayout />
+          </ProtectedRoute>
+        }
+      >
         <Route index element={<HomePage />} />
         <Route path="thong-tin-ca-nhan" element={<ProfilePage />} />
         <Route path="don-mua" element={<MyOrdersPage />} />

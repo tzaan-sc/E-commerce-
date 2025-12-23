@@ -13,11 +13,11 @@ export const CartProvider = ({ children }) => {
       const response = await apiClient.get("/cart"); 
       const cartItems = response.data;
 
-      // Cách 1: Đếm tổng số sản phẩm (VD: 2 cái áo + 3 cái quần = 5)
-      const totalCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+      // // Cách 1: Đếm tổng số sản phẩm (VD: 2 cái áo + 3 cái quần = 5)
+      // const totalCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
       
       // Cách 2: Đếm số loại sản phẩm (VD: 2 cái áo + 3 cái quần = 2 loại)
-      // const totalCount = cartItems.length;
+      const totalCount = cartItems.length;
 
       setCartCount(totalCount);
     } catch (error) {

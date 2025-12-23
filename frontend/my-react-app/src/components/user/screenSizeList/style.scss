@@ -1,0 +1,36 @@
+.screen-sizes {
+  margin-top: 10px;
+
+  &__grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .screen-size-item {
+    display: inline-block;
+    padding: 8px 16px;
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #333;
+    text-decoration: none;
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+
+    &:hover {
+      border-color: #2563eb;
+      color: #2563eb;
+      background-color: #f8fbff;
+    }
+
+    // Trạng thái đang chọn (Active)
+    &.active {
+      border-color: #2563eb;
+      background-color: #2563eb;
+      color: #fff;
+      font-weight: 600;
+    }
+  }
+}

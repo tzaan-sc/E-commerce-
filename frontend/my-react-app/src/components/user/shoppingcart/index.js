@@ -84,6 +84,25 @@ const ShoppingCart = () => {
         } 
     });
   };
+  const getProductImage = (product) => {
+    if (!product) return "https://via.placeholder.com/100x100?text=No+Product";
+
+    // Ưu tiên 1: Lấy ảnh từ list images (Entity ImageProduct)
+    if (product.images && product.images.length > 0) {
+        const firstImg = product.images[0];
+        // Kiểm tra xem backend trả về object hay string
+        const url = firstImg.urlImage || firstImg; 
+        return `http://localhost:8080${url}`;
+    }
+
+    // Ưu tiên 2: Lấy từ trường imageUrl cũ (nếu còn dùng)
+    if (product.imageUrl) {
+        return `http://localhost:8080${product.imageUrl}`;
+    }
+
+    // Cuối cùng: Ảnh placeholder
+    return "https://via.placeholder.com/100x100?text=No+Image";
+  };
 
   if (loading && cartItems.length === 0) return <div>Đang tải...</div>;
 
@@ -103,7 +122,7 @@ const ShoppingCart = () => {
           <div className="cart-item" key={item.id}>
              {/* ... Item render content (Giữ nguyên code cũ) ... */}
              <div className="cart-col select"><input type="checkbox" checked={selectedItems.includes(item.id)} onChange={() => handleSelectItem(item.id)}/></div>
-             <div className="cart-col product"><img src={`http://localhost:8080${item.product?.imageUrl}`} alt="" /><div className="info"><div className="name">{item.product?.name}</div></div></div>
+             <div className="cart-col product"><img src={getProductImage(item.product)} alt={item.product?.name} /><div className="info"><div className="name">{item.product?.name}</div></div></div>
              <div className="cart-col price">{formatPrice(item.product?.price || 0)}</div>
              <div className="cart-col quantity">
                 <button onClick={() => handleUpdateQuantity(item.id, -1)}><AiOutlineMinus /></button><span>{item.quantity}</span><button onClick={() => handleUpdateQuantity(item.id, 1)}><AiOutlinePlus /></button>

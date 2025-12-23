@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom'; // Import useLocation
+import { useLocation, useNavigate } from 'react-router-dom';
 import { User, MapPin, Phone, Mail, CheckCircle, AlertCircle } from 'lucide-react';
 import { checkoutSelected } from "api/cart"; 
 import { updateUserProfile } from "api/user"; 
 import apiClient from "api/axiosConfig";
-import "./style.scss"; // Bạn cần sửa lại CSS file này bỏ class overlay đi
+import "./style.scss"; 
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Lấy dữ liệu được gửi từ trang Giỏ hàng
   const { selectedIds, displayItems, totalAmount } = location.state || {};
 
   const [step, setStep] = useState('form'); 
@@ -19,14 +18,26 @@ const CheckoutPage = () => {
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
 
-  // Nếu người dùng vào thẳng link /checkout mà không qua giỏ hàng thì đá về giỏ hàng
+  // --- HÀM LẤY ẢNH (Giống bên Giỏ Hàng) ---
+  const getProductImage = (product) => {
+    if (!product) return "https://via.placeholder.com/60";
+    if (product.images && product.images.length > 0) {
+        const firstImg = product.images[0];
+        const url = firstImg.urlImage || firstImg;
+        return `http://localhost:8080${url}`;
+    }
+    if (product.imageUrl) {
+        return `http://localhost:8080${product.imageUrl}`;
+    }
+    return "https://via.placeholder.com/60?text=No+Img";
+  };
+
   useEffect(() => {
     if (!selectedIds || selectedIds.length === 0) {
         navigate("/gio-hang");
     }
   }, [selectedIds, navigate]);
 
-  // Lấy thông tin User (Giữ nguyên logic cũ)
   useEffect(() => {
     const fetchLatestUserData = async () => {
       const userStr = localStorage.getItem("user");
@@ -54,11 +65,21 @@ const CheckoutPage = () => {
 
   const formatCurrency = (amount) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
 
-  // ... (Giữ nguyên các hàm validateForm, handleInputChange) ...
-  const validateForm = () => { /* Logic cũ */ const newErrors = {}; if(!formData.fullName.trim()) newErrors.fullName="Nhập họ tên"; if(!formData.phone.trim()) newErrors.phone="Nhập SĐT"; if(!formData.address.trim()) newErrors.address="Nhập địa chỉ"; setErrors(newErrors); return Object.keys(newErrors).length === 0; };
-  const handleInputChange = (e) => { const { name, value } = e.target; setFormData(prev => ({ ...prev, [name]: value })); if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' })); };
+  const validateForm = () => { 
+      const newErrors = {}; 
+      if(!formData.fullName.trim()) newErrors.fullName="Nhập họ tên"; 
+      if(!formData.phone.trim()) newErrors.phone="Nhập SĐT"; 
+      if(!formData.address.trim()) newErrors.address="Nhập địa chỉ"; 
+      setErrors(newErrors); 
+      return Object.keys(newErrors).length === 0; 
+  };
 
-  // Logic chuyển bước (Giữ nguyên)
+  const handleInputChange = (e) => { 
+      const { name, value } = e.target; 
+      setFormData(prev => ({ ...prev, [name]: value })); 
+      if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' })); 
+  };
+
   const handleUpdateUserAndNext = async () => {
     if (!validateForm()) return;
     const hasChanged = formData.fullName !== originalData.fullName || formData.phone !== originalData.phone || formData.address !== originalData.address;
@@ -80,15 +101,12 @@ const CheckoutPage = () => {
       await checkoutSelected(selectedIds, formData); 
       setStep('success');
     } catch (error) {
-      alert('Có lỗi xảy ra!');
+      alert('Có lỗi xảy ra: ' + (error.response?.data?.message || error.message));
     } finally {
       setIsLoading(false);
     }
   };
 
-  // --- RENDER (Đã bỏ overlay/modal) ---
-  
-  // Thay vì dùng class .checkout-overlay, hãy dùng .checkout-page-container (viết CSS cho nó căn giữa đẹp)
   return (
     <div className="checkout-page-container" style={{ padding: "20px", maxWidth: "800px", margin: "0 auto" }}>
       
@@ -101,7 +119,6 @@ const CheckoutPage = () => {
                <AlertCircle size={16}/> Kiểm tra thông tin nhận hàng của bạn.
             </div>
 
-            {/* Các Input Form (Giữ nguyên code cũ) */}
             <div className="form-group">
                 <label>Họ tên:</label>
                 <input type="text" name="fullName" value={formData.fullName} onChange={handleInputChange} className="form-control" />
@@ -135,7 +152,7 @@ const CheckoutPage = () => {
         </div>
       )}
 
-      {/* STEP 2: CONFIRM */}
+      {/* STEP 2: CONFIRM (ĐÃ THÊM ẢNH) */}
       {step === 'confirm' && (
         <div className="checkout-content">
             <h2>Xác Nhận Đơn Hàng</h2>
@@ -150,14 +167,38 @@ const CheckoutPage = () => {
             <h3>Sản phẩm ({displayItems?.length})</h3>
             <div className="order-items">
                 {displayItems?.map(item => (
-                    <div key={item.id} style={{display:'flex', justifyContent:'space-between', borderBottom:'1px dashed #eee', padding:'10px 0'}}>
-                        <span>{item.product?.name} <strong>x {item.quantity}</strong></span>
-                        <span>{formatCurrency((item.product?.price || 0) * item.quantity)}</span>
+                    <div key={item.id} style={{display:'flex', alignItems:'center', justifyContent:'space-between', borderBottom:'1px dashed #eee', padding:'15px 0'}}>
+                        
+                        {/* 👇 PHẦN HIỂN THỊ ẢNH & TÊN */}
+                        <div style={{display:'flex', alignItems:'center', gap:'15px'}}>
+                            <img 
+                                src={getProductImage(item.product)} 
+                                alt={item.product?.name}
+                                style={{
+                                    width: '60px', 
+                                    height: '60px', 
+                                    objectFit: 'contain', 
+                                    border: '1px solid #eee',
+                                    borderRadius: '4px',
+                                    backgroundColor: '#fff'
+                                }}
+                            />
+                            <div>
+                                <div style={{fontWeight:'500', marginBottom:'5px'}}>{item.product?.name}</div>
+                                <div style={{fontSize:'14px', color:'#666'}}>Số lượng: <strong>x{item.quantity}</strong></div>
+                            </div>
+                        </div>
+
+                        {/* PHẦN GIÁ */}
+                        <div style={{fontWeight:'bold', color:'#333'}}>
+                            {formatCurrency((item.product?.price || 0) * item.quantity)}
+                        </div>
                     </div>
                 ))}
             </div>
-            <div style={{textAlign:'right', fontSize:'20px', fontWeight:'bold', marginTop:'20px', color:'red'}}>
-                Tổng: {formatCurrency(totalAmount)}
+            
+            <div style={{textAlign:'right', fontSize:'20px', fontWeight:'bold', marginTop:'20px', color:'#d70018'}}>
+                Tổng cộng: {formatCurrency(totalAmount)}
             </div>
 
             <div className="action-footer" style={{marginTop: '20px', display:'flex', gap:'10px'}}>
