@@ -1,0 +1,75 @@
+.action-bar {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+
+  .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s;
+
+    &.btn-primary {
+      background: #3498db;
+      color: white;
+
+      &:hover {
+        background: #2980b9;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+      }
+    }
+
+    &.btn-danger {
+      background: #e74c3c;
+      color: white;
+
+      &:hover {
+        background: #c0392b;
+      }
+    }
+
+    &.btn-success {
+      background: #27ae60;
+      color: white;
+
+      &:hover {
+        background: #229954;
+      }
+    }
+
+    &.btn-warning {
+      background: #f39c12;
+      color: white;
+
+      &:hover {
+        background: #e67e22;
+      }
+    }
+  }
+
+  .form-input {
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border 0.3s;
+
+    &:focus {
+      outline: none;
+      border-color: #3498db;
+    }
+  }
+
+  select.form-input {
+    cursor: pointer;
+  }
+}

@@ -1,0 +1,228 @@
+// --- 1. BIẾN MÀU SẮC (Theme Hồng Đỏ) ---
+$primary-gradient-start: #ff6b6b;
+$primary-gradient-end: #ee5a6f;
+$text-color: #333;
+$text-light: #666;
+$bg-gray: #f5f5f5;
+$white: #ffffff;
+
+.featured-products {
+  padding: 60px 0;
+  // background: #f8f9fa; // Bỏ comment nếu muốn nền xám nhẹ cho cả vùng
+
+  // --- 2. HEADER SECTION ---
+  .section-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: $text-color;
+    margin-bottom: 40px;
+    text-align: center;
+    position: relative;
+    padding-bottom: 12px;
+    text-transform: uppercase;
+
+    &::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 4px;
+      background: linear-gradient(90deg, $primary-gradient-start, $primary-gradient-end);
+      border-radius: 2px;
+    }
+  }
+
+  // --- 3. GRID LAYOUT (LƯỚI SẢN PHẨM) ---
+  .product-grid {
+    display: grid;
+    // Mặc định Desktop: 4 cột
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+
+    // Laptop nhỏ
+    @media (max-width: 1200px) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    // Tablet
+    @media (max-width: 768px) {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+    // Mobile
+    @media (max-width: 480px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  // --- 4. PRODUCT CARD STYLE ---
+  .product-card {
+    background: $white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid transparent;
+
+    // Hiệu ứng Hover vào Card
+    &:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+      border-color: rgba($primary-gradient-end, 0.3);
+
+      // Zoom ảnh
+      .product-card__image img {
+        transform: scale(1.1);
+      }
+    }
+
+    // -- Ảnh sản phẩm --
+    &__image {
+      position: relative;
+      padding-top: 75%; // Tỷ lệ 4:3
+      overflow: hidden;
+      background: $bg-gray;
+      width: 100%;
+
+      a {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain; // Giữ ảnh không bị méo
+        transition: transform 0.4s ease;
+        padding: 15px; // Padding để ảnh không dính sát lề
+      }
+    }
+
+    // -- Nội dung sản phẩm --
+    &__content {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+
+      // Tên sản phẩm
+      .product-name {
+        margin: 0 0 12px 0;
+        height: 44px; // Chiều cao cố định cho 2 dòng
+        overflow: hidden;
+
+        a {
+          font-size: 15px;
+          font-weight: 600;
+          color: $text-color;
+          text-decoration: none;
+          display: -webkit-box;
+          -webkit-line-clamp: 2; // Cắt dòng thứ 2...
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          line-height: 1.5;
+          transition: color 0.3s ease;
+
+          &:hover {
+            color: $primary-gradient-start;
+          }
+        }
+      }
+
+      // Giá tiền
+      .product-price {
+        font-size: 20px;
+        font-weight: 700;
+        color: $primary-gradient-start;
+        margin-bottom: 15px;
+      }
+
+      // Nút Thêm vào giỏ
+      .btn-add-cart {
+        width: 100%;
+        margin-top: auto;
+        padding: 10px;
+        background: linear-gradient(135deg, $primary-gradient-start, $primary-gradient-end);
+        color: $white;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+
+        svg {
+          font-size: 18px;
+        }
+
+        &:hover {
+          background: linear-gradient(135deg, $primary-gradient-end, $primary-gradient-start); // Đảo màu gradient
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+        }
+
+        &:active {
+          transform: translateY(0);
+        }
+      }
+    }
+  }
+
+  // --- 5. NÚT XEM THÊM (LOAD MORE) ---
+  .view-more-container {
+    margin-top: 50px;
+    display: flex;
+    justify-content: center;
+
+    .btn-view-more {
+      padding: 12px 50px;
+      background-color: $white;
+      color: $primary-gradient-start;
+      border: 2px solid $primary-gradient-start;
+      border-radius: 30px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+
+      &:hover {
+        background: linear-gradient(90deg, $primary-gradient-start, $primary-gradient-end);
+        color: $white;
+        border-color: transparent;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(255, 107, 107, 0.4);
+      }
+
+      &:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      }
+      &.collapse-mode {
+      border-color: #666;
+      color: #666;
+      
+      &:hover {
+        background: #666;
+        color: #fff;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      }
+    }
+    }
+  }
+}

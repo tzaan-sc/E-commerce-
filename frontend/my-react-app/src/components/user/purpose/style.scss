@@ -1,0 +1,115 @@
+// --- 1. BIẾN MÀU SẮC (Theme Hồng Đỏ đồng bộ) ---
+$primary-gradient-start: #ff6b6b;
+$primary-gradient-end: #ee5a6f;
+$hover-color: #ff6b6b;
+
+$black: #333;
+$gray: #666;
+$light-gray: #f5f5f5;
+$white: #ffffff;
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+// --- 2. SECTION TITLE ---
+.section-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: $black;
+  margin-bottom: 40px;
+  position: relative;
+  padding-bottom: 15px;
+  text-transform: uppercase;
+  text-align: center; // Căn giữa tiêu đề cho đẹp
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 4px;
+    background: linear-gradient(90deg, $primary-gradient-start, $primary-gradient-end);
+    border-radius: 2px;
+  }
+}
+
+// --- 3. CATEGORIES SECTION ---
+.categories {
+  padding: 50px 0;
+  background-color: $white;
+
+  &__grid {
+    display: grid;
+    // Tự động chia cột, mỗi cột tối thiểu 180px
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 20px;
+  }
+}
+
+.category-card {
+  background: $white;
+  border: 1px solid #e0e0e0;
+  border-radius: 16px;
+  padding: 30px 20px;
+  text-align: center;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  // --- HIỆU ỨNG HOVER ---
+  &:hover {
+    border-color: $hover-color;
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(255, 107, 107, 0.15); // Bóng màu đỏ nhạt
+
+    .category-card__icon {
+      transform: scale(1.2);
+    }
+    
+    h3 { color: $hover-color; }
+  }
+
+  // --- TRẠNG THÁI ĐANG CHỌN (ACTIVE) ---
+  &.active {
+    background-color: #fff5f5; // Nền hồng nhạt
+    border-color: $hover-color; // Viền đỏ
+    box-shadow: 0 5px 15px rgba(255, 107, 107, 0.2);
+
+    h3 {
+      color: $hover-color;
+      font-weight: 800;
+    }
+    
+    .category-card__icon {
+        transform: scale(1.2);
+    }
+  }
+
+  &__icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+    transition: transform 0.3s;
+  }
+
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: $black;
+    margin: 0 0 8px 0;
+    transition: color 0.3s;
+  }
+
+  span {
+    font-size: 13px;
+    color: $gray;
+  }
+}

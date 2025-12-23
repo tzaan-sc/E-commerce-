@@ -1,0 +1,20 @@
+.product-detail-page {
+  padding-top: 20px;
+
+  .product-content-wrapper {
+    display: flex;
+    flex-direction: column; // Xếp dọc
+    align-items: center;    // Căn giữa nội dung
+  }
+
+  // Giới hạn chiều rộng ảnh để không bị vỡ hình khi xem trên màn hình lớn
+  .product-section-image {
+    width: 100%;
+    max-width: 800px; // Giới hạn độ rộng tối đa của carousel
+    margin: 0 auto 30px auto;
+  }
+
+  .product-section-info {
+    width: 100%;
+  }
+}

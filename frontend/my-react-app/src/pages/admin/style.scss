@@ -1,0 +1,906 @@
+// Variables
+$primary-color: #2563eb;
+$primary-hover: #1d4ed8;
+$secondary-color: #64748b;
+$success-color: #22c55e;
+$warning-color: #eab308;
+$danger-color: #ef4444;
+$info-color: #3b82f6;
+$purple-color: #a855f7;
+$orange-color: #f97316;
+
+$bg-gray-50: #f9fafb;
+$bg-gray-100: #f3f4f6;
+$border-gray: #e5e7eb;
+$text-gray-400:#b9bbc0;
+$text-gray-500: #6b7280;
+$text-gray-600: #4b5563;
+$text-gray-800: #1f2937;
+
+$sidebar-gradient-from: #2563eb;
+$sidebar-gradient-to: #1e40af;
+
+$border-radius: 0.5rem;
+$border-radius-lg: 0.75rem;
+$border-radius-xl: 1rem;
+
+$transition: all 0.3s ease;
+$shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+$shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+$shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+$shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
+
+
+// Mixins
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+// Admin Dashboard Container
+.admin-dashboard {
+  display: flex;
+  height: 100vh;
+  background-color: $bg-gray-100;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+}
+
+// Sidebar Styles
+.sidebar {
+  background: linear-gradient(to bottom, $sidebar-gradient-from, $sidebar-gradient-to);
+  color: white;
+  transition: $transition;
+  display: flex;
+  flex-direction: column;
+  box-shadow: $shadow-lg;
+
+  &--open {
+    width: 16rem;
+  }
+
+  &--closed {
+    width: 5rem;
+  }
+
+  &__header {
+    padding: 1rem;
+    @include flex-between;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  &__title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin: 0;
+  }
+
+  &__toggle {
+    padding: 0.5rem;
+    background: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    border-radius: $border-radius;
+    transition: $transition;
+
+    &:hover {
+      background-color: rgba(29, 78, 216, 0.5);
+    }
+  }
+
+  &__nav {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 3px;
+    }
+  }
+
+  &__menu-group {
+    margin-bottom: 0.5rem;
+  }
+
+  &__menu-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    border-radius: $border-radius-lg;
+    transition: $transition;
+    font-size: 0.95rem;
+    font-weight: 500;
+
+    &:hover {
+      background-color: rgba(29, 78, 216, 0.5);
+    }
+
+    &--active {
+      background-color: #3b82f6;
+      box-shadow: $shadow-lg;
+    }
+  }
+
+  &__menu-text {
+    white-space: nowrap;
+  }
+
+  &__submenu {
+    margin-left: 1rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  &__submenu-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    background: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    border-radius: $border-radius-lg;
+    transition: $transition;
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+
+    &:hover {
+      background-color: rgba(29, 78, 216, 0.5);
+    }
+
+    &--active {
+      background-color: #3b82f6;
+    }
+  }
+
+  &__footer {
+    padding: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  &__logout {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    border-radius: $border-radius-lg;
+    transition: $transition;
+    font-size: 0.95rem;
+
+    &:hover {
+      background-color: rgba(29, 78, 216, 0.5);
+    }
+  }
+}
+
+// Main Content Styles
+.main-content {
+  flex: 1;
+  overflow: auto;
+
+  &__header {
+    background: white;
+    box-shadow: $shadow;
+    border-bottom: 1px solid $border-gray;
+    padding: 1.5rem;
+  }
+
+  &__title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: $text-gray-800;
+    margin: 0;
+  }
+
+  &__body {
+    padding: 1.5rem;
+  }
+}
+
+// Dashboard Styles
+.dashboard {
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+}
+
+.stat-card {
+  background: white;
+  border-radius: $border-radius-xl;
+  box-shadow: $shadow-md;
+  padding: 1.5rem;
+  transition: $transition;
+
+  &:hover {
+    box-shadow: $shadow-xl;
+    transform: translateY(-2px);
+  }
+
+  &__content {
+    @include flex-between;
+  }
+
+  &__label {
+    color: $text-gray-500;
+    font-size: 0.875rem;
+    margin: 0 0 0.5rem 0;
+  }
+
+  &__value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: $text-gray-800;
+    margin: 0;
+  }
+
+  &__icon {
+    padding: 1rem;
+    border-radius: $border-radius-lg;
+    color: white;
+
+    &--blue {
+      background-color: $primary-color;
+    }
+
+    &--green {
+      background-color: $success-color;
+    }
+
+    &--purple {
+      background-color: $purple-color;
+    }
+
+    &--orange {
+      background-color: $orange-color;
+    }
+  }
+}
+
+.recent-orders {
+  background: white;
+  border-radius: $border-radius-xl;
+  box-shadow: $shadow-md;
+  padding: 1.5rem;
+
+  &__title {
+    font-size: 1.25rem;
+    font-weight: bold;
+    margin: 0 0 1rem 0;
+  }
+}
+
+// Page Card Styles
+.page-card {
+  background: white;
+  border-radius: $border-radius-xl;
+  box-shadow: $shadow-md;
+  padding: 1.5rem;
+
+  &__header {
+    @include flex-between;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  &__title {
+    font-size: 1.25rem;
+    font-weight: bold;
+    margin: 0;
+  }
+}
+
+// Table Styles
+// --- CẬP NHẬT PHẦN TABLE: QUAN TRỌNG CHO FIXED LAYOUT ---
+.table-container {
+  overflow-x: auto;
+  border: 1px solid #c1c4c7;
+  border-radius: 0.5rem;
+  background-color: #fff;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  
+  // 👇 QUAN TRỌNG: Khóa layout bảng, giúp cột trên dưới thẳng hàng
+  table-layout: fixed; 
+
+  thead {
+    background-color: #e5e7eb; // Màu header đậm hơn chút
+    border-bottom: 2px solid #d1d5db;
+
+    tr {
+      height: 50px; // Cố định chiều cao header
+    }
+
+    tr th {
+      padding: 0 1rem;
+      text-align: center;
+      vertical-align: middle;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #1f2937;
+      white-space: nowrap; // Không xuống dòng tiêu đề
+      border-right: 1px solid #d1d5db;
+
+      &:last-child {
+        border-right: none;
+      }
+    }
+  }
+
+  tbody {
+    tr {
+      border-bottom: 1px solid #e5e7eb;
+      transition: background-color 0.2s ease;
+      
+      // 👇 QUAN TRỌNG: Khóa chiều cao dòng để không bị giật layout
+      height: 90px; 
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      &:hover {
+        background-color: #f9fafb;
+      }
+
+      td {
+        padding: 0.5rem 1rem;
+        color: #374151;
+        border-right: 1px solid #e5e7eb;
+        text-align: center;
+        vertical-align: middle;
+        font-size: 0.9rem;
+        
+        // Tự động cắt chữ nếu quá dài (kết hợp với width cứng ở JS)
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+
+        &:last-child {
+          border-right: none;
+          overflow: visible; // Để nút bấm không bị cắt
+        }
+      }
+    }
+  }
+}
+
+// --- Class cho khung chứa ảnh trong bảng ---
+.table-img-wrapper {
+    width: 80px;
+    height: 60px;
+    background: #f3f4f6;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 0 auto; // Căn giữa
+    border: 1px solid #e5e7eb;
+    
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain; // Giữ tỉ lệ ảnh
+        display: block;
+    }
+}
+
+// --- THÊM CLASS CHO KHUNG CẬP NHẬT TRẠNG THÁI TRONG MODAL ---
+.status-update-box {
+  flex: 1;
+  min-width: 300px;
+  background: #f9fafb;
+  padding: 1.25rem;
+  border-radius: 0.5rem;
+  border: 1px solid #d1d5db;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+
+  h4 {
+    margin-bottom: 1rem;
+    color: #374151;
+    font-weight: 600;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 0.5rem;
+  }
+}
+
+// Button Styles
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: $border-radius-lg;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: $transition;
+
+  &--primary {
+    background-color: $primary-color;
+    color: white;
+
+    &:hover {
+      background-color: $primary-hover;
+    }
+  }
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center; // Căn giữa nút hành động
+}
+
+.action-btn {
+  padding: 0.5rem;
+  border: 1px solid transparent; // Tránh nhảy size khi hover
+  background: transparent;
+  border-radius: $border-radius;
+  cursor: pointer;
+  transition: $transition;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  &--sm {
+    padding: 0.25rem;
+  }
+
+  &--edit {
+    color: $primary-color;
+    background-color: #eff6ff;
+    &:hover {
+      background-color: $primary-color;
+      color: white;
+    }
+  }
+
+  &--delete {
+    color: $danger-color;
+    background-color: #fef2f2;
+    &:hover {
+      background-color: $danger-color;
+      color: white;
+    }
+  }
+}
+
+.link-btn {
+  background: transparent;
+  border: none;
+  color: $primary-color;
+  cursor: pointer;
+  font-size: 0.875rem;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+// Badge Styles
+.badge {
+  display: inline-flex; 
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  line-height: 1;
+  min-width: 100px; 
+
+  &--success {
+    background-color: #d1fae5 !important; 
+    color: #065f46 !important; 
+    border: 1px solid #34d399; 
+  }
+  &--warning {
+    background-color: #fef3c7 !important; 
+    color: #92400e !important; 
+    border: 1px solid #f59e0b; 
+  }
+  &--danger {
+    background-color: #fee2e2 !important;
+    color: #991b1b !important; 
+    border: 1px solid #f87171; 
+  }
+  &--info {
+    background-color: #dbeafe !important;
+    color: #1e40af !important; 
+    border: 1px solid #60a5fa; 
+  }
+  &--primary {
+    background-color: #e0e7ff !important; 
+    color: #3730a3 !important; 
+    border: 1px solid #818cf8; 
+  }
+  &--secondary {
+    background-color: $bg-gray-100 !important;
+    color: $text-gray-800 !important;
+    border: 1px solid #d1d5db;
+  }
+}
+
+// Search Box Styles
+.search-box {
+  position: relative;
+  flex: 1;
+  max-width: 28rem;
+
+  &__icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #4b5563;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  &__input {
+    width: 100%;
+    padding: 0.65rem 1rem 0.65rem 3rem; 
+    border: 2px solid #d1d5db; 
+    border-radius: 0.5rem; 
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #111827;
+    background-color: #fff;
+    transition: all 0.2s ease-in-out;
+
+    &::placeholder {
+      color: #9ca3af;
+      font-weight: 400;
+    }
+
+    &:hover {
+      border-color: #9ca3af; 
+    }
+
+    &:focus {
+      outline: none;
+      border-color: $primary-color;
+      box-shadow: 0 0 0 4px rgba($primary-color, 0.15);
+    }
+  }
+}
+
+// Select Input Styles
+.select-input {
+  padding: 0.5rem 1rem;
+  border: 1px solid $border-gray;
+  border-radius: $border-radius-lg;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: $transition;
+
+  &:focus {
+    outline: none;
+    border-color: $primary-color;
+    box-shadow: 0 0 0 3px rgba($primary-color, 0.1);
+  }
+}
+
+// Category Grid Styles
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+
+  &--3col {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+}
+
+.category-card {
+  border: 1px solid $border-gray;
+  border-radius: $border-radius-lg;
+  padding: 1.5rem;
+  transition: $transition;
+
+  &:hover {
+    box-shadow: $shadow-lg;
+    transform: translateY(-2px);
+  }
+
+  &__header {
+    @include flex-between;
+    margin-bottom: 1rem;
+  }
+
+  &__title {
+    font-size: 1.125rem;
+    font-weight: bold;
+    margin: 0;
+    color: $text-gray-800;
+  }
+
+  &__count {
+    color: $text-gray-600;
+    font-size: 0.875rem;
+    margin: 0;
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .admin-dashboard {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    &--open,
+    &--closed {
+      width: 100%;
+      height: auto;
+    }
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .category-grid {
+    grid-template-columns: 1fr;
+
+    &--3col {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .page-card__header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-box {
+    max-width: 100%;
+  }
+  
+  // Responsive Table
+  .table-container {
+    overflow-x: scroll;
+  }
+  .data-table {
+     min-width: 800px; // Đảm bảo bảng không bị bóp quá nhỏ trên mobile
+  }
+}
+
+@media (max-width: 480px) {
+  .data-table {
+    font-size: 0.75rem;
+    thead tr th,
+    tbody tr td {
+      padding: 0.5rem;
+    }
+  }
+
+  .stat-card__value {
+    font-size: 1.5rem;
+  }
+}
+
+// Product Page Specific
+.btn.btn--primary {
+  background-color: #1e90ff !important; 
+  color: #fff !important;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  &:hover {
+    background-color: #1c86ee !important;
+  }
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.45); 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  backdrop-filter: blur(2px);
+  animation: fadeIn 0.25s ease-out;
+}
+
+.modal-container {
+  width: 750px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: white;
+  border-radius: $border-radius-xl;
+  box-shadow: $shadow-xl;
+  padding: 2rem;
+  animation: popup 0.25s ease-out;
+
+  h2 {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: $text-gray-800;
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    
+    h2 { margin: 0; }
+  }
+
+  .close-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    color: $text-gray-600;
+    transition: $transition;
+
+    &:hover {
+      color: $danger-color;
+      transform: scale(1.2);
+    }
+  }
+}
+
+.modal-input,
+.modal-select,
+.modal-textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid $text-gray-400;
+  border-radius: $border-radius-lg;
+  font-size: 0.9rem;
+  background: white;
+  color: $text-gray-800;
+  transition: $transition;
+  box-sizing: border-box; // Quan trọng
+
+  &:focus {
+    outline: none;
+    border-color: $primary-color;
+    box-shadow: 0 0 0 3px rgba($primary-color, 0.15);
+  }
+
+  &::placeholder {
+    color: $text-gray-500;
+  }
+}
+
+.modal-textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.modal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; // Chia 2 cột
+    gap: 1.25rem;
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        
+        label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: $text-gray-800;
+        }
+    }
+
+    .form-full {
+        grid-column: 1 / -1; // Chiếm hết dòng
+    }
+}
+
+.modal-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+
+  .btn-cancel {
+    background: $bg-gray-100;
+    color: $text-gray-600;
+    padding: 0.65rem 1.5rem;
+    border-radius: $border-radius-lg;
+    border: 1px solid $border-gray;
+    font-weight: 500;
+    transition: $transition;
+    cursor: pointer;
+
+    &:hover {
+      background: $bg-gray-50;
+    }
+  }
+  
+  .btn-submit {
+    background: $primary-color;
+    color: white;
+    padding: 0.65rem 1.5rem;
+    border-radius: $border-radius-lg;
+    font-weight: 500;
+    transition: $transition;
+    border: none;
+    cursor: pointer;
+
+    &:hover {
+      background: $primary-hover;
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes popup {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

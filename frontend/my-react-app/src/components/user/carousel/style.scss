@@ -1,0 +1,146 @@
+$primary-color: #2563eb;
+$border-color: #e5e7eb;
+
+.product-carousel-wrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  position: sticky;
+  top: 20px;
+
+  // --- 1. ẢNH LỚN ---
+  .main-stage {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1; // Vuông
+    overflow: hidden;
+    border-radius: 8px;
+    background-color: #fff;
+    border: 1px solid $border-color;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .carousel-slide {
+      width: 100%;
+      height: 100%;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      
+      img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+      }
+    }
+
+    // Nút Next/Prev ảnh lớn
+    .carousel-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid $border-color;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      opacity: 0; // Ẩn mặc định
+      z-index: 2;
+      
+      &:hover {
+        background: $primary-color;
+        color: white;
+        border-color: $primary-color;
+      }
+      &.prev { left: 10px; }
+      &.next { right: 10px; }
+    }
+
+    &:hover .carousel-nav {
+        opacity: 1; // Hiện khi hover
+    }
+  }
+
+  // --- 2. THUMBNAILS CONTAINER (MỚI) ---
+  .thumbnail-container {
+      display: flex;
+      align-items: stretch; // Kéo giãn chiều cao nút bằng chiều cao ảnh
+      gap: 8px;
+      width: 100%;
+      justify-content: space-between;
+
+      // Nút điều hướng nhỏ cho Thumbnail
+      .thumb-nav-btn {
+          background: #fff;
+          border: 1px solid $border-color;
+          border-radius: 4px;
+          cursor: pointer;
+          color: #666;
+          padding: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 32px; // Chiều rộng nút
+          // height: auto; // Chiều cao tự động theo container
+          transition: 0.2s;
+          flex-shrink: 0;
+
+          &:hover:not(:disabled) {
+              background: $primary-color;
+              color: white;
+              border-color: $primary-color;
+          }
+          &:disabled {
+              color: #ccc;
+              cursor: default;
+              opacity: 0.5;
+              background: #f9f9f9;
+          }
+      }
+
+      .thumbnail-list {
+          display: grid;
+          grid-template-columns: repeat(5, 1fr); // Luôn hiển thị 5 cột
+          gap: 10px;
+          flex: 1; // Chiếm hết khoảng trống giữa 2 nút
+
+          .thumbnail-item {
+              aspect-ratio: 1/1;
+              border-radius: 6px;
+              overflow: hidden;
+              cursor: pointer;
+              padding: 2px;
+              border: 1px solid $border-color;
+              background: #fff;
+              opacity: 0.6;
+              transition: all 0.2s;
+
+              img {
+                  width: 100%;
+                  height: 100%;
+                  object-fit: contain;
+                  border-radius: 4px;
+              }
+
+              &:hover {
+                  opacity: 1;
+                  border-color: #999;
+              }
+
+              &.active {
+                  opacity: 1;
+                  border-color: $primary-color;
+                  box-shadow: 0 0 0 1px $primary-color;
+              }
+          }
+      }
+  }
+}

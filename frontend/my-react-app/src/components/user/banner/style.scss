@@ -1,0 +1,41 @@
+.dual-carousel {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px; /* khoảng cách giữa 2 khung */
+  margin: 30px auto;
+  max-width: 1310px;
+  flex-wrap: wrap; /* để responsive */
+
+  .carousel-box {
+    width: 630px;
+    height: 200px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .swiper-button-next,
+    .swiper-button-prev {
+      color: #fff;
+      transition: 0.3s;
+      &:hover {
+        color: #ff424e;
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 15px;
+    .carousel-box {
+      width: 90%;
+      height: 150px;
+    }
+  }
+}
