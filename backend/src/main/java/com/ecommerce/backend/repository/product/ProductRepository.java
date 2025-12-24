@@ -15,7 +15,11 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     long countByBrandId(Long brandId);
     long countByUsagePurposeId(Long usagePurposeId);
     long countByScreenSizeId(Long screenSizeId);
+    // 👇 THÊM HÀM NÀY: Kiểm tra tồn tại theo tên
+    boolean existsByName(String name);
 
+    // 👇 THÊM HÀM NÀY: Kiểm tra tồn tại theo tên NHƯNG trừ ID hiện tại ra (Dùng cho Update)
+    boolean existsByNameAndIdNot(String name, Long id);
 
     @Modifying
     @Query("UPDATE Product p SET p.brand = NULL WHERE p.brand.id = :brandId")

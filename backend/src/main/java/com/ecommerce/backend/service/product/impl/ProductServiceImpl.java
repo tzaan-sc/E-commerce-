@@ -280,6 +280,10 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public Product createProduct(CreateProductRequest request) {
+        // 👇 1. KIỂM TRA TRÙNG TÊN TRƯỚC
+        if (productRepository.existsByName(request.getName())) {
+            throw new RuntimeException("Tên sản phẩm '" + request.getName() + "' đã tồn tại! Vui lòng chọn tên khác.");
+        }
 
         Product product = new Product();
 
@@ -340,7 +344,10 @@ public class ProductServiceImpl implements ProductService {
 
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product không tồn tại"));
-
+        // 👇 1. KIỂM TRA TRÙNG TÊN (Nếu tên thay đổi và trùng với SP khác)
+        if (!product.getName().equals(request.getName()) && productRepository.existsByName(request.getName())) {
+            throw new RuntimeException("Tên sản phẩm '" + request.getName() + "' đã được sử dụng bởi sản phẩm khác!");
+        }
         product.setName(request.getName());
         product.setDescription(request.getDescription());
         product.setPrice(request.getPrice());
