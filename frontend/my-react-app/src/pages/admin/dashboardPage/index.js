@@ -2731,6 +2731,7 @@ const AccountsPage = () => {
   );
 };
 
+
 const BrandsPage = () => {
   const {
     data: brands,
@@ -2797,32 +2798,39 @@ const BrandsPage = () => {
     if (window.confirm("Bạn có chắc muốn xóa thương hiệu này?")) {
       const result = await deleteBrand(brandId);
       if (result.success) {
-        alert("Xóa thương hiệu thành công!");
-        setSelectedBrands(selectedBrands.filter((id) => id !== brandId));
+        alert("Xóa thành công!");
+        setSelectedBrands((prev) => prev.filter((id) => id !== brandId));
       } else {
-        alert(`Xóa thất bại: ${result.error}`);
+        alert(result.error); // 👇 Hiện nguyên văn lỗi backend
       }
     }
   };
 
   // Xử lý xóa nhiều thương hiệu
+  // --- XÓA NHIỀU MỤC ---
   const handleDeleteSelected = async () => {
     if (selectedBrands.length === 0) {
-      alert("Vui lòng chọn ít nhất một thương hiệu để xóa!");
+      alert("Vui lòng chọn ít nhất một thương hiệu!");
       return;
     }
+    if (!window.confirm(`Bạn có chắc muốn xóa ${selectedBrands.length} thương hiệu đã chọn?`)) return;
 
-    if (
-      window.confirm(
-        `Bạn có chắc muốn xóa ${selectedBrands.length} thương hiệu đã chọn?`
-      )
-    ) {
-      for (const brandId of selectedBrands) {
-        await deleteBrand(brandId);
+    // Duyệt qua từng item để xóa
+    for (const brandId of selectedBrands) {
+      const result = await deleteBrand(brandId);
+      
+      // 👇 Nếu gặp lỗi thì báo ngay và dừng lại, không xóa tiếp các mục sau
+      if (!result.success) {
+        alert(result.error); 
+        // Load lại danh sách những cái đã xóa được (cập nhật lại state selected)
+        setSelectedBrands(prev => prev.filter(id => brands.find(b => b.id === id))); 
+        return; 
       }
-      alert("Xóa các thương hiệu thành công!");
-      setSelectedBrands([]);
     }
+
+    // Nếu chạy hết vòng lặp mà không lỗi
+    alert("Đã xóa tất cả mục đã chọn thành công!");
+    setSelectedBrands([]);
   };
 
   // Toggle chọn một thương hiệu
@@ -2858,8 +2866,8 @@ const BrandsPage = () => {
           <div className="card-header bg-primary text-white d-flex align-items-center justify-content-between">
             <h5 className="mb-0">
               {editingId
-                ? "✏️ Chỉnh sửa thương hiệu"
-                : "➕ Thêm thương hiệu mới"}
+                ? "Chỉnh sửa thương hiệu"
+                : "Thêm thương hiệu mới"}
             </h5>
             {editingId && (
               <button className="btn btn-light btn-sm" onClick={resetForm}>
@@ -2901,7 +2909,7 @@ const BrandsPage = () => {
 
             <div className="text-center mt-4">
               <button className="btn btn-primary px-4" onClick={handleSubmit}>
-                {editingId ? "💾 Lưu thay đổi" : "➕ Thêm thương hiệu"}
+                {editingId ? "Lưu thay đổi" : "Thêm thương hiệu"}
               </button>
             </div>
           </div>
@@ -3007,7 +3015,7 @@ const BrandsPage = () => {
   );
 };
 
-// const UsagePurposePage = () => {
+
 //   const [purposes, setPurposes] = useState([]);
 //   const [loading, setLoading] = useState(true);
 
@@ -3104,11 +3112,10 @@ const UsagePurposePage = () => {
   const {
     data: purposes,
     loading,
-    error,
     addItem: addPurpose,
     deleteItem: deletePurpose,
     updateItem: updatePurpose,
-  } = useGenericApi("usage-purposes"); // endpoint: /api/usage-purposes
+  } = useGenericApi("usage-purposes");
 
   const [formData, setFormData] = useState({ name: "" });
   const [editingId, setEditingId] = useState(null);
@@ -3125,20 +3132,16 @@ const UsagePurposePage = () => {
       alert("Vui lòng nhập tên nhu cầu sử dụng!");
       return;
     }
-    // UsagePurposePage: Gộp ID và FormData thành một object
-    const payload = { id: editingId, ...formData };
+    const payload = editingId ? { id: editingId, ...formData } : formData;
     const fn = editingId ? updatePurpose(payload) : addPurpose(formData);
-
     const result = await fn;
+
     if (result.success) {
-      alert(
-        editingId
-          ? "Cập nhật nhu cầu sử dụng thành công!"
-          : "Thêm nhu cầu sử dụng thành công!"
-      );
+      alert(editingId ? "Cập nhật thành công!" : "Thêm mới thành công!");
       resetForm();
     } else {
-      alert(`${editingId ? "Cập nhật" : "Thêm"} thất bại: ${result.error}`);
+      // 👇 Hiển thị lỗi chuẩn từ Backend
+      alert(result.error);
     }
   };
 
@@ -3148,6 +3151,7 @@ const UsagePurposePage = () => {
     formRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  // ✅ SỬA LOGIC XÓA 1
   const handleDelete = async (id) => {
     if (!window.confirm("Bạn có chắc muốn xóa nhu cầu này?")) return;
     const result = await deletePurpose(id);
@@ -3155,107 +3159,75 @@ const UsagePurposePage = () => {
       alert("Xóa thành công!");
       setSelectedIds((prev) => prev.filter((x) => x !== id));
     } else {
-      alert(`Xóa thất bại: ${result.error}`);
+      // 👇 Hiển thị lỗi chuẩn
+      alert(result.error);
     }
   };
 
+  // ✅ SỬA LOGIC XÓA NHIỀU
   const handleDeleteSelected = async () => {
     if (selectedIds.length === 0) {
-      alert("Vui lòng chọn ít nhất một nhu cầu để xóa!");
+      alert("Vui lòng chọn ít nhất một mục để xóa!");
       return;
     }
-    if (
-      !window.confirm(
-        `Bạn có chắc muốn xóa ${selectedIds.length} nhu cầu đã chọn?`
-      )
-    )
-      return;
-    for (const id of selectedIds) await deletePurpose(id);
-    alert("Xóa các nhu cầu thành công!");
-    setSelectedIds([]);
+    if (!window.confirm(`Bạn có chắc muốn xóa ${selectedIds.length} mục đã chọn?`)) return;
+
+    let hasError = false;
+    for (const id of selectedIds) {
+      const result = await deletePurpose(id);
+      if (!result.success) {
+        alert(`Không thể xóa (ID: ${id}):\n${result.error}`);
+        hasError = true;
+        break; 
+      }
+    }
+
+    if (!hasError) {
+      alert("Xóa tất cả thành công!");
+      setSelectedIds([]);
+    } else {
+        // Clear những ID đã xóa thành công khỏi danh sách chọn
+        setSelectedIds(prev => prev.filter(id => purposes.find(p => p.id === id)));
+    }
   };
 
-  const toggleSelect = (id) =>
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-
-  const toggleSelectAll = () =>
-    setSelectedIds((prev) =>
-      purposes.length > 0 && prev.length === purposes.length
-        ? []
-        : purposes.map((x) => x.id)
-    );
+  const toggleSelect = (id) => setSelectedIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+  const toggleSelectAll = () => setSelectedIds((prev) => purposes.length > 0 && prev.length === purposes.length ? [] : purposes.map((x) => x.id));
 
   if (loading) return <div className="loading">Đang tải dữ liệu...</div>;
-  if (error) return <div className="error">Lỗi: {error}</div>;
 
   return (
     <div className="page-card">
-      {/* FORM THÊM/SỬA */}
       <div ref={formRef} className="container mt-4 mb-4">
         <div className="card shadow-sm border-0">
           <div className="card-header bg-primary text-white d-flex align-items-center justify-content-between">
-            <h5 className="mb-0">
-              {editingId
-                ? "✏️ Chỉnh sửa nhu cầu sử dụng"
-                : "➕ Thêm nhu cầu sử dụng mới"}
-            </h5>
-            {editingId && (
-              <button className="btn btn-light btn-sm" onClick={resetForm}>
-                Hủy
-              </button>
-            )}
+            <h5 className="mb-0">{editingId ? " Chỉnh sửa nhu cầu" : " Thêm nhu cầu mới"}</h5>
+            {editingId && <button className="btn btn-light btn-sm" onClick={resetForm}>Hủy</button>}
           </div>
           <div className="card-body">
             <div className="row g-3">
               <div className="col-md-12">
                 <label className="form-label fw-semibold">Tên nhu cầu</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="VD: Gaming, Văn phòng, Học tập..."
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                />
+                <input type="text" className="form-control" placeholder="VD: Gaming, Văn phòng..." value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
               </div>
             </div>
             <div className="text-center mt-4">
-              <button className="btn btn-primary px-4" onClick={handleSubmit}>
-                {editingId ? "💾 Lưu thay đổi" : "➕ Thêm nhu cầu"}
-              </button>
+              <button className="btn btn-primary px-4" onClick={handleSubmit}>{editingId ? " Lưu thay đổi" : " Thêm nhu cầu"}</button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* DANH SÁCH */}
       <div className="page-card__header">
         <h3 className="page-card__title">Danh sách nhu cầu sử dụng</h3>
-        {selectedIds.length > 0 && (
-          <button className="btn btn-danger" onClick={handleDeleteSelected}>
-            <Trash2 size={20} /> Xóa đã chọn ({selectedIds.length})
-          </button>
-        )}
+        {selectedIds.length > 0 && <button className="btn btn-danger" onClick={handleDeleteSelected}><Trash2 size={20} /> Xóa đã chọn ({selectedIds.length})</button>}
       </div>
 
       <div className="table-container">
         <table className="data-table">
           <thead>
             <tr>
-              <th style={{ width: "50px" }}>
-                <input
-                  type="checkbox"
-                  checked={
-                    purposes.length > 0 &&
-                    selectedIds.length === purposes.length
-                  }
-                  onChange={toggleSelectAll}
-                  style={{ cursor: "pointer" }}
-                />
-              </th>
+              <th style={{ width: "50px" }}><input type="checkbox" checked={purposes.length > 0 && selectedIds.length === purposes.length} onChange={toggleSelectAll} style={{ cursor: "pointer" }} /></th>
               <th>ID</th>
               <th>Tên nhu cầu</th>
               <th>Số sản phẩm</th>
@@ -3265,46 +3237,231 @@ const UsagePurposePage = () => {
           <tbody>
             {purposes.map((p) => (
               <tr key={p.id}>
-                <td>
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.includes(p.id)}
-                    onChange={() => toggleSelect(p.id)}
-                    style={{ cursor: "pointer" }}
-                  />
-                </td>
+                <td><input type="checkbox" checked={selectedIds.includes(p.id)} onChange={() => toggleSelect(p.id)} style={{ cursor: "pointer" }} /></td>
                 <td className="font-medium">{p.id}</td>
                 <td>{p.name}</td>
                 <td>{p.productCount}</td>
                 <td>
                   <div className="action-buttons">
-                    <button
-                      className="action-btn action-btn--edit"
-                      onClick={() => handleEdit(p)}
-                    >
-                      <Edit size={18} />
-                    </button>
-                    <button
-                      className="action-btn action-btn--delete"
-                      onClick={() => handleDelete(p.id)}
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                    <button className="action-btn action-btn--edit" onClick={() => handleEdit(p)}><Edit size={18} /></button>
+                    <button className="action-btn action-btn--delete" onClick={() => handleDelete(p.id)}><Trash2 size={18} /></button>
                   </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        {purposes.length === 0 && (
-          <p className="empty-message">Chưa có nhu cầu nào được thêm.</p>
-        )}
+        {purposes.length === 0 && !loading && <p className="empty-message">Chưa có nhu cầu nào được thêm.</p>}
       </div>
     </div>
   );
 };
+// const UsagePurposePage = () => {
+//   const {
+//     data: purposes,
+//     loading,
+//     error,
+//     addItem: addPurpose,
+//     deleteItem: deletePurpose,
+//     updateItem: updatePurpose,
+//   } = useGenericApi("usage-purposes"); // endpoint: /api/usage-purposes
 
-// const ScreenSizePage = () => {
+//   const [formData, setFormData] = useState({ name: "" });
+//   const [editingId, setEditingId] = useState(null);
+//   const [selectedIds, setSelectedIds] = useState([]);
+//   const formRef = useRef(null);
+
+//   const resetForm = () => {
+//     setFormData({ name: "" });
+//     setEditingId(null);
+//   };
+
+//   const handleSubmit = async () => {
+//     if (!formData.name.trim()) {
+//       alert("Vui lòng nhập tên nhu cầu sử dụng!");
+//       return;
+//     }
+//     // UsagePurposePage: Gộp ID và FormData thành một object
+//     const payload = { id: editingId, ...formData };
+//     const fn = editingId ? updatePurpose(payload) : addPurpose(formData);
+
+//     const result = await fn;
+//     if (result.success) {
+//       alert(
+//         editingId
+//           ? "Cập nhật nhu cầu sử dụng thành công!"
+//           : "Thêm nhu cầu sử dụng thành công!"
+//       );
+//       resetForm();
+//     } else {
+//       alert(`${editingId ? "Cập nhật" : "Thêm"} thất bại: ${result.error}`);
+//     }
+//   };
+
+//   const handleEdit = (item) => {
+//     setFormData({ name: item.name });
+//     setEditingId(item.id);
+//     formRef.current?.scrollIntoView({ behavior: "smooth" });
+//   };
+
+//   const handleDelete = async (id) => {
+//     if (!window.confirm("Bạn có chắc muốn xóa nhu cầu này?")) return;
+//     const result = await deletePurpose(id);
+//     if (result.success) {
+//       alert("Xóa thành công!");
+//       setSelectedIds((prev) => prev.filter((x) => x !== id));
+//     } else {
+//       alert(`Xóa thất bại: ${result.error}`);
+//     }
+//   };
+
+//   const handleDeleteSelected = async () => {
+//     if (selectedIds.length === 0) {
+//       alert("Vui lòng chọn ít nhất một nhu cầu để xóa!");
+//       return;
+//     }
+//     if (
+//       !window.confirm(
+//         `Bạn có chắc muốn xóa ${selectedIds.length} nhu cầu đã chọn?`
+//       )
+//     )
+//       return;
+//     for (const id of selectedIds) await deletePurpose(id);
+//     alert("Xóa các nhu cầu thành công!");
+//     setSelectedIds([]);
+//   };
+
+//   const toggleSelect = (id) =>
+//     setSelectedIds((prev) =>
+//       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+//     );
+
+//   const toggleSelectAll = () =>
+//     setSelectedIds((prev) =>
+//       purposes.length > 0 && prev.length === purposes.length
+//         ? []
+//         : purposes.map((x) => x.id)
+//     );
+
+//   if (loading) return <div className="loading">Đang tải dữ liệu...</div>;
+//   if (error) return <div className="error">Lỗi: {error}</div>;
+
+//   return (
+//     <div className="page-card">
+//       {/* FORM THÊM/SỬA */}
+//       <div ref={formRef} className="container mt-4 mb-4">
+//         <div className="card shadow-sm border-0">
+//           <div className="card-header bg-primary text-white d-flex align-items-center justify-content-between">
+//             <h5 className="mb-0">
+//               {editingId
+//                 ? " Chỉnh sửa nhu cầu sử dụng"
+//                 : " Thêm nhu cầu sử dụng mới"}
+//             </h5>
+//             {editingId && (
+//               <button className="btn btn-light btn-sm" onClick={resetForm}>
+//                 Hủy
+//               </button>
+//             )}
+//           </div>
+//           <div className="card-body">
+//             <div className="row g-3">
+//               <div className="col-md-12">
+//                 <label className="form-label fw-semibold">Tên nhu cầu</label>
+//                 <input
+//                   type="text"
+//                   className="form-control"
+//                   placeholder="VD: Gaming, Văn phòng, Học tập..."
+//                   value={formData.name}
+//                   onChange={(e) =>
+//                     setFormData({ ...formData, name: e.target.value })
+//                   }
+//                 />
+//               </div>
+//             </div>
+//             <div className="text-center mt-4">
+//               <button className="btn btn-primary px-4" onClick={handleSubmit}>
+//                 {editingId ? " Lưu thay đổi" : " Thêm nhu cầu"}
+//               </button>
+//             </div>
+//           </div>
+//         </div>
+//       </div>
+
+//       {/* DANH SÁCH */}
+//       <div className="page-card__header">
+//         <h3 className="page-card__title">Danh sách nhu cầu sử dụng</h3>
+//         {selectedIds.length > 0 && (
+//           <button className="btn btn-danger" onClick={handleDeleteSelected}>
+//             <Trash2 size={20} /> Xóa đã chọn ({selectedIds.length})
+//           </button>
+//         )}
+//       </div>
+
+//       <div className="table-container">
+//         <table className="data-table">
+//           <thead>
+//             <tr>
+//               <th style={{ width: "50px" }}>
+//                 <input
+//                   type="checkbox"
+//                   checked={
+//                     purposes.length > 0 &&
+//                     selectedIds.length === purposes.length
+//                   }
+//                   onChange={toggleSelectAll}
+//                   style={{ cursor: "pointer" }}
+//                 />
+//               </th>
+//               <th>ID</th>
+//               <th>Tên nhu cầu</th>
+//               <th>Số sản phẩm</th>
+//               <th>Hành động</th>
+//             </tr>
+//           </thead>
+//           <tbody>
+//             {purposes.map((p) => (
+//               <tr key={p.id}>
+//                 <td>
+//                   <input
+//                     type="checkbox"
+//                     checked={selectedIds.includes(p.id)}
+//                     onChange={() => toggleSelect(p.id)}
+//                     style={{ cursor: "pointer" }}
+//                   />
+//                 </td>
+//                 <td className="font-medium">{p.id}</td>
+//                 <td>{p.name}</td>
+//                 <td>{p.productCount}</td>
+//                 <td>
+//                   <div className="action-buttons">
+//                     <button
+//                       className="action-btn action-btn--edit"
+//                       onClick={() => handleEdit(p)}
+//                     >
+//                       <Edit size={18} />
+//                     </button>
+//                     <button
+//                       className="action-btn action-btn--delete"
+//                       onClick={() => handleDelete(p.id)}
+//                     >
+//                       <Trash2 size={18} />
+//                     </button>
+//                   </div>
+//                 </td>
+//               </tr>
+//             ))}
+//           </tbody>
+//         </table>
+//         {purposes.length === 0 && (
+//           <p className="empty-message">Chưa có nhu cầu nào được thêm.</p>
+//         )}
+//       </div>
+//     </div>
+//   );
+// };
+
+
+
 //   const [sizes, setSizes] = useState([]);
 //   const [loading, setLoading] = useState(true);
 
@@ -3395,17 +3552,15 @@ const UsagePurposePage = () => {
 //   );
 // };
 const ScreenSizePage = () => {
-  // 👈 Sử dụng useGenericApi với resource name là 'screen-sizes'
   const {
-    data: sizes, // Đổi tên 'data' thành 'sizes'
+    data: sizes,
     loading,
-    error,
     addItem: addSize,
     deleteItem: deleteSize,
     updateItem: updateSize,
-  } = useGenericApi("screen-sizes"); // endpoint: /api/screen-sizes
+  } = useGenericApi("screen-sizes");
 
-  const [formData, setFormData] = useState({ value: "" }); // Thay 'name' bằng 'value'
+  const [formData, setFormData] = useState({ value: "" });
   const [editingId, setEditingId] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const formRef = useRef(null);
@@ -3415,43 +3570,31 @@ const ScreenSizePage = () => {
     setEditingId(null);
   };
 
-  // Xử lý thêm/sửa kích thước
   const handleSubmit = async () => {
-    const valueAsDouble = parseFloat(formData.value); // Chuyển đổi sang số thực
-
+    const valueAsDouble = parseFloat(formData.value);
     if (isNaN(valueAsDouble) || valueAsDouble <= 0) {
-      alert("Vui lòng nhập kích thước màn hình hợp lệ (là số dương)!");
+      alert("Vui lòng nhập kích thước màn hình hợp lệ!");
       return;
     }
-
-    const payload = {
-      id: editingId, // Chỉ cần cho PUT
-      value: valueAsDouble,
-    };
-
-    const fn = editingId ? updateSize(payload) : addSize(payload); // Truyền payload
+    const payload = { id: editingId, value: valueAsDouble };
+    const fn = editingId ? updateSize(payload) : addSize(payload);
     const result = await fn;
 
     if (result.success) {
-      alert(
-        editingId
-          ? "Cập nhật kích thước thành công!"
-          : "Thêm kích thước thành công!"
-      );
+      alert(editingId ? "Cập nhật thành công!" : "Thêm mới thành công!");
       resetForm();
     } else {
-      alert(`${editingId ? "Cập nhật" : "Thêm"} thất bại: ${result.error}`);
+      alert(result.error);
     }
   };
 
-  // Xử lý sửa - đổ dữ liệu lên form
   const handleEdit = (item) => {
-    setFormData({ value: item.value.toString() }); // Chuyển Double về String cho input
+    setFormData({ value: item.value.toString() });
     setEditingId(item.id);
     formRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Xử lý xóa một kích thước
+  // ✅ SỬA LOGIC XÓA 1
   const handleDelete = async (id) => {
     if (!window.confirm("Bạn có chắc muốn xóa kích thước này?")) return;
     const result = await deleteSize(id);
@@ -3459,119 +3602,74 @@ const ScreenSizePage = () => {
       alert("Xóa thành công!");
       setSelectedIds((prev) => prev.filter((x) => x !== id));
     } else {
-      alert(`Xóa thất bại: ${result.error}`);
+      // 👇 Hiện lỗi chuẩn
+      alert(result.error);
     }
   };
 
-  // Xử lý xóa nhiều kích thước
+  // ✅ SỬA LOGIC XÓA NHIỀU
   const handleDeleteSelected = async () => {
     if (selectedIds.length === 0) {
       alert("Vui lòng chọn ít nhất một mục để xóa!");
       return;
     }
+    if (!window.confirm(`Bạn có chắc muốn xóa ${selectedIds.length} mục đã chọn?`)) return;
 
-    if (
-      !window.confirm(`Bạn có chắc muốn xóa ${selectedIds.length} mục đã chọn?`)
-    )
-      return;
-
-    // Xóa từng mục một
+    let hasError = false;
     for (const id of selectedIds) {
-      await deleteSize(id);
+      const result = await deleteSize(id);
+      if (!result.success) {
+        alert(`Không thể xóa (ID: ${id}):\n${result.error}`);
+        hasError = true;
+        break;
+      }
     }
 
-    alert("Xóa các kích thước thành công!");
-    setSelectedIds([]);
+    if (!hasError) {
+      alert("Xóa tất cả thành công!");
+      setSelectedIds([]);
+    } else {
+       setSelectedIds(prev => prev.filter(id => sizes.find(s => s.id === id)));
+    }
   };
 
-  // Toggle chọn một kích thước
-  const toggleSelect = (id) =>
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-
-  // Toggle chọn tất cả
-  const toggleSelectAll = () =>
-    setSelectedIds((prev) =>
-      sizes.length > 0 && prev.length === sizes.length
-        ? []
-        : sizes.map((x) => x.id)
-    );
+  const toggleSelect = (id) => setSelectedIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+  const toggleSelectAll = () => setSelectedIds((prev) => sizes.length > 0 && prev.length === sizes.length ? [] : sizes.map((x) => x.id));
 
   if (loading) return <div className="loading">Đang tải dữ liệu...</div>;
-  if (error) return <div className="error">Lỗi: {error}</div>;
-
-  // Hàm hiển thị tên kích thước (kết hợp với 'inch')
-  const formatSizeName = (value) => {
-    return `${value} inch`;
-  };
 
   return (
     <div className="page-card">
-      {/* FORM THÊM/SỬA */}
       <div ref={formRef} className="container mt-4 mb-4">
         <div className="card shadow-sm border-0">
           <div className="card-header bg-primary text-white d-flex align-items-center justify-content-between">
-            <h5 className="mb-0">
-              {editingId
-                ? "✏️ Chỉnh sửa kích thước màn hình"
-                : "➕ Thêm kích thước màn hình mới"}
-            </h5>
-            {editingId && (
-              <button className="btn btn-light btn-sm" onClick={resetForm}>
-                Hủy
-              </button>
-            )}
+            <h5 className="mb-0">{editingId ? " Chỉnh sửa kích thước" : " Thêm kích thước mới"}</h5>
+            {editingId && <button className="btn btn-light btn-sm" onClick={resetForm}>Hủy</button>}
           </div>
           <div className="card-body">
             <div className="row g-3">
               <div className="col-md-12">
                 <label className="form-label fw-semibold">Giá trị (inch)</label>
-                <input
-                  type="number" // Đổi sang type number
-                  step="0.1"
-                  className="form-control"
-                  placeholder="VD: 13.3, 15.6, 17.0..."
-                  value={formData.value}
-                  onChange={(e) =>
-                    setFormData({ ...formData, value: e.target.value })
-                  }
-                />
+                <input type="number" step="0.1" className="form-control" placeholder="VD: 15.6" value={formData.value} onChange={(e) => setFormData({ ...formData, value: e.target.value })} />
               </div>
             </div>
             <div className="text-center mt-4">
-              <button className="btn btn-primary px-4" onClick={handleSubmit}>
-                {editingId ? "💾 Lưu thay đổi" : "➕ Thêm kích thước"}
-              </button>
+              <button className="btn btn-primary px-4" onClick={handleSubmit}>{editingId ? " Lưu thay đổi" : " Thêm kích thước"}</button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* DANH SÁCH */}
       <div className="page-card__header">
-        <h3 className="page-card__title">Danh sách kích thước màn hình</h3>
-        {selectedIds.length > 0 && (
-          <button className="btn btn-danger" onClick={handleDeleteSelected}>
-            <Trash2 size={20} /> Xóa đã chọn ({selectedIds.length})
-          </button>
-        )}
+        <h3 className="page-card__title">Danh sách kích thước</h3>
+        {selectedIds.length > 0 && <button className="btn btn-danger" onClick={handleDeleteSelected}><Trash2 size={20} /> Xóa đã chọn ({selectedIds.length})</button>}
       </div>
 
       <div className="table-container">
         <table className="data-table">
           <thead>
             <tr>
-              <th style={{ width: "50px" }}>
-                <input
-                  type="checkbox"
-                  checked={
-                    sizes.length > 0 && selectedIds.length === sizes.length
-                  }
-                  onChange={toggleSelectAll}
-                  style={{ cursor: "pointer" }}
-                />
-              </th>
+              <th style={{ width: "50px" }}><input type="checkbox" checked={sizes.length > 0 && selectedIds.length === sizes.length} onChange={toggleSelectAll} style={{ cursor: "pointer" }} /></th>
               <th>ID</th>
               <th>Kích thước</th>
               <th>Số sản phẩm</th>
@@ -3581,43 +3679,249 @@ const ScreenSizePage = () => {
           <tbody>
             {sizes.map((s) => (
               <tr key={s.id}>
-                <td>
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.includes(s.id)}
-                    onChange={() => toggleSelect(s.id)}
-                    style={{ cursor: "pointer" }}
-                  />
-                </td>
+                <td><input type="checkbox" checked={selectedIds.includes(s.id)} onChange={() => toggleSelect(s.id)} style={{ cursor: "pointer" }} /></td>
                 <td className="font-medium">{s.id}</td>
-                <td>{formatSizeName(s.value)}</td> {/* Hiển thị giá trị */}
+                <td>{s.value} inch</td>
                 <td>{s.productCount}</td>
                 <td>
                   <div className="action-buttons">
-                    <button
-                      className="action-btn action-btn--edit"
-                      onClick={() => handleEdit(s)}
-                    >
-                      <Edit size={18} />
-                    </button>
-                    <button
-                      className="action-btn action-btn--delete"
-                      onClick={() => handleDelete(s.id)}
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                    <button className="action-btn action-btn--edit" onClick={() => handleEdit(s)}><Edit size={18} /></button>
+                    <button className="action-btn action-btn--delete" onClick={() => handleDelete(s.id)}><Trash2 size={18} /></button>
                   </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        {sizes.length === 0 && (
-          <p className="empty-message">Chưa có kích thước nào được thêm.</p>
-        )}
+        {sizes.length === 0 && !loading && <p className="empty-message">Chưa có kích thước nào được thêm.</p>}
       </div>
     </div>
   );
 };
+// const ScreenSizePage = () => {
+//   // 👈 Sử dụng useGenericApi với resource name là 'screen-sizes'
+//   const {
+//     data: sizes, // Đổi tên 'data' thành 'sizes'
+//     loading,
+//     error,
+//     addItem: addSize,
+//     deleteItem: deleteSize,
+//     updateItem: updateSize,
+//   } = useGenericApi("screen-sizes"); // endpoint: /api/screen-sizes
+
+//   const [formData, setFormData] = useState({ value: "" }); // Thay 'name' bằng 'value'
+//   const [editingId, setEditingId] = useState(null);
+//   const [selectedIds, setSelectedIds] = useState([]);
+//   const formRef = useRef(null);
+
+//   const resetForm = () => {
+//     setFormData({ value: "" });
+//     setEditingId(null);
+//   };
+
+//   // Xử lý thêm/sửa kích thước
+//   const handleSubmit = async () => {
+//     const valueAsDouble = parseFloat(formData.value); // Chuyển đổi sang số thực
+
+//     if (isNaN(valueAsDouble) || valueAsDouble <= 0) {
+//       alert("Vui lòng nhập kích thước màn hình hợp lệ (là số dương)!");
+//       return;
+//     }
+
+//     const payload = {
+//       id: editingId, // Chỉ cần cho PUT
+//       value: valueAsDouble,
+//     };
+
+//     const fn = editingId ? updateSize(payload) : addSize(payload); // Truyền payload
+//     const result = await fn;
+
+//     if (result.success) {
+//       alert(
+//         editingId
+//           ? "Cập nhật kích thước thành công!"
+//           : "Thêm kích thước thành công!"
+//       );
+//       resetForm();
+//     } else {
+//       alert(`${editingId ? "Cập nhật" : "Thêm"} thất bại: ${result.error}`);
+//     }
+//   };
+
+//   // Xử lý sửa - đổ dữ liệu lên form
+//   const handleEdit = (item) => {
+//     setFormData({ value: item.value.toString() }); // Chuyển Double về String cho input
+//     setEditingId(item.id);
+//     formRef.current?.scrollIntoView({ behavior: "smooth" });
+//   };
+
+//   // Xử lý xóa một kích thước
+//   const handleDelete = async (id) => {
+//     if (!window.confirm("Bạn có chắc muốn xóa kích thước này?")) return;
+//     const result = await deleteSize(id);
+//     if (result.success) {
+//       alert("Xóa thành công!");
+//       setSelectedIds((prev) => prev.filter((x) => x !== id));
+//     } else {
+//       alert(`Xóa thất bại: ${result.error}`);
+//     }
+//   };
+
+//   // Xử lý xóa nhiều kích thước
+//   const handleDeleteSelected = async () => {
+//     if (selectedIds.length === 0) {
+//       alert("Vui lòng chọn ít nhất một mục để xóa!");
+//       return;
+//     }
+
+//     if (
+//       !window.confirm(`Bạn có chắc muốn xóa ${selectedIds.length} mục đã chọn?`)
+//     )
+//       return;
+
+//     // Xóa từng mục một
+//     for (const id of selectedIds) {
+//       await deleteSize(id);
+//     }
+
+//     alert("Xóa các kích thước thành công!");
+//     setSelectedIds([]);
+//   };
+
+//   // Toggle chọn một kích thước
+//   const toggleSelect = (id) =>
+//     setSelectedIds((prev) =>
+//       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+//     );
+
+//   // Toggle chọn tất cả
+//   const toggleSelectAll = () =>
+//     setSelectedIds((prev) =>
+//       sizes.length > 0 && prev.length === sizes.length
+//         ? []
+//         : sizes.map((x) => x.id)
+//     );
+
+//   if (loading) return <div className="loading">Đang tải dữ liệu...</div>;
+//   if (error) return <div className="error">Lỗi: {error}</div>;
+
+//   // Hàm hiển thị tên kích thước (kết hợp với 'inch')
+//   const formatSizeName = (value) => {
+//     return `${value} inch`;
+//   };
+
+//   return (
+//     <div className="page-card">
+//       {/* FORM THÊM/SỬA */}
+//       <div ref={formRef} className="container mt-4 mb-4">
+//         <div className="card shadow-sm border-0">
+//           <div className="card-header bg-primary text-white d-flex align-items-center justify-content-between">
+//             <h5 className="mb-0">
+//               {editingId
+//                 ? " Chỉnh sửa kích thước màn hình"
+//                 : " Thêm kích thước màn hình mới"}
+//             </h5>
+//             {editingId && (
+//               <button className="btn btn-light btn-sm" onClick={resetForm}>
+//                 Hủy
+//               </button>
+//             )}
+//           </div>
+//           <div className="card-body">
+//             <div className="row g-3">
+//               <div className="col-md-12">
+//                 <label className="form-label fw-semibold">Giá trị (inch)</label>
+//                 <input
+//                   type="number" // Đổi sang type number
+//                   step="0.1"
+//                   className="form-control"
+//                   placeholder="VD: 13.3, 15.6, 17.0..."
+//                   value={formData.value}
+//                   onChange={(e) =>
+//                     setFormData({ ...formData, value: e.target.value })
+//                   }
+//                 />
+//               </div>
+//             </div>
+//             <div className="text-center mt-4">
+//               <button className="btn btn-primary px-4" onClick={handleSubmit}>
+//                 {editingId ? " Lưu thay đổi" : " Thêm kích thước"}
+//               </button>
+//             </div>
+//           </div>
+//         </div>
+//       </div>
+
+//       {/* DANH SÁCH */}
+//       <div className="page-card__header">
+//         <h3 className="page-card__title">Danh sách kích thước màn hình</h3>
+//         {selectedIds.length > 0 && (
+//           <button className="btn btn-danger" onClick={handleDeleteSelected}>
+//             <Trash2 size={20} /> Xóa đã chọn ({selectedIds.length})
+//           </button>
+//         )}
+//       </div>
+
+//       <div className="table-container">
+//         <table className="data-table">
+//           <thead>
+//             <tr>
+//               <th style={{ width: "50px" }}>
+//                 <input
+//                   type="checkbox"
+//                   checked={
+//                     sizes.length > 0 && selectedIds.length === sizes.length
+//                   }
+//                   onChange={toggleSelectAll}
+//                   style={{ cursor: "pointer" }}
+//                 />
+//               </th>
+//               <th>ID</th>
+//               <th>Kích thước</th>
+//               <th>Số sản phẩm</th>
+//               <th>Hành động</th>
+//             </tr>
+//           </thead>
+//           <tbody>
+//             {sizes.map((s) => (
+//               <tr key={s.id}>
+//                 <td>
+//                   <input
+//                     type="checkbox"
+//                     checked={selectedIds.includes(s.id)}
+//                     onChange={() => toggleSelect(s.id)}
+//                     style={{ cursor: "pointer" }}
+//                   />
+//                 </td>
+//                 <td className="font-medium">{s.id}</td>
+//                 <td>{formatSizeName(s.value)}</td> {/* Hiển thị giá trị */}
+//                 <td>{s.productCount}</td>
+//                 <td>
+//                   <div className="action-buttons">
+//                     <button
+//                       className="action-btn action-btn--edit"
+//                       onClick={() => handleEdit(s)}
+//                     >
+//                       <Edit size={18} />
+//                     </button>
+//                     <button
+//                       className="action-btn action-btn--delete"
+//                       onClick={() => handleDelete(s.id)}
+//                     >
+//                       <Trash2 size={18} />
+//                     </button>
+//                   </div>
+//                 </td>
+//               </tr>
+//             ))}
+//           </tbody>
+//         </table>
+//         {sizes.length === 0 && (
+//           <p className="empty-message">Chưa có kích thước nào được thêm.</p>
+//         )}
+//       </div>
+//     </div>
+//   );
+// };
 
 export default AdminDashboard;
