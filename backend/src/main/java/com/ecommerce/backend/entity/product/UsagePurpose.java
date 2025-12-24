@@ -22,7 +22,8 @@ public class UsagePurpose {
     @Column(nullable = false, unique = true, length = 100)
     private String name; // Ví dụ: Gaming, Văn phòng, Đồ họa, Học tập
 
-
+    @Transient
+    private long productCount;
     @OneToMany(mappedBy = "usagePurpose")
 
     private List<Product> products;

@@ -66,18 +66,27 @@ public class UsagePurposeServiceImpl implements UsagePurposeService {
         UsagePurpose usagePurpose = usagePurposeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("UsagePurpose", "id", id));
 
-        // 2. XỬ LÝ KHÓA NGOẠI: Gán Product.usagePurpose về NULL
-        productRepository.setUsagePurposeToNullByUsagePurposeId(id);
-
+        // 2.KIỂM TRA RÀNG BUỘC
+        long productCount = productRepository.countByUsagePurposeId(id);
+        if (productCount > 0) {
+            throw new RuntimeException("Không thể xóa nhu cầu '" + usagePurpose.getName() + "' vì đang có " + productCount + " sản phẩm sử dụng. Vui lòng gỡ bỏ sản phẩm trước.");
+        }
         // 3. Xóa
         usagePurposeRepository.delete(usagePurpose);
     }
 
     @Override
     public List<UsagePurpose> getAllUsagePurposes() {
-        return usagePurposeRepository.findAll();
-    }
+        List<UsagePurpose> purposes = usagePurposeRepository.findAll();
 
+        // 👇 DUYỆT VÀ ĐẾM
+        for (UsagePurpose p : purposes) {
+            long count = productRepository.countByUsagePurposeId(p.getId());
+            p.setProductCount(count);
+        }
+
+        return purposes;
+    }
     @Override
     public UsagePurpose getUsagePurposeById(Long id) {
         // Sử dụng ResourceNotFoundException đồng bộ
