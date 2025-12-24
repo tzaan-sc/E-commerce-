@@ -62,18 +62,27 @@ public class ScreenSizeServiceImpl implements ScreenSizeService {
         ScreenSize screenSize = screenSizeRepository.findById(screenSizeId)
                 .orElseThrow(() -> new ResourceNotFoundException("ScreenSize", "id", screenSizeId));
 
-        // 2. Xử lý khóa ngoại: Gán ScreenSize_ID của tất cả Product liên quan về NULL
-        productRepository.setScreenSizeToNullByScreenSizeId(screenSizeId); // 👈 Cần thêm phương thức này vào ProductRepository
-
+        // 2. KIỂM TRA RÀNG BUỘC
+        long productCount = productRepository.countByScreenSizeId(screenSizeId);
+        if (productCount > 0) {
+            throw new RuntimeException("Không thể xóa kích thước '" + screenSize.getValue() + " inch' vì đang có " + productCount + " sản phẩm liên quan.");
+        }
         // 3. Xóa ScreenSize
         screenSizeRepository.delete(screenSize);
     }
 
     @Override
     public List<ScreenSize> getAllScreenSizes() {
-        return screenSizeRepository.findAll();
-    }
+        List<ScreenSize> sizes = screenSizeRepository.findAll();
 
+        // 👇 DUYỆT VÀ ĐẾM
+        for (ScreenSize s : sizes) {
+            long count = productRepository.countByScreenSizeId(s.getId());
+            s.setProductCount(count);
+        }
+
+        return sizes;
+    }
     @Override
     public ScreenSize getScreenSizeById(Long screenSizeId) {
         return screenSizeRepository.findById(screenSizeId)

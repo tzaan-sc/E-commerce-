@@ -22,7 +22,8 @@
         @Column(nullable = false, unique = true)
         private Double value; // Ví dụ: 13.3, 14.0, 15.6, 17.3 inch
 
-
+        @Transient
+        private long productCount;
         @OneToMany(mappedBy = "screenSize")
         private List<Product> products;
     }

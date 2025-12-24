@@ -31,7 +31,8 @@ public class Brand {
 
     @Column(nullable = false,length = 500)
     private String logoUrl;
-
+    @Transient // Đánh dấu để không tạo cột trong Database
+    private long productCount;
     @OneToMany(mappedBy = "brand")
     // Thiết lập quan hệ 1-N (OneToMany) với bảng Product.
     // Một Brand có thể có nhiều Product.

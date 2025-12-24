@@ -52,24 +52,18 @@ public class BrandServiceImpl implements BrandService {
         // 1. Tìm Brand theo ID
         Brand existingBrand = brandRepository.findById(request.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Brand", "id", request.getId()));
-
         // 2. Kiểm tra trùng lặp tên (chỉ khi tên thay đổi)
         if (!existingBrand.getName().equalsIgnoreCase(request.getName()) && brandRepository.existsByName(request.getName())) {
             throw new DuplicateResourceException("Brand với tên '" + request.getName() + "' đã tồn tại.");
         }
-
         // 3. Cập nhật thông tin
         existingBrand.setName(request.getName());
         existingBrand.setLogoUrl(request.getLogoUrl());
-
         return brandRepository.save(existingBrand);
     }
 
     /**
      * Xóa một thương hiệu theo ID.
-     * Kiểm tra thương hiệu có tồn tại không.
-     * Lưu ý: Cần xử lý ràng buộc khóa ngoại (ví dụ: gán các Product của Brand này về NULL hoặc xóa chúng)
-     * trước khi xóa Brand nếu không Spring/Database sẽ báo lỗi.
      */
     @Override
     @Transactional
@@ -77,18 +71,27 @@ public class BrandServiceImpl implements BrandService {
         // 1. Tìm Brand theo ID
         Brand brand = brandRepository.findById(brandId)
                 .orElseThrow(() -> new ResourceNotFoundException("Brand", "id", brandId));
-
-        // 2. Xử lý khóa ngoại: Gán Brand_ID của tất cả Product liên quan về NULL
-        productRepository.setBrandToNullByBrandId(brandId); // 👈 Thêm dòng này
-
-        // 3. Xóa Brand
+        // 2. 👇 KIỂM TRA RÀNG BUỘC: Nếu còn sản phẩm thì chặn lại
+        long productCount = productRepository.countByBrandId(brandId);
+        if (productCount > 0) {
+            throw new RuntimeException("Không thể xóa thương hiệu '" + brand.getName() + "' vì đang có " + productCount + " sản phẩm liên quan. Vui lòng kiểm tra sản phẩm trước.");
+        }
+        // 3. Nếu không còn sản phẩm nào thì xóa
         brandRepository.delete(brand);
     }
 
     // Các phương thức khác (ví dụ: lấy tất cả)
     @Override
     public List<Brand> getAllBrands() {
-        return brandRepository.findAll();
+        List<Brand> brands = brandRepository.findAll();
+
+        // 👇 DUYỆT VÀ ĐẾM SỐ LƯỢNG CHO TỪNG CÁI
+        for (Brand brand : brands) {
+            long count = productRepository.countByBrandId(brand.getId());
+            brand.setProductCount(count);
+        }
+
+        return brands;
     }
 
     @Override

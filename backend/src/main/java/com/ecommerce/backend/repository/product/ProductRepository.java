@@ -10,6 +10,13 @@ import java.util.List;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
     boolean existsBySlug(String slug);
+
+    //thêm các hàm đếm số lượng sản phẩm theo từng danh mục để kiểm tra nhanh
+    long countByBrandId(Long brandId);
+    long countByUsagePurposeId(Long usagePurposeId);
+    long countByScreenSizeId(Long screenSizeId);
+
+
     @Modifying
     @Query("UPDATE Product p SET p.brand = NULL WHERE p.brand.id = :brandId")
     void setBrandToNullByBrandId(Long brandId);
@@ -39,23 +46,6 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             nativeQuery = true)
     List<Product> fullTextSearch(@Param("keyword") String keyword);
 
-
-//    // Trong ProductRepository.java, THÊM PHƯƠNG THỨC NÀY
-//    @Query("SELECT p FROM Product p WHERE " +
-//            "(:keyword IS NULL OR UPPER(p.name) LIKE UPPER(CONCAT('%', :keyword, '%')) OR UPPER(p.description) LIKE UPPER(CONCAT('%', :keyword, '%'))) AND " +
-//            "(:purposeId IS NULL OR p.usagePurpose.id = :purposeId) AND " +
-//            "(:screenSizeId IS NULL OR p.screenSize.id = :screenSizeId) AND " +
-//            "(:minPrice IS NULL OR p.price >= :minPrice) AND " +
-//            "(:maxPrice IS NULL OR p.price <= :maxPrice) AND " +
-//            "(:brandIds IS NULL OR p.brand.id IN :brandIds)")
-//    List<Product> advancedFilter(
-//            @Param("keyword") String keyword,
-//            @Param("brandIds") List<Long> brandIds,
-//            @Param("purposeId") Long purposeId,
-//            @Param("screenSizeId") Long screenSizeId,
-//            @Param("minPrice") Double minPrice,
-//            @Param("maxPrice") Double maxPrice
-//    );
     //// Ghi chú: Logic sắp xếp (sortBy) sẽ được giữ lại trong Service Impl như bạn đã code.
     @Query("SELECT DISTINCT p FROM Product p " +
             "LEFT JOIN p.brand b " +
