@@ -592,9 +592,19 @@ const ProductsPage = () => {
       });
 
       if (!res.ok) {
-        // Cố gắng đọc tin nhắn lỗi từ Backend gửi về
-        const errorData = await res.text();
-        throw new Error(errorData || "Lỗi lưu sản phẩm từ Server!");
+        let errorMessage = "Lỗi lưu sản phẩm từ Server!";
+        try {
+          // 1. Cố gắng đọc lỗi dạng JSON chuẩn từ Backend
+          const errorData = await res.json();
+          if (errorData.message) {
+            errorMessage = errorData.message; // Lấy đúng câu tiếng Việt
+          }
+        } catch (e) {
+          // 2. Nếu không phải JSON (lỗi mạng, html...), đọc dạng text thường
+          const textError = await res.text();
+          if (textError) errorMessage = textError;
+        }
+        throw new Error(errorMessage);
       }
       // Refresh list
       const resP = await fetch("http://localhost:8080/api/products");
@@ -1175,7 +1185,36 @@ const OrdersPage = () => {
     if (!id) return "#N/A";
     return `#ORD${String(id).padStart(3, "0")}`;
   };
+  // Định nghĩa thứ tự quy trình và nhãn hiển thị TRẠNG THÁI ĐƠN HÀNG
+  const STATUS_STEPS = [
+    { value: "PENDING", label: "Chờ xác nhận", step: 0 },
+    { value: "PROCESSING", label: "Đang xử lý", step: 1 },
+    { value: "SHIPPING", label: "Đang giao", step: 2 },
+    { value: "COMPLETED", label: "Đã giao", step: 3 },
+    { value: "CANCELLED", label: "Đã hủy", step: 4 }, // Cancelled là trường hợp đặc biệt
+  ];
 
+  // Hàm kiểm tra xem option có nên bị khóa không
+  const isOptionDisabled = (optionValue, currentStatus) => {
+    // 1. Nếu đơn hàng đã Hoàn tất hoặc Đã hủy -> Khóa tất cả, không cho sửa gì nữa
+    if (currentStatus === "COMPLETED" || currentStatus === "CANCELLED") {
+      return true;
+    }
+
+    // 2. Lấy số thứ tự (step) của trạng thái hiện tại và trạng thái trong option
+    const currentStepObj = STATUS_STEPS.find((s) => s.value === currentStatus);
+    const optionStepObj = STATUS_STEPS.find((s) => s.value === optionValue);
+
+    if (!currentStepObj || !optionStepObj) return false;
+
+    // 3. Logic chặn quay lui:
+    // Nếu option là 'CANCELLED', luôn cho phép (trừ khi đã Completed ở rule 1)
+    if (optionValue === "CANCELLED") return false;
+
+    // Nếu step của option nhỏ hơn step hiện tại -> KHÓA
+    // Ví dụ: Hiện tại là SHIPPING (2), option là PENDING (0) -> 0 < 2 -> True (Disabled)
+    return optionStepObj.step < currentStepObj.step;
+  };
   const translateStatus = (status) => {
     if (!status) return "Không rõ";
     const map = {
@@ -1517,7 +1556,7 @@ const OrdersPage = () => {
 
                 <div className="status-update-box">
                   <h4>Cập nhật trạng thái</h4>
-
+                  {/* 👇 PHẦN CHỌN TRẠNG THÁI VÀ NÚT LƯU */}
                   <div
                     style={{
                       display: "flex",
@@ -1530,18 +1569,45 @@ const OrdersPage = () => {
                       value={editingStatus}
                       onChange={(e) => setEditingStatus(e.target.value)}
                       style={{ flex: 1 }}
+                      // Nếu đơn hàng đã xong/hủy thì disable luôn cả ô select
+                      disabled={
+                        selectedOrder.status === "COMPLETED" ||
+                        selectedOrder.status === "CANCELLED"
+                      }
                     >
-                      <option value="PENDING">Chờ xác nhận</option>
-                      <option value="PROCESSING">Đang xử lý</option>
-                      <option value="SHIPPING">Đang giao</option>
-                      <option value="COMPLETED">Đã giao</option>
-                      <option value="CANCELLED">Đã hủy</option>
+                      {STATUS_STEPS.map((statusItem) => (
+                        <option
+                          key={statusItem.value}
+                          value={statusItem.value}
+                          // 👇 Gọi hàm kiểm tra logic để khóa dòng này
+                          disabled={isOptionDisabled(
+                            statusItem.value,
+                            selectedOrder.status
+                          )}
+                          style={{
+                            // (Tùy chọn) Làm xám màu chữ nếu bị disabled để dễ nhìn
+                            color: isOptionDisabled(
+                              statusItem.value,
+                              selectedOrder.status
+                            )
+                              ? "#ccc"
+                              : "#000",
+                          }}
+                        >
+                          {statusItem.label}
+                        </option>
+                      ))}
                     </select>
 
                     <button
                       className="btn btn--primary"
                       onClick={handleUpdateStatus}
                       style={{ whiteSpace: "nowrap" }}
+                      // Khóa nút Lưu nếu đơn hàng đã xong/hủy
+                      disabled={
+                        selectedOrder.status === "COMPLETED" ||
+                        selectedOrder.status === "CANCELLED"
+                      }
                     >
                       <Save size={16} /> Lưu
                     </button>
@@ -1686,8 +1752,6 @@ const OrdersPage = () => {
   );
 };
 
-//   const [accounts, setAccounts] = useState([]);
-//   const [loading, setLoading] = useState(true);
 
 //   useEffect(() => {
 //     fetchAccounts();
@@ -1826,335 +1890,6 @@ const OrdersPage = () => {
 //   );
 // };
 const API_BASE = "http://localhost:8080/api/users";
-
-// const AccountsPage = () => {
-//   const [accounts, setAccounts] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const [editingAccount, setEditingAccount] = useState(null);
-//   const [newAccount, setNewAccount] = useState({
-//     username: '',
-//     email: '',
-//     role: 'Khách hàng',
-//     status: 'Hoạt động',
-//   });
-
-//   // 👇 2. STATE PHÂN TRANG
-//   const [currentPage, setCurrentPage] = useState(1);
-//   const itemsPerPage = 10; // Số tài khoản mỗi trang
-
-//   const formRef = useRef(null);
-//   const API_BASE = "http://localhost:8080/api/users"; // Đảm bảo đường dẫn API đúng
-
-//   // ================== LẤY DANH SÁCH TÀI KHOẢN ==================
-//   useEffect(() => {
-//     fetchAccounts();
-//   }, []);
-
-//   const fetchAccounts = async () => {
-//     try {
-//       setLoading(true);
-//       const response = await fetch(API_BASE);
-//       const data = await response.json();
-
-//       // Map dữ liệu từ backend
-//       const mappedData = data.map((acc) => ({
-//         id: acc.id,
-//         username: acc.username,
-//         email: acc.email,
-//         role: acc.role === 'ADMIN' ? 'Admin' : 'Khách hàng',
-//         status: acc.active ? 'Hoạt động' : 'Khóa',
-//       }));
-
-//       setAccounts(mappedData);
-//     } catch (error) {
-//       console.error('Lỗi tải tài khoản:', error);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   // ================== XỬ LÝ THÊM TÀI KHOẢN ==================
-//   const handleAddAccount = async () => {
-//     const userPayload = {
-//       username: newAccount.username,
-//       email: newAccount.email,
-//       password: '123456',
-//       role: newAccount.role === 'Admin' ? 'ADMIN' : 'CUSTOMER',
-//       active: newAccount.status === 'Hoạt động',
-//     };
-
-//     try {
-//       const response = await fetch(API_BASE, {
-//         method: 'POST',
-//         headers: { 'Content-Type': 'application/json' },
-//         body: JSON.stringify(userPayload),
-//       });
-
-//       if (response.ok) {
-//         await fetchAccounts();
-//         setNewAccount({
-//           username: '',
-//           email: '',
-//           role: 'Khách hàng',
-//           status: 'Hoạt động',
-//         });
-//         alert('Thêm tài khoản thành công!');
-//       } else {
-//         alert('Lỗi khi thêm tài khoản!');
-//       }
-//     } catch (error) {
-//       console.error('Error adding account:', error);
-//     }
-//   };
-
-//   // ================== XỬ LÝ SỬA TÀI KHOẢN ==================
-//   const handleEditAccount = (account) => {
-//     setEditingAccount(account);
-//     setNewAccount({ ...account });
-//     formRef.current?.scrollIntoView({ behavior: 'smooth' });
-//   };
-
-//   const handleUpdateAccount = async () => {
-//     const userPayload = {
-//       username: newAccount.username,
-//       email: newAccount.email,
-//       role: newAccount.role === 'Admin' ? 'ADMIN' : 'CUSTOMER',
-//       active: newAccount.status === 'Hoạt động',
-//     };
-
-//     try {
-//       const response = await fetch(`${API_BASE}/${editingAccount.id}`, {
-//         method: 'PUT',
-//         headers: { 'Content-Type': 'application/json' },
-//         body: JSON.stringify(userPayload),
-//       });
-
-//       if (response.ok) {
-//         await fetchAccounts();
-//         setEditingAccount(null);
-//         setNewAccount({
-//           username: '',
-//           email: '',
-//           role: 'Khách hàng',
-//           status: 'Hoạt động',
-//         });
-//         alert('Cập nhật tài khoản thành công!');
-//       } else {
-//         alert('Lỗi khi cập nhật tài khoản!');
-//       }
-//     } catch (error) {
-//       console.error('Error updating account:', error);
-//     }
-//   };
-
-//   const scrollToForm = () => {
-//     formRef.current?.scrollIntoView({ behavior: 'smooth' });
-//   };
-
-//   // 👇 3. LOGIC TÍNH TOÁN PHÂN TRANG
-//   const indexOfLastItem = currentPage * itemsPerPage;
-//   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-//   const currentAccounts = accounts.slice(indexOfFirstItem, indexOfLastItem);
-//   const totalPages = Math.ceil(accounts.length / itemsPerPage);
-
-//   // if (loading) return <div className="loading">Đang tải dữ liệu...</div>;
-
-//   return (
-//     <div className="page-card">
-//       {/* ======= HEADER ======= */}
-//       <div className="page-card__header">
-//         <h3 className="page-card__title">Quản lý tài khoản</h3>
-//         <button className="btn btn-primary" onClick={scrollToForm}>
-//           Thêm tài khoản
-//         </button>
-//       </div>
-
-//       {/* ======= BẢNG DỮ LIỆU ======= */}
-//       <div className="table-container">
-//         <table className="data-table" style={{width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed'}}>
-//           <thead>
-//             <tr style={{background: '#f4f4f4', height: '50px', textAlign: 'left'}}>
-//               <th style={{width: '50px', padding: '10px'}}>ID</th>
-//               <th style={{padding: '10px'}}>Tên</th>
-//               <th style={{padding: '10px'}}>Email</th>
-//               <th style={{width: '120px', padding: '10px'}}>Vai trò</th>
-//               <th style={{width: '120px', padding: '10px'}}>Trạng thái</th>
-//               <th style={{width: '100px', padding: '10px'}}>Hành động</th>
-//             </tr>
-//           </thead>
-//           <tbody>
-//             {/* 👇 Render currentAccounts thay vì accounts */}
-//             {currentAccounts.map((account) => (
-//               <tr key={account.id} style={{height: '60px', borderBottom: '1px solid #eee'}}>
-//                 <td style={{padding: '10px'}}>{account.id}</td>
-//                 <td className="font-medium" style={{padding: '10px'}}>{account.username}</td>
-//                 <td style={{padding: '10px'}}>{account.email}</td>
-//                 <td style={{padding: '10px'}}>
-//                   <span
-//                     className={`badge ${
-//                       account.role === 'Admin'
-//                         ? 'badge--purple text-dark'
-//                         : 'badge--info text-dark'
-//                     }`}
-//                   >
-//                     {account.role}
-//                   </span>
-//                 </td>
-//                 <td style={{padding: '10px'}}>
-//                   <span
-//                     className={`badge ${
-//                       account.status === 'Hoạt động'
-//                         ? 'badge--success text-dark'
-//                         : 'badge--danger text-dark'
-//                     }`}
-//                   >
-//                     {account.status}
-//                   </span>
-//                 </td>
-//                 <td style={{padding: '10px'}}>
-//                   <div className="action-buttons text-center">
-//                     <button
-//                       className="action-btn action-btn--edit"
-//                       onClick={() => handleEditAccount(account)}
-//                     >
-//                       <Edit size={18} />
-//                     </button>
-//                   </div>
-//                 </td>
-//               </tr>
-//             ))}
-//           </tbody>
-//         </table>
-
-//         {/* 👇 4. UI PHÂN TRANG */}
-//         {totalPages > 1 && (
-//             <div className="pagination-controls" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '15px', padding: '20px' }}>
-//                 <button
-//                     onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-//                     disabled={currentPage === 1}
-//                     style={{ padding: '5px 10px', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', opacity: currentPage === 1 ? 0.5 : 1, border: '1px solid #ddd', borderRadius: '4px', background: '#fff' }}
-//                 >
-//                     <ChevronLeft size={20} />
-//                 </button>
-
-//                 <span style={{ fontSize: '14px', fontWeight: '600' }}>Trang {currentPage} / {totalPages}</span>
-
-//                 <button
-//                     onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-//                     disabled={currentPage === totalPages}
-//                     style={{ padding: '5px 10px', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', opacity: currentPage === totalPages ? 0.5 : 1, border: '1px solid #ddd', borderRadius: '4px', background: '#fff' }}
-//                 >
-//                     <ChevronRight size={20} />
-//                 </button>
-//             </div>
-//         )}
-//       </div>
-
-//       {/* ======= FORM THÊM / SỬA ======= */}
-//       <div ref={formRef} className="container mt-4">
-//         <div className="card shadow-sm border-0">
-//           <div className="card-header bg-primary text-white d-flex align-items-center justify-content-between">
-//             <h5 className="mb-0">
-//               {editingAccount ? ' Chỉnh sửa tài khoản' : ' Thêm tài khoản mới'}
-//             </h5>
-//             {editingAccount && (
-//               <button
-//                 className="btn btn-light btn-sm"
-//                 onClick={() => {
-//                   setEditingAccount(null);
-//                   setNewAccount({
-//                     username: '',
-//                     email: '',
-//                     role: 'Khách hàng',
-//                     status: 'Hoạt động',
-//                   });
-//                 }}
-//               >
-//                 Hủy
-//               </button>
-//             )}
-//           </div>
-
-//           <div className="card-body">
-//             <div className="row g-3">
-//               <div className="col-md-6">
-//                 <label className="form-label fw-semibold">Tên người dùng</label>
-//                 <input
-//                   type="text"
-//                   className="form-control"
-//                   placeholder="Nhập tên người dùng"
-//                   value={newAccount.username}
-//                   onChange={(e) =>
-//                     setNewAccount({ ...newAccount, username: e.target.value })
-//                   }
-//                 />
-//               </div>
-
-//               <div className="col-md-6">
-//                 <label className="form-label fw-semibold">Email</label>
-//                 <input
-//                   type="email"
-//                   className="form-control"
-//                   placeholder="Nhập email"
-//                   value={newAccount.email}
-//                   onChange={(e) =>
-//                     setNewAccount({ ...newAccount, email: e.target.value })
-//                   }
-//                 />
-//               </div>
-
-//               <div className="col-md-6">
-//                 <label className="form-label fw-semibold">Vai trò</label>
-//                 <select
-//                   className="form-select"
-//                   value={newAccount.role}
-//                   onChange={(e) =>
-//                     setNewAccount({ ...newAccount, role: e.target.value })
-//                   }
-//                 >
-//                   <option value="Khách hàng">Khách hàng</option>
-//                   <option value="Admin">Admin</option>
-//                 </select>
-//               </div>
-
-//               <div className="col-md-6">
-//                 <label className="form-label fw-semibold">Trạng thái</label>
-//                 <select
-//                   className="form-select"
-//                   value={newAccount.status}
-//                   onChange={(e) =>
-//                     setNewAccount({ ...newAccount, status: e.target.value })
-//                   }
-//                 >
-//                   <option value="Hoạt động">Hoạt động</option>
-//                   <option value="Khóa">Khóa</option>
-//                 </select>
-//               </div>
-//             </div>
-
-//             <div className="text-center mt-4">
-//               {editingAccount ? (
-//                 <button
-//                   className="btn btn-primary px-4 me-2"
-//                   onClick={handleUpdateAccount}
-//                 >
-//                   <i className="bi bi-save"></i> Lưu thay đổi
-//                 </button>
-//               ) : (
-//                 <button
-//                   className="btn btn-primary px-4"
-//                   onClick={handleAddAccount}
-//                 >
-//                   <i className="bi bi-person-plus"></i> Thêm tài khoản
-//                 </button>
-//               )}
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
 
 const AccountsPage = () => {
   const [accounts, setAccounts] = useState([]);
@@ -2731,7 +2466,6 @@ const AccountsPage = () => {
   );
 };
 
-
 const BrandsPage = () => {
   const {
     data: brands,
@@ -2813,18 +2547,25 @@ const BrandsPage = () => {
       alert("Vui lòng chọn ít nhất một thương hiệu!");
       return;
     }
-    if (!window.confirm(`Bạn có chắc muốn xóa ${selectedBrands.length} thương hiệu đã chọn?`)) return;
+    if (
+      !window.confirm(
+        `Bạn có chắc muốn xóa ${selectedBrands.length} thương hiệu đã chọn?`
+      )
+    )
+      return;
 
     // Duyệt qua từng item để xóa
     for (const brandId of selectedBrands) {
       const result = await deleteBrand(brandId);
-      
+
       // 👇 Nếu gặp lỗi thì báo ngay và dừng lại, không xóa tiếp các mục sau
       if (!result.success) {
-        alert(result.error); 
+        alert(result.error);
         // Load lại danh sách những cái đã xóa được (cập nhật lại state selected)
-        setSelectedBrands(prev => prev.filter(id => brands.find(b => b.id === id))); 
-        return; 
+        setSelectedBrands((prev) =>
+          prev.filter((id) => brands.find((b) => b.id === id))
+        );
+        return;
       }
     }
 
@@ -2865,9 +2606,7 @@ const BrandsPage = () => {
         <div className="card shadow-sm border-0">
           <div className="card-header bg-primary text-white d-flex align-items-center justify-content-between">
             <h5 className="mb-0">
-              {editingId
-                ? "Chỉnh sửa thương hiệu"
-                : "Thêm thương hiệu mới"}
+              {editingId ? "Chỉnh sửa thương hiệu" : "Thêm thương hiệu mới"}
             </h5>
             {editingId && (
               <button className="btn btn-light btn-sm" onClick={resetForm}>
@@ -3015,99 +2754,6 @@ const BrandsPage = () => {
   );
 };
 
-
-//   const [purposes, setPurposes] = useState([]);
-//   const [loading, setLoading] = useState(true);
-
-//   useEffect(() => {
-//     fetchUsagePurposes();
-//   }, []);
-
-//   const fetchUsagePurposes = async () => {
-//     try {
-//       setLoading(true);
-//       // TODO: Gọi API lấy danh sách nhu cầu sử dụng
-//       // const response = await fetch('/api/usage-purposes');
-//       // const data = await response.json();
-//       // setPurposes(data);
-
-//       // Mock data
-//       setPurposes([
-//         { id: 1, name: "Gaming", productCount: 35 },
-//         { id: 2, name: "Văn phòng", productCount: 68 },
-//         { id: 3, name: "Thiết kế - Kĩ thuật", productCount: 42 },
-//         { id: 4, name: "Học tập", productCount: 56 },
-//       ]);
-//     } catch (error) {
-//       console.error("Error fetching usage purposes:", error);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const handleAddPurpose = () => {
-//     console.log("Add purpose");
-//   };
-
-//   const handleEditPurpose = (purposeId) => {
-//     console.log("Edit purpose:", purposeId);
-//   };
-
-//   const handleDeletePurpose = async (purposeId) => {
-//     if (window.confirm("Bạn có chắc muốn xóa nhu cầu này?")) {
-//       try {
-//         setPurposes(purposes.filter((p) => p.id !== purposeId));
-//         alert("Xóa nhu cầu sử dụng thành công!");
-//       } catch (error) {
-//         console.error("Error deleting purpose:", error);
-//         alert("Xóa nhu cầu sử dụng thất bại!");
-//       }
-//     }
-//   };
-
-//   if (loading) {
-//     return <div className="loading">Đang tải dữ liệu...</div>;
-//   }
-
-//   return (
-//     <div className="page-card">
-//       <div className="page-card__header">
-//         <h3 className="page-card__title">Quản lý nhu cầu sử dụng</h3>
-//         <button className="btn btn--primary" onClick={handleAddPurpose}>
-//           <Plus size={20} />
-//           Thêm nhu cầu
-//         </button>
-//       </div>
-
-//       <div className="category-grid">
-//         {purposes.map((purpose) => (
-//           <div key={purpose.id} className="category-card">
-//             <div className="category-card__header">
-//               <h4 className="category-card__title">{purpose.name}</h4>
-//               <div className="action-buttons">
-//                 <button
-//                   className="action-btn action-btn--edit action-btn--sm"
-//                   onClick={() => handleEditPurpose(purpose.id)}
-//                 >
-//                   <Edit size={16} />
-//                 </button>
-//                 <button
-//                   className="action-btn action-btn--delete action-btn--sm"
-//                   onClick={() => handleDeletePurpose(purpose.id)}
-//                 >
-//                   <Trash2 size={16} />
-//                 </button>
-//               </div>
-//             </div>
-//             <p className="category-card__count">
-//               {purpose.productCount} sản phẩm
-//             </p>
-//           </div>
-//         ))}
-//       </div>
-//     </div>
-//   );
-// };
 const UsagePurposePage = () => {
   const {
     data: purposes,
@@ -3170,7 +2816,10 @@ const UsagePurposePage = () => {
       alert("Vui lòng chọn ít nhất một mục để xóa!");
       return;
     }
-    if (!window.confirm(`Bạn có chắc muốn xóa ${selectedIds.length} mục đã chọn?`)) return;
+    if (
+      !window.confirm(`Bạn có chắc muốn xóa ${selectedIds.length} mục đã chọn?`)
+    )
+      return;
 
     let hasError = false;
     for (const id of selectedIds) {
@@ -3178,7 +2827,7 @@ const UsagePurposePage = () => {
       if (!result.success) {
         alert(`Không thể xóa (ID: ${id}):\n${result.error}`);
         hasError = true;
-        break; 
+        break;
       }
     }
 
@@ -3186,13 +2835,23 @@ const UsagePurposePage = () => {
       alert("Xóa tất cả thành công!");
       setSelectedIds([]);
     } else {
-        // Clear những ID đã xóa thành công khỏi danh sách chọn
-        setSelectedIds(prev => prev.filter(id => purposes.find(p => p.id === id)));
+      // Clear những ID đã xóa thành công khỏi danh sách chọn
+      setSelectedIds((prev) =>
+        prev.filter((id) => purposes.find((p) => p.id === id))
+      );
     }
   };
 
-  const toggleSelect = (id) => setSelectedIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
-  const toggleSelectAll = () => setSelectedIds((prev) => purposes.length > 0 && prev.length === purposes.length ? [] : purposes.map((x) => x.id));
+  const toggleSelect = (id) =>
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  const toggleSelectAll = () =>
+    setSelectedIds((prev) =>
+      purposes.length > 0 && prev.length === purposes.length
+        ? []
+        : purposes.map((x) => x.id)
+    );
 
   if (loading) return <div className="loading">Đang tải dữ liệu...</div>;
 
@@ -3201,18 +2860,34 @@ const UsagePurposePage = () => {
       <div ref={formRef} className="container mt-4 mb-4">
         <div className="card shadow-sm border-0">
           <div className="card-header bg-primary text-white d-flex align-items-center justify-content-between">
-            <h5 className="mb-0">{editingId ? " Chỉnh sửa nhu cầu" : " Thêm nhu cầu mới"}</h5>
-            {editingId && <button className="btn btn-light btn-sm" onClick={resetForm}>Hủy</button>}
+            <h5 className="mb-0">
+              {editingId ? " Chỉnh sửa nhu cầu" : " Thêm nhu cầu mới"}
+            </h5>
+            {editingId && (
+              <button className="btn btn-light btn-sm" onClick={resetForm}>
+                Hủy
+              </button>
+            )}
           </div>
           <div className="card-body">
             <div className="row g-3">
               <div className="col-md-12">
                 <label className="form-label fw-semibold">Tên nhu cầu</label>
-                <input type="text" className="form-control" placeholder="VD: Gaming, Văn phòng..." value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="VD: Gaming, Văn phòng..."
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                />
               </div>
             </div>
             <div className="text-center mt-4">
-              <button className="btn btn-primary px-4" onClick={handleSubmit}>{editingId ? " Lưu thay đổi" : " Thêm nhu cầu"}</button>
+              <button className="btn btn-primary px-4" onClick={handleSubmit}>
+                {editingId ? " Lưu thay đổi" : " Thêm nhu cầu"}
+              </button>
             </div>
           </div>
         </div>
@@ -3220,14 +2895,28 @@ const UsagePurposePage = () => {
 
       <div className="page-card__header">
         <h3 className="page-card__title">Danh sách nhu cầu sử dụng</h3>
-        {selectedIds.length > 0 && <button className="btn btn-danger" onClick={handleDeleteSelected}><Trash2 size={20} /> Xóa đã chọn ({selectedIds.length})</button>}
+        {selectedIds.length > 0 && (
+          <button className="btn btn-danger" onClick={handleDeleteSelected}>
+            <Trash2 size={20} /> Xóa đã chọn ({selectedIds.length})
+          </button>
+        )}
       </div>
 
       <div className="table-container">
         <table className="data-table">
           <thead>
             <tr>
-              <th style={{ width: "50px" }}><input type="checkbox" checked={purposes.length > 0 && selectedIds.length === purposes.length} onChange={toggleSelectAll} style={{ cursor: "pointer" }} /></th>
+              <th style={{ width: "50px" }}>
+                <input
+                  type="checkbox"
+                  checked={
+                    purposes.length > 0 &&
+                    selectedIds.length === purposes.length
+                  }
+                  onChange={toggleSelectAll}
+                  style={{ cursor: "pointer" }}
+                />
+              </th>
               <th>ID</th>
               <th>Tên nhu cầu</th>
               <th>Số sản phẩm</th>
@@ -3237,320 +2926,44 @@ const UsagePurposePage = () => {
           <tbody>
             {purposes.map((p) => (
               <tr key={p.id}>
-                <td><input type="checkbox" checked={selectedIds.includes(p.id)} onChange={() => toggleSelect(p.id)} style={{ cursor: "pointer" }} /></td>
+                <td>
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(p.id)}
+                    onChange={() => toggleSelect(p.id)}
+                    style={{ cursor: "pointer" }}
+                  />
+                </td>
                 <td className="font-medium">{p.id}</td>
                 <td>{p.name}</td>
                 <td>{p.productCount}</td>
                 <td>
                   <div className="action-buttons">
-                    <button className="action-btn action-btn--edit" onClick={() => handleEdit(p)}><Edit size={18} /></button>
-                    <button className="action-btn action-btn--delete" onClick={() => handleDelete(p.id)}><Trash2 size={18} /></button>
+                    <button
+                      className="action-btn action-btn--edit"
+                      onClick={() => handleEdit(p)}
+                    >
+                      <Edit size={18} />
+                    </button>
+                    <button
+                      className="action-btn action-btn--delete"
+                      onClick={() => handleDelete(p.id)}
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        {purposes.length === 0 && !loading && <p className="empty-message">Chưa có nhu cầu nào được thêm.</p>}
+        {purposes.length === 0 && !loading && (
+          <p className="empty-message">Chưa có nhu cầu nào được thêm.</p>
+        )}
       </div>
     </div>
   );
 };
-// const UsagePurposePage = () => {
-//   const {
-//     data: purposes,
-//     loading,
-//     error,
-//     addItem: addPurpose,
-//     deleteItem: deletePurpose,
-//     updateItem: updatePurpose,
-//   } = useGenericApi("usage-purposes"); // endpoint: /api/usage-purposes
-
-//   const [formData, setFormData] = useState({ name: "" });
-//   const [editingId, setEditingId] = useState(null);
-//   const [selectedIds, setSelectedIds] = useState([]);
-//   const formRef = useRef(null);
-
-//   const resetForm = () => {
-//     setFormData({ name: "" });
-//     setEditingId(null);
-//   };
-
-//   const handleSubmit = async () => {
-//     if (!formData.name.trim()) {
-//       alert("Vui lòng nhập tên nhu cầu sử dụng!");
-//       return;
-//     }
-//     // UsagePurposePage: Gộp ID và FormData thành một object
-//     const payload = { id: editingId, ...formData };
-//     const fn = editingId ? updatePurpose(payload) : addPurpose(formData);
-
-//     const result = await fn;
-//     if (result.success) {
-//       alert(
-//         editingId
-//           ? "Cập nhật nhu cầu sử dụng thành công!"
-//           : "Thêm nhu cầu sử dụng thành công!"
-//       );
-//       resetForm();
-//     } else {
-//       alert(`${editingId ? "Cập nhật" : "Thêm"} thất bại: ${result.error}`);
-//     }
-//   };
-
-//   const handleEdit = (item) => {
-//     setFormData({ name: item.name });
-//     setEditingId(item.id);
-//     formRef.current?.scrollIntoView({ behavior: "smooth" });
-//   };
-
-//   const handleDelete = async (id) => {
-//     if (!window.confirm("Bạn có chắc muốn xóa nhu cầu này?")) return;
-//     const result = await deletePurpose(id);
-//     if (result.success) {
-//       alert("Xóa thành công!");
-//       setSelectedIds((prev) => prev.filter((x) => x !== id));
-//     } else {
-//       alert(`Xóa thất bại: ${result.error}`);
-//     }
-//   };
-
-//   const handleDeleteSelected = async () => {
-//     if (selectedIds.length === 0) {
-//       alert("Vui lòng chọn ít nhất một nhu cầu để xóa!");
-//       return;
-//     }
-//     if (
-//       !window.confirm(
-//         `Bạn có chắc muốn xóa ${selectedIds.length} nhu cầu đã chọn?`
-//       )
-//     )
-//       return;
-//     for (const id of selectedIds) await deletePurpose(id);
-//     alert("Xóa các nhu cầu thành công!");
-//     setSelectedIds([]);
-//   };
-
-//   const toggleSelect = (id) =>
-//     setSelectedIds((prev) =>
-//       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-//     );
-
-//   const toggleSelectAll = () =>
-//     setSelectedIds((prev) =>
-//       purposes.length > 0 && prev.length === purposes.length
-//         ? []
-//         : purposes.map((x) => x.id)
-//     );
-
-//   if (loading) return <div className="loading">Đang tải dữ liệu...</div>;
-//   if (error) return <div className="error">Lỗi: {error}</div>;
-
-//   return (
-//     <div className="page-card">
-//       {/* FORM THÊM/SỬA */}
-//       <div ref={formRef} className="container mt-4 mb-4">
-//         <div className="card shadow-sm border-0">
-//           <div className="card-header bg-primary text-white d-flex align-items-center justify-content-between">
-//             <h5 className="mb-0">
-//               {editingId
-//                 ? " Chỉnh sửa nhu cầu sử dụng"
-//                 : " Thêm nhu cầu sử dụng mới"}
-//             </h5>
-//             {editingId && (
-//               <button className="btn btn-light btn-sm" onClick={resetForm}>
-//                 Hủy
-//               </button>
-//             )}
-//           </div>
-//           <div className="card-body">
-//             <div className="row g-3">
-//               <div className="col-md-12">
-//                 <label className="form-label fw-semibold">Tên nhu cầu</label>
-//                 <input
-//                   type="text"
-//                   className="form-control"
-//                   placeholder="VD: Gaming, Văn phòng, Học tập..."
-//                   value={formData.name}
-//                   onChange={(e) =>
-//                     setFormData({ ...formData, name: e.target.value })
-//                   }
-//                 />
-//               </div>
-//             </div>
-//             <div className="text-center mt-4">
-//               <button className="btn btn-primary px-4" onClick={handleSubmit}>
-//                 {editingId ? " Lưu thay đổi" : " Thêm nhu cầu"}
-//               </button>
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-
-//       {/* DANH SÁCH */}
-//       <div className="page-card__header">
-//         <h3 className="page-card__title">Danh sách nhu cầu sử dụng</h3>
-//         {selectedIds.length > 0 && (
-//           <button className="btn btn-danger" onClick={handleDeleteSelected}>
-//             <Trash2 size={20} /> Xóa đã chọn ({selectedIds.length})
-//           </button>
-//         )}
-//       </div>
-
-//       <div className="table-container">
-//         <table className="data-table">
-//           <thead>
-//             <tr>
-//               <th style={{ width: "50px" }}>
-//                 <input
-//                   type="checkbox"
-//                   checked={
-//                     purposes.length > 0 &&
-//                     selectedIds.length === purposes.length
-//                   }
-//                   onChange={toggleSelectAll}
-//                   style={{ cursor: "pointer" }}
-//                 />
-//               </th>
-//               <th>ID</th>
-//               <th>Tên nhu cầu</th>
-//               <th>Số sản phẩm</th>
-//               <th>Hành động</th>
-//             </tr>
-//           </thead>
-//           <tbody>
-//             {purposes.map((p) => (
-//               <tr key={p.id}>
-//                 <td>
-//                   <input
-//                     type="checkbox"
-//                     checked={selectedIds.includes(p.id)}
-//                     onChange={() => toggleSelect(p.id)}
-//                     style={{ cursor: "pointer" }}
-//                   />
-//                 </td>
-//                 <td className="font-medium">{p.id}</td>
-//                 <td>{p.name}</td>
-//                 <td>{p.productCount}</td>
-//                 <td>
-//                   <div className="action-buttons">
-//                     <button
-//                       className="action-btn action-btn--edit"
-//                       onClick={() => handleEdit(p)}
-//                     >
-//                       <Edit size={18} />
-//                     </button>
-//                     <button
-//                       className="action-btn action-btn--delete"
-//                       onClick={() => handleDelete(p.id)}
-//                     >
-//                       <Trash2 size={18} />
-//                     </button>
-//                   </div>
-//                 </td>
-//               </tr>
-//             ))}
-//           </tbody>
-//         </table>
-//         {purposes.length === 0 && (
-//           <p className="empty-message">Chưa có nhu cầu nào được thêm.</p>
-//         )}
-//       </div>
-//     </div>
-//   );
-// };
-
-
-
-//   const [sizes, setSizes] = useState([]);
-//   const [loading, setLoading] = useState(true);
-
-//   useEffect(() => {
-//     fetchScreenSizes();
-//   }, []);
-
-//   const fetchScreenSizes = async () => {
-//     try {
-//       setLoading(true);
-//       // TODO: Gọi API lấy danh sách kích thước màn hình
-//       // const response = await fetch('/api/screen-sizes');
-//       // const data = await response.json();
-//       // setSizes(data);
-
-//       // Mock data
-//       setSizes([
-//         { id: 1, name: "13-14 inch", productCount: 52 },
-//         { id: 2, name: "15-16 inch", productCount: 89 },
-//         { id: 3, name: "17 inch trở lên", productCount: 35 },
-//       ]);
-//     } catch (error) {
-//       console.error("Error fetching screen sizes:", error);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const handleAddSize = () => {
-//     console.log("Add size");
-//   };
-
-//   const handleEditSize = (sizeId) => {
-//     console.log("Edit size:", sizeId);
-//   };
-
-//   const handleDeleteSize = async (sizeId) => {
-//     if (window.confirm("Bạn có chắc muốn xóa kích thước này?")) {
-//       try {
-//         setSizes(sizes.filter((s) => s.id !== sizeId));
-//         alert("Xóa kích thước thành công!");
-//       } catch (error) {
-//         console.error("Error deleting size:", error);
-//         alert("Xóa kích thước thất bại!");
-//       }
-//     }
-//   };
-
-//   if (loading) {
-//     return <div className="loading">Đang tải dữ liệu...</div>;
-//   }
-
-//   return (
-//     <div className="page-card">
-//       <div className="page-card__header">
-//         <h3 className="page-card__title">Quản lý kích thước màn hình</h3>
-//         <button className="btn btn--primary" onClick={handleAddSize}>
-//           <Plus size={20} />
-//           Thêm kích thước
-//         </button>
-//       </div>
-
-//       <div className="category-grid category-grid--3col">
-//         {sizes.map((size) => (
-//           <div key={size.id} className="category-card">
-//             <div className="category-card__header">
-//               <h4 className="category-card__title">{size.name}</h4>
-//               <div className="action-buttons">
-//                 <button
-//                   className="action-btn action-btn--edit action-btn--sm"
-//                   onClick={() => handleEditSize(size.id)}
-//                 >
-//                   <Edit size={16} />
-//                 </button>
-//                 <button
-//                   className="action-btn action-btn--delete action-btn--sm"
-//                   onClick={() => handleDeleteSize(size.id)}
-//                 >
-//                   <Trash2 size={16} />
-//                 </button>
-//               </div>
-//             </div>
-//             <p className="category-card__count">{size.productCount} sản phẩm</p>
-//           </div>
-//         ))}
-//       </div>
-//     </div>
-//   );
-// };
 const ScreenSizePage = () => {
   const {
     data: sizes,
@@ -3613,7 +3026,10 @@ const ScreenSizePage = () => {
       alert("Vui lòng chọn ít nhất một mục để xóa!");
       return;
     }
-    if (!window.confirm(`Bạn có chắc muốn xóa ${selectedIds.length} mục đã chọn?`)) return;
+    if (
+      !window.confirm(`Bạn có chắc muốn xóa ${selectedIds.length} mục đã chọn?`)
+    )
+      return;
 
     let hasError = false;
     for (const id of selectedIds) {
@@ -3629,12 +3045,22 @@ const ScreenSizePage = () => {
       alert("Xóa tất cả thành công!");
       setSelectedIds([]);
     } else {
-       setSelectedIds(prev => prev.filter(id => sizes.find(s => s.id === id)));
+      setSelectedIds((prev) =>
+        prev.filter((id) => sizes.find((s) => s.id === id))
+      );
     }
   };
 
-  const toggleSelect = (id) => setSelectedIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
-  const toggleSelectAll = () => setSelectedIds((prev) => sizes.length > 0 && prev.length === sizes.length ? [] : sizes.map((x) => x.id));
+  const toggleSelect = (id) =>
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  const toggleSelectAll = () =>
+    setSelectedIds((prev) =>
+      sizes.length > 0 && prev.length === sizes.length
+        ? []
+        : sizes.map((x) => x.id)
+    );
 
   if (loading) return <div className="loading">Đang tải dữ liệu...</div>;
 
@@ -3643,18 +3069,35 @@ const ScreenSizePage = () => {
       <div ref={formRef} className="container mt-4 mb-4">
         <div className="card shadow-sm border-0">
           <div className="card-header bg-primary text-white d-flex align-items-center justify-content-between">
-            <h5 className="mb-0">{editingId ? " Chỉnh sửa kích thước" : " Thêm kích thước mới"}</h5>
-            {editingId && <button className="btn btn-light btn-sm" onClick={resetForm}>Hủy</button>}
+            <h5 className="mb-0">
+              {editingId ? " Chỉnh sửa kích thước" : " Thêm kích thước mới"}
+            </h5>
+            {editingId && (
+              <button className="btn btn-light btn-sm" onClick={resetForm}>
+                Hủy
+              </button>
+            )}
           </div>
           <div className="card-body">
             <div className="row g-3">
               <div className="col-md-12">
                 <label className="form-label fw-semibold">Giá trị (inch)</label>
-                <input type="number" step="0.1" className="form-control" placeholder="VD: 15.6" value={formData.value} onChange={(e) => setFormData({ ...formData, value: e.target.value })} />
+                <input
+                  type="number"
+                  step="0.1"
+                  className="form-control"
+                  placeholder="VD: 15.6"
+                  value={formData.value}
+                  onChange={(e) =>
+                    setFormData({ ...formData, value: e.target.value })
+                  }
+                />
               </div>
             </div>
             <div className="text-center mt-4">
-              <button className="btn btn-primary px-4" onClick={handleSubmit}>{editingId ? " Lưu thay đổi" : " Thêm kích thước"}</button>
+              <button className="btn btn-primary px-4" onClick={handleSubmit}>
+                {editingId ? " Lưu thay đổi" : " Thêm kích thước"}
+              </button>
             </div>
           </div>
         </div>
@@ -3662,14 +3105,27 @@ const ScreenSizePage = () => {
 
       <div className="page-card__header">
         <h3 className="page-card__title">Danh sách kích thước</h3>
-        {selectedIds.length > 0 && <button className="btn btn-danger" onClick={handleDeleteSelected}><Trash2 size={20} /> Xóa đã chọn ({selectedIds.length})</button>}
+        {selectedIds.length > 0 && (
+          <button className="btn btn-danger" onClick={handleDeleteSelected}>
+            <Trash2 size={20} /> Xóa đã chọn ({selectedIds.length})
+          </button>
+        )}
       </div>
 
       <div className="table-container">
         <table className="data-table">
           <thead>
             <tr>
-              <th style={{ width: "50px" }}><input type="checkbox" checked={sizes.length > 0 && selectedIds.length === sizes.length} onChange={toggleSelectAll} style={{ cursor: "pointer" }} /></th>
+              <th style={{ width: "50px" }}>
+                <input
+                  type="checkbox"
+                  checked={
+                    sizes.length > 0 && selectedIds.length === sizes.length
+                  }
+                  onChange={toggleSelectAll}
+                  style={{ cursor: "pointer" }}
+                />
+              </th>
               <th>ID</th>
               <th>Kích thước</th>
               <th>Số sản phẩm</th>
@@ -3679,249 +3135,43 @@ const ScreenSizePage = () => {
           <tbody>
             {sizes.map((s) => (
               <tr key={s.id}>
-                <td><input type="checkbox" checked={selectedIds.includes(s.id)} onChange={() => toggleSelect(s.id)} style={{ cursor: "pointer" }} /></td>
+                <td>
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(s.id)}
+                    onChange={() => toggleSelect(s.id)}
+                    style={{ cursor: "pointer" }}
+                  />
+                </td>
                 <td className="font-medium">{s.id}</td>
                 <td>{s.value} inch</td>
                 <td>{s.productCount}</td>
                 <td>
                   <div className="action-buttons">
-                    <button className="action-btn action-btn--edit" onClick={() => handleEdit(s)}><Edit size={18} /></button>
-                    <button className="action-btn action-btn--delete" onClick={() => handleDelete(s.id)}><Trash2 size={18} /></button>
+                    <button
+                      className="action-btn action-btn--edit"
+                      onClick={() => handleEdit(s)}
+                    >
+                      <Edit size={18} />
+                    </button>
+                    <button
+                      className="action-btn action-btn--delete"
+                      onClick={() => handleDelete(s.id)}
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        {sizes.length === 0 && !loading && <p className="empty-message">Chưa có kích thước nào được thêm.</p>}
+        {sizes.length === 0 && !loading && (
+          <p className="empty-message">Chưa có kích thước nào được thêm.</p>
+        )}
       </div>
     </div>
   );
 };
-// const ScreenSizePage = () => {
-//   // 👈 Sử dụng useGenericApi với resource name là 'screen-sizes'
-//   const {
-//     data: sizes, // Đổi tên 'data' thành 'sizes'
-//     loading,
-//     error,
-//     addItem: addSize,
-//     deleteItem: deleteSize,
-//     updateItem: updateSize,
-//   } = useGenericApi("screen-sizes"); // endpoint: /api/screen-sizes
-
-//   const [formData, setFormData] = useState({ value: "" }); // Thay 'name' bằng 'value'
-//   const [editingId, setEditingId] = useState(null);
-//   const [selectedIds, setSelectedIds] = useState([]);
-//   const formRef = useRef(null);
-
-//   const resetForm = () => {
-//     setFormData({ value: "" });
-//     setEditingId(null);
-//   };
-
-//   // Xử lý thêm/sửa kích thước
-//   const handleSubmit = async () => {
-//     const valueAsDouble = parseFloat(formData.value); // Chuyển đổi sang số thực
-
-//     if (isNaN(valueAsDouble) || valueAsDouble <= 0) {
-//       alert("Vui lòng nhập kích thước màn hình hợp lệ (là số dương)!");
-//       return;
-//     }
-
-//     const payload = {
-//       id: editingId, // Chỉ cần cho PUT
-//       value: valueAsDouble,
-//     };
-
-//     const fn = editingId ? updateSize(payload) : addSize(payload); // Truyền payload
-//     const result = await fn;
-
-//     if (result.success) {
-//       alert(
-//         editingId
-//           ? "Cập nhật kích thước thành công!"
-//           : "Thêm kích thước thành công!"
-//       );
-//       resetForm();
-//     } else {
-//       alert(`${editingId ? "Cập nhật" : "Thêm"} thất bại: ${result.error}`);
-//     }
-//   };
-
-//   // Xử lý sửa - đổ dữ liệu lên form
-//   const handleEdit = (item) => {
-//     setFormData({ value: item.value.toString() }); // Chuyển Double về String cho input
-//     setEditingId(item.id);
-//     formRef.current?.scrollIntoView({ behavior: "smooth" });
-//   };
-
-//   // Xử lý xóa một kích thước
-//   const handleDelete = async (id) => {
-//     if (!window.confirm("Bạn có chắc muốn xóa kích thước này?")) return;
-//     const result = await deleteSize(id);
-//     if (result.success) {
-//       alert("Xóa thành công!");
-//       setSelectedIds((prev) => prev.filter((x) => x !== id));
-//     } else {
-//       alert(`Xóa thất bại: ${result.error}`);
-//     }
-//   };
-
-//   // Xử lý xóa nhiều kích thước
-//   const handleDeleteSelected = async () => {
-//     if (selectedIds.length === 0) {
-//       alert("Vui lòng chọn ít nhất một mục để xóa!");
-//       return;
-//     }
-
-//     if (
-//       !window.confirm(`Bạn có chắc muốn xóa ${selectedIds.length} mục đã chọn?`)
-//     )
-//       return;
-
-//     // Xóa từng mục một
-//     for (const id of selectedIds) {
-//       await deleteSize(id);
-//     }
-
-//     alert("Xóa các kích thước thành công!");
-//     setSelectedIds([]);
-//   };
-
-//   // Toggle chọn một kích thước
-//   const toggleSelect = (id) =>
-//     setSelectedIds((prev) =>
-//       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-//     );
-
-//   // Toggle chọn tất cả
-//   const toggleSelectAll = () =>
-//     setSelectedIds((prev) =>
-//       sizes.length > 0 && prev.length === sizes.length
-//         ? []
-//         : sizes.map((x) => x.id)
-//     );
-
-//   if (loading) return <div className="loading">Đang tải dữ liệu...</div>;
-//   if (error) return <div className="error">Lỗi: {error}</div>;
-
-//   // Hàm hiển thị tên kích thước (kết hợp với 'inch')
-//   const formatSizeName = (value) => {
-//     return `${value} inch`;
-//   };
-
-//   return (
-//     <div className="page-card">
-//       {/* FORM THÊM/SỬA */}
-//       <div ref={formRef} className="container mt-4 mb-4">
-//         <div className="card shadow-sm border-0">
-//           <div className="card-header bg-primary text-white d-flex align-items-center justify-content-between">
-//             <h5 className="mb-0">
-//               {editingId
-//                 ? " Chỉnh sửa kích thước màn hình"
-//                 : " Thêm kích thước màn hình mới"}
-//             </h5>
-//             {editingId && (
-//               <button className="btn btn-light btn-sm" onClick={resetForm}>
-//                 Hủy
-//               </button>
-//             )}
-//           </div>
-//           <div className="card-body">
-//             <div className="row g-3">
-//               <div className="col-md-12">
-//                 <label className="form-label fw-semibold">Giá trị (inch)</label>
-//                 <input
-//                   type="number" // Đổi sang type number
-//                   step="0.1"
-//                   className="form-control"
-//                   placeholder="VD: 13.3, 15.6, 17.0..."
-//                   value={formData.value}
-//                   onChange={(e) =>
-//                     setFormData({ ...formData, value: e.target.value })
-//                   }
-//                 />
-//               </div>
-//             </div>
-//             <div className="text-center mt-4">
-//               <button className="btn btn-primary px-4" onClick={handleSubmit}>
-//                 {editingId ? " Lưu thay đổi" : " Thêm kích thước"}
-//               </button>
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-
-//       {/* DANH SÁCH */}
-//       <div className="page-card__header">
-//         <h3 className="page-card__title">Danh sách kích thước màn hình</h3>
-//         {selectedIds.length > 0 && (
-//           <button className="btn btn-danger" onClick={handleDeleteSelected}>
-//             <Trash2 size={20} /> Xóa đã chọn ({selectedIds.length})
-//           </button>
-//         )}
-//       </div>
-
-//       <div className="table-container">
-//         <table className="data-table">
-//           <thead>
-//             <tr>
-//               <th style={{ width: "50px" }}>
-//                 <input
-//                   type="checkbox"
-//                   checked={
-//                     sizes.length > 0 && selectedIds.length === sizes.length
-//                   }
-//                   onChange={toggleSelectAll}
-//                   style={{ cursor: "pointer" }}
-//                 />
-//               </th>
-//               <th>ID</th>
-//               <th>Kích thước</th>
-//               <th>Số sản phẩm</th>
-//               <th>Hành động</th>
-//             </tr>
-//           </thead>
-//           <tbody>
-//             {sizes.map((s) => (
-//               <tr key={s.id}>
-//                 <td>
-//                   <input
-//                     type="checkbox"
-//                     checked={selectedIds.includes(s.id)}
-//                     onChange={() => toggleSelect(s.id)}
-//                     style={{ cursor: "pointer" }}
-//                   />
-//                 </td>
-//                 <td className="font-medium">{s.id}</td>
-//                 <td>{formatSizeName(s.value)}</td> {/* Hiển thị giá trị */}
-//                 <td>{s.productCount}</td>
-//                 <td>
-//                   <div className="action-buttons">
-//                     <button
-//                       className="action-btn action-btn--edit"
-//                       onClick={() => handleEdit(s)}
-//                     >
-//                       <Edit size={18} />
-//                     </button>
-//                     <button
-//                       className="action-btn action-btn--delete"
-//                       onClick={() => handleDelete(s.id)}
-//                     >
-//                       <Trash2 size={18} />
-//                     </button>
-//                   </div>
-//                 </td>
-//               </tr>
-//             ))}
-//           </tbody>
-//         </table>
-//         {sizes.length === 0 && (
-//           <p className="empty-message">Chưa có kích thước nào được thêm.</p>
-//         )}
-//       </div>
-//     </div>
-//   );
-// };
 
 export default AdminDashboard;
