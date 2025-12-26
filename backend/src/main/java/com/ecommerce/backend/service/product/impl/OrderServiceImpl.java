@@ -224,13 +224,9 @@ public class OrderServiceImpl implements OrderService {
         for (OrderItem item : order.getOrderItems()) {
             Product product = item.getProduct();
             if (product != null) {
-                int currentStock = product.getStockQuantity();
-                int quantityToRestore = item.getQuantity();
-
-                // Cộng dồn số lượng
-                product.setStockQuantity(currentStock + quantityToRestore);
-
-                // Lưu xuống DB
+                // Đảm bảo không có lỗi dữ liệu nếu quantity bị null
+                int quantityToRestore = (item.getQuantity() != null) ? item.getQuantity() : 0;
+                product.setStockQuantity(product.getStockQuantity() + quantityToRestore);
                 productRepository.save(product);
             }
         }

@@ -145,7 +145,7 @@ const ShoppingCart = () => {
           <button
             className="buy-btn"
             onClick={handleCheckoutClick} // <-- Gọi hàm chuyển trang
-            // disabled={selectedItems.length === 0}
+            disabled={selectedItems.length === 0}
           >
             Mua Hàng
           </button>

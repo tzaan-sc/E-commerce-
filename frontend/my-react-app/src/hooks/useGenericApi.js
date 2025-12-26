@@ -3,14 +3,29 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
-// Base URL cho tất cả các API (ví dụ: http://localhost:8080/api/brands)
 const API_BASE_URL = 'http://localhost:8080/api/';
 
-const useGenericApi = (resourceName) => { // resourceName là 'brands', 'categories', 'screensize'...
+const useGenericApi = (resourceName) => {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const endpoint = `${API_BASE_URL}${resourceName}`;
+
+    // --- Helper để lấy tin nhắn lỗi chuẩn xác từ Backend ---
+    const getErrorMessage = (err) => {
+        if (err.response && err.response.data) {
+            // Trường hợp 1: Backend trả về JSON chuẩn Spring (có field 'message')
+            if (err.response.data.message) {
+                return err.response.data.message;
+            }
+            // Trường hợp 2: Backend trả về String thô (ví dụ: ResponseEntity.badRequest().body("Lỗi rồi"))
+            if (typeof err.response.data === 'string') {
+                return err.response.data;
+            }
+        }
+        // Trường hợp 3: Lỗi mạng hoặc lỗi không xác định
+        return err.message || 'Có lỗi xảy ra, vui lòng thử lại.';
+    };
 
     // ---------------------- READ ALL ----------------------
     const fetchData = async () => {
@@ -19,11 +34,10 @@ const useGenericApi = (resourceName) => { // resourceName là 'brands', 'categor
             setError(null);
             const response = await axios.get(endpoint);
             
-            // Tạm thời mock relatedCount (ví dụ: productCount) nếu backend chưa cung cấp
+            // Mock productCount (Bạn nhớ cập nhật Backend sau này để trả về số thật nhé)
             const processedData = response.data.map(item => ({
                 ...item,
-                // Giả định trường này là 'productCount' cho Brand, 'relatedCount' cho cái khác
-                productCount: item.productCount || Math.floor(Math.random() * 60) + 10 
+                productCount: item.productCount || 0 
             }));
             
             setData(processedData);
@@ -40,77 +54,50 @@ const useGenericApi = (resourceName) => { // resourceName là 'brands', 'categor
         try {
             const response = await axios.post(endpoint, itemData);
             const newItem = response.data;
-            // Thêm item mới vào state (với productCount mặc định)
+            // Khi thêm mới, mặc định số lượng liên quan là 0
             setData(prevData => [...prevData, { ...newItem, productCount: 0 }]);
             return { success: true, item: newItem };
         } catch (err) {
-            const errorMessage = err.response?.data?.message || 'Lỗi không xác định khi thêm.';
-            return { success: false, error: errorMessage };
+            return { success: false, error: getErrorMessage(err) };
         }
     };
 
-    // // ---------------------- UPDATE ----------------------
-    // const updateItem = async (itemData) => {
-    //     try {
-    //         const response = await axios.put(endpoint, itemData);
-    //         const updatedItem = response.data;
+    // ---------------------- UPDATE ----------------------
+    const updateItem = async (itemData) => {
+        try {
+            const itemId = itemData.id; 
+            const urlWithId = `${endpoint}/${itemId}`; 
             
-    //         // Cập nhật item trong state
-    //         setData(prevData => 
-    //             prevData.map(item => (item.id === updatedItem.id ? { ...item, ...updatedItem } : item))
-    //         );
-    //         return { success: true, item: updatedItem };
-    //     } catch (err) {
-    //         const errorMessage = err.response?.data?.message || 'Lỗi không xác định khi cập nhật.';
-    //         return { success: false, error: errorMessage };
-    //     }
-    // };
-
-    // Thay thế hàm UPDATE trong hooks/useGenericApi.js
-// ---------------------- UPDATE ----------------------
-const updateItem = async (itemData) => {
-    try {
-        // Lấy ID. Chúng ta giả định itemData luôn chứa ID.
-        const itemId = itemData.id; 
-        
-        // 💡 Quyết định URL: Dùng ID trong URL cho các Controller /resource/{id}
-        // URL sẽ là: /api/brands/1, /api/usage-purposes/2, ...
-        const urlWithId = `${endpoint}/${itemId}`; 
-        
-        // Backend UsagePurposeController/BrandController vẫn cần ID trong body để validation, nên gửi toàn bộ itemData
-        const response = await axios.put(urlWithId, itemData); 
-        const updatedItem = response.data;
-        
-        // Cập nhật item trong state
-        setData(prevData => 
-            prevData.map(item => (item.id === updatedItem.id ? { ...item, ...updatedItem } : item))
-        );
-        return { success: true, item: updatedItem };
-    } catch (err) {
-        // Cải thiện việc báo lỗi từ backend
-        const errorMessage = err.response?.data?.message || 'Lỗi không xác định khi cập nhật.';
-        return { success: false, error: errorMessage };
-    }
-};
-// ----------------------------------------------------
+            const response = await axios.put(urlWithId, itemData); 
+            const updatedItem = response.data;
+            
+            // Cập nhật lại item trong danh sách mà không cần load lại trang
+            setData(prevData => 
+                prevData.map(item => (item.id === updatedItem.id ? { ...item, ...updatedItem } : item))
+            );
+            return { success: true, item: updatedItem };
+        } catch (err) {
+            return { success: false, error: getErrorMessage(err) };
+        }
+    };
 
     // ---------------------- DELETE ----------------------
     const deleteItem = async (itemId) => {
         try {
             await axios.delete(`${endpoint}/${itemId}`);
-            // Xóa item khỏi state
+            
+            // Xóa thành công thì loại bỏ khỏi state ngay lập tức
             setData(prevData => prevData.filter(item => item.id !== itemId));
             return { success: true };
         } catch (err) {
-            const errorMessage = err.response?.data?.message || 'Lỗi không xác định khi xóa.';
-            return { success: false, error: errorMessage };
+            // 👇 Quan trọng: Trả về error text để Frontend hiển thị alert
+            return { success: false, error: getErrorMessage(err) };
         }
     };
 
-    // Tự động gọi API khi hook được mount
     useEffect(() => {
         fetchData();
-    }, [resourceName]); // Chạy lại khi tên resource thay đổi
+    }, [resourceName]);
 
     return { 
         data, 

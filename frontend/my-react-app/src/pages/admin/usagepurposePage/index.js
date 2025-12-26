@@ -1,9 +1,6 @@
-import React, { useState, useEffect, useRef,useMemo } from 'react';
-// import axios from 'axios'; // You can remove axios if you use apiClient
-import apiClient from "../../../api/axiosConfig"; // 👈 FIXED IMPORT PATH
-import ImportProductModal from '../../../components/page/ImportProductModal';
-import ProductsPage from '../ProductsPage';
-import { Save,Upload } from 'lucide-react';
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import apiClient from "../../../api/axiosConfig";
+import { Save, Upload } from "lucide-react";
 import {
   LayoutDashboard,
   Laptop,
@@ -19,91 +16,107 @@ import {
   Edit,
   Trash2,
   Search,
-   ChevronLeft, ChevronRight, UploadCloud,FileSpreadsheet
-} from 'lucide-react';
-import useGenericApi from 'hooks/useGenericApi';
-import '../style.scss';
-
+  ChevronLeft,
+  ChevronRight,
+  UploadCloud,
+  User,
+  Mail,
+  Shield,
+  Activity,
+} from "lucide-react";
+import useGenericApi from "hooks/useGenericApi";
 const UsagePurposePage = () => {
   const {
     data: purposes,
     loading,
-    error,
     addItem: addPurpose,
     deleteItem: deletePurpose,
     updateItem: updatePurpose,
-  } = useGenericApi('usage-purposes'); // endpoint: /api/usage-purposes
+  } = useGenericApi("usage-purposes");
 
-  const [formData, setFormData] = useState({ name: '' });
+  const [formData, setFormData] = useState({ name: "" });
   const [editingId, setEditingId] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const formRef = useRef(null);
 
   const resetForm = () => {
-    setFormData({ name: '' });
+    setFormData({ name: "" });
     setEditingId(null);
   };
 
   const handleSubmit = async () => {
     if (!formData.name.trim()) {
-      alert('Vui lòng nhập tên nhu cầu sử dụng!');
+      alert("Vui lòng nhập tên nhu cầu sử dụng!");
       return;
     }
-    // UsagePurposePage: Gộp ID và FormData thành một object
-    const payload = { id: editingId, ...formData };
+    const payload = editingId ? { id: editingId, ...formData } : formData;
     const fn = editingId ? updatePurpose(payload) : addPurpose(formData);
-
     const result = await fn;
+
     if (result.success) {
-      alert(
-        editingId
-          ? 'Cập nhật nhu cầu sử dụng thành công!'
-          : 'Thêm nhu cầu sử dụng thành công!'
-      );
+      alert(editingId ? "Cập nhật thành công!" : "Thêm mới thành công!");
       resetForm();
     } else {
-      alert(`${editingId ? 'Cập nhật' : 'Thêm'} thất bại: ${result.error}`);
+      // 👇 Hiển thị lỗi chuẩn từ Backend
+      alert(result.error);
     }
   };
 
   const handleEdit = (item) => {
     setFormData({ name: item.name });
     setEditingId(item.id);
-    formRef.current?.scrollIntoView({ behavior: 'smooth' });
+    formRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  // ✅ SỬA LOGIC XÓA 1
   const handleDelete = async (id) => {
-    if (!window.confirm('Bạn có chắc muốn xóa nhu cầu này?')) return;
+    if (!window.confirm("Bạn có chắc muốn xóa nhu cầu này?")) return;
     const result = await deletePurpose(id);
     if (result.success) {
-      alert('Xóa thành công!');
+      alert("Xóa thành công!");
       setSelectedIds((prev) => prev.filter((x) => x !== id));
     } else {
-      alert(`Xóa thất bại: ${result.error}`);
+      // 👇 Hiển thị lỗi chuẩn
+      alert(result.error);
     }
   };
 
+  // ✅ SỬA LOGIC XÓA NHIỀU
   const handleDeleteSelected = async () => {
     if (selectedIds.length === 0) {
-      alert('Vui lòng chọn ít nhất một nhu cầu để xóa!');
+      alert("Vui lòng chọn ít nhất một mục để xóa!");
       return;
     }
     if (
-      !window.confirm(
-        `Bạn có chắc muốn xóa ${selectedIds.length} nhu cầu đã chọn?`
-      )
+      !window.confirm(`Bạn có chắc muốn xóa ${selectedIds.length} mục đã chọn?`)
     )
       return;
-    for (const id of selectedIds) await deletePurpose(id);
-    alert('Xóa các nhu cầu thành công!');
-    setSelectedIds([]);
+
+    let hasError = false;
+    for (const id of selectedIds) {
+      const result = await deletePurpose(id);
+      if (!result.success) {
+        alert(`Không thể xóa (ID: ${id}):\n${result.error}`);
+        hasError = true;
+        break;
+      }
+    }
+
+    if (!hasError) {
+      alert("Xóa tất cả thành công!");
+      setSelectedIds([]);
+    } else {
+      // Clear những ID đã xóa thành công khỏi danh sách chọn
+      setSelectedIds((prev) =>
+        prev.filter((id) => purposes.find((p) => p.id === id))
+      );
+    }
   };
 
   const toggleSelect = (id) =>
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
-
   const toggleSelectAll = () =>
     setSelectedIds((prev) =>
       purposes.length > 0 && prev.length === purposes.length
@@ -112,18 +125,14 @@ const UsagePurposePage = () => {
     );
 
   if (loading) return <div className="loading">Đang tải dữ liệu...</div>;
-  if (error) return <div className="error">Lỗi: {error}</div>;
 
   return (
     <div className="page-card">
-      {/* FORM THÊM/SỬA */}
       <div ref={formRef} className="container mt-4 mb-4">
         <div className="card shadow-sm border-0">
           <div className="card-header bg-primary text-white d-flex align-items-center justify-content-between">
             <h5 className="mb-0">
-              {editingId
-                ? '✏️ Chỉnh sửa nhu cầu sử dụng'
-                : '➕ Thêm nhu cầu sử dụng mới'}
+              {editingId ? " Chỉnh sửa nhu cầu" : " Thêm nhu cầu mới"}
             </h5>
             {editingId && (
               <button className="btn btn-light btn-sm" onClick={resetForm}>
@@ -138,7 +147,7 @@ const UsagePurposePage = () => {
                 <input
                   type="text"
                   className="form-control"
-                  placeholder="VD: Gaming, Văn phòng, Học tập..."
+                  placeholder="VD: Gaming, Văn phòng..."
                   value={formData.name}
                   onChange={(e) =>
                     setFormData({ ...formData, name: e.target.value })
@@ -148,14 +157,13 @@ const UsagePurposePage = () => {
             </div>
             <div className="text-center mt-4">
               <button className="btn btn-primary px-4" onClick={handleSubmit}>
-                {editingId ? '💾 Lưu thay đổi' : '➕ Thêm nhu cầu'}
+                {editingId ? " Lưu thay đổi" : " Thêm nhu cầu"}
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* DANH SÁCH */}
       <div className="page-card__header">
         <h3 className="page-card__title">Danh sách nhu cầu sử dụng</h3>
         {selectedIds.length > 0 && (
@@ -169,7 +177,7 @@ const UsagePurposePage = () => {
         <table className="data-table">
           <thead>
             <tr>
-              <th style={{ width: '50px' }}>
+              <th style={{ width: "50px" }}>
                 <input
                   type="checkbox"
                   checked={
@@ -177,7 +185,7 @@ const UsagePurposePage = () => {
                     selectedIds.length === purposes.length
                   }
                   onChange={toggleSelectAll}
-                  style={{ cursor: 'pointer' }}
+                  style={{ cursor: "pointer" }}
                 />
               </th>
               <th>ID</th>
@@ -194,7 +202,7 @@ const UsagePurposePage = () => {
                     type="checkbox"
                     checked={selectedIds.includes(p.id)}
                     onChange={() => toggleSelect(p.id)}
-                    style={{ cursor: 'pointer' }}
+                    style={{ cursor: "pointer" }}
                   />
                 </td>
                 <td className="font-medium">{p.id}</td>
@@ -220,7 +228,7 @@ const UsagePurposePage = () => {
             ))}
           </tbody>
         </table>
-        {purposes.length === 0 && (
+        {purposes.length === 0 && !loading && (
           <p className="empty-message">Chưa có nhu cầu nào được thêm.</p>
         )}
       </div>

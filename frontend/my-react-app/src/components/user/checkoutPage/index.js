@@ -64,37 +64,16 @@ const CheckoutPage = () => {
   }, []);
 
   const formatCurrency = (amount) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
-// Hàm kiểm tra form
+
   const validateForm = () => { 
       const newErrors = {}; 
-      
-      // 1. Kiểm tra Tên
-      if(!formData.fullName.trim()) {
-          newErrors.fullName = "Vui lòng nhập họ tên.";
-      }
-
-      // 2. Kiểm tra Số điện thoại (QUAN TRỌNG)
-      const phoneRegex = /^(0[3|5|7|8|9])+([0-9]{8})$/; // Regex chuẩn đầu số VN (03, 05, 07, 08, 09) + 8 số đuôi
-      
-      if(!formData.phone.trim()) {
-          newErrors.phone = "Vui lòng nhập số điện thoại.";
-      } else if (!/^\d+$/.test(formData.phone)) {
-          newErrors.phone = "Số điện thoại chỉ được chứa số.";
-      } else if (formData.phone.length !== 10) {
-          newErrors.phone = "Số điện thoại phải có đúng 10 chữ số.";
-      } else if (!phoneRegex.test(formData.phone)) {
-          // Tùy chọn: Kiểm tra chặt chẽ hơn đầu số (nếu cần)
-          newErrors.phone = "Số điện thoại không hợp lệ (VD: 0912345678).";
-      }
-
-      // 3. Kiểm tra Địa chỉ
-      if(!formData.address.trim()) {
-          newErrors.address = "Vui lòng nhập địa chỉ nhận hàng.";
-      } 
-      
+      if(!formData.fullName.trim()) newErrors.fullName="Nhập họ tên"; 
+      if(!formData.phone.trim()) newErrors.phone="Nhập SĐT"; 
+      if(!formData.address.trim()) newErrors.address="Nhập địa chỉ"; 
       setErrors(newErrors); 
       return Object.keys(newErrors).length === 0; 
   };
+
   const handleInputChange = (e) => { 
       const { name, value } = e.target; 
       setFormData(prev => ({ ...prev, [name]: value })); 

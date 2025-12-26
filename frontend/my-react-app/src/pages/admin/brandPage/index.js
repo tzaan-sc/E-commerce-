@@ -1,9 +1,6 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-// import axios from 'axios'; // You can remove axios if you use apiClient
-import apiClient from '../../../api/axiosConfig'; // 👈 FIXED IMPORT PATH
-import ImportProductModal from '../../../components/page/ImportProductModal';
-import ProductsPage from '../ProductsPage';
-import { Save, Upload } from 'lucide-react';
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import apiClient from "../../../api/axiosConfig";
+import { Save, Upload } from "lucide-react";
 import {
   LayoutDashboard,
   Laptop,
@@ -22,10 +19,12 @@ import {
   ChevronLeft,
   ChevronRight,
   UploadCloud,
-  FileSpreadsheet,
-} from 'lucide-react';
-import useGenericApi from 'hooks/useGenericApi';
-import '../style.scss';
+  User,
+  Mail,
+  Shield,
+  Activity,
+} from "lucide-react";
+import useGenericApi from "hooks/useGenericApi";
 
 const BrandsPage = () => {
   const {
@@ -35,11 +34,11 @@ const BrandsPage = () => {
     addItem: addBrand,
     deleteItem: deleteBrand,
     updateItem: updateBrand,
-  } = useGenericApi('brands');
+  } = useGenericApi("brands");
 
   const [formData, setFormData] = useState({
-    name: '',
-    logoUrl: '',
+    name: "",
+    logoUrl: "",
   });
   const [editingId, setEditingId] = useState(null);
   const [selectedBrands, setSelectedBrands] = useState([]);
@@ -47,14 +46,14 @@ const BrandsPage = () => {
 
   // Reset form
   const resetForm = () => {
-    setFormData({ name: '', logoUrl: '' });
+    setFormData({ name: "", logoUrl: "" });
     setEditingId(null);
   };
 
   // Xử lý thêm/sửa thương hiệu
   const handleSubmit = async () => {
     if (!formData.name.trim()) {
-      alert('Vui lòng nhập tên thương hiệu!');
+      alert("Vui lòng nhập tên thương hiệu!");
       return;
     }
 
@@ -64,7 +63,7 @@ const BrandsPage = () => {
       const payload = { id: editingId, ...formData };
       const result = await updateBrand(payload);
       if (result.success) {
-        alert('Cập nhật thương hiệu thành công!');
+        alert("Cập nhật thương hiệu thành công!");
         resetForm();
       } else {
         alert(`Cập nhật thất bại: ${result.error}`);
@@ -73,7 +72,7 @@ const BrandsPage = () => {
       // Thêm mới
       const result = await addBrand(formData);
       if (result.success) {
-        alert('Thêm thương hiệu thành công!');
+        alert("Thêm thương hiệu thành công!");
         resetForm();
       } else {
         alert(`Thêm thất bại: ${result.error}`);
@@ -85,40 +84,54 @@ const BrandsPage = () => {
   const handleEditBrand = (brand) => {
     setFormData({ name: brand.name, logoUrl: brand.logoUrl });
     setEditingId(brand.id);
-    formRef.current?.scrollIntoView({ behavior: 'smooth' });
+    formRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   // Xử lý xóa một thương hiệu
   const handleDeleteBrand = async (brandId) => {
-    if (window.confirm('Bạn có chắc muốn xóa thương hiệu này?')) {
+    if (window.confirm("Bạn có chắc muốn xóa thương hiệu này?")) {
       const result = await deleteBrand(brandId);
       if (result.success) {
-        alert('Xóa thương hiệu thành công!');
-        setSelectedBrands(selectedBrands.filter((id) => id !== brandId));
+        alert("Xóa thành công!");
+        setSelectedBrands((prev) => prev.filter((id) => id !== brandId));
       } else {
-        alert(`Xóa thất bại: ${result.error}`);
+        alert(result.error); // 👇 Hiện nguyên văn lỗi backend
       }
     }
   };
 
   // Xử lý xóa nhiều thương hiệu
+  // --- XÓA NHIỀU MỤC ---
   const handleDeleteSelected = async () => {
     if (selectedBrands.length === 0) {
-      alert('Vui lòng chọn ít nhất một thương hiệu để xóa!');
+      alert("Vui lòng chọn ít nhất một thương hiệu!");
       return;
     }
-
     if (
-      window.confirm(
+      !window.confirm(
         `Bạn có chắc muốn xóa ${selectedBrands.length} thương hiệu đã chọn?`
       )
-    ) {
-      for (const brandId of selectedBrands) {
-        await deleteBrand(brandId);
+    )
+      return;
+
+    // Duyệt qua từng item để xóa
+    for (const brandId of selectedBrands) {
+      const result = await deleteBrand(brandId);
+
+      // 👇 Nếu gặp lỗi thì báo ngay và dừng lại, không xóa tiếp các mục sau
+      if (!result.success) {
+        alert(result.error);
+        // Load lại danh sách những cái đã xóa được (cập nhật lại state selected)
+        setSelectedBrands((prev) =>
+          prev.filter((id) => brands.find((b) => b.id === id))
+        );
+        return;
       }
-      alert('Xóa các thương hiệu thành công!');
-      setSelectedBrands([]);
     }
+
+    // Nếu chạy hết vòng lặp mà không lỗi
+    alert("Đã xóa tất cả mục đã chọn thành công!");
+    setSelectedBrands([]);
   };
 
   // Toggle chọn một thương hiệu
@@ -153,9 +166,7 @@ const BrandsPage = () => {
         <div className="card shadow-sm border-0">
           <div className="card-header bg-primary text-white d-flex align-items-center justify-content-between">
             <h5 className="mb-0">
-              {editingId
-                ? '✏️ Chỉnh sửa thương hiệu'
-                : '➕ Thêm thương hiệu mới'}
+              {editingId ? "Chỉnh sửa thương hiệu" : "Thêm thương hiệu mới"}
             </h5>
             {editingId && (
               <button className="btn btn-light btn-sm" onClick={resetForm}>
@@ -197,7 +208,7 @@ const BrandsPage = () => {
 
             <div className="text-center mt-4">
               <button className="btn btn-primary px-4" onClick={handleSubmit}>
-                {editingId ? '💾 Lưu thay đổi' : '➕ Thêm thương hiệu'}
+                {editingId ? "Lưu thay đổi" : "Thêm thương hiệu"}
               </button>
             </div>
           </div>
@@ -219,14 +230,14 @@ const BrandsPage = () => {
         <table className="data-table">
           <thead>
             <tr>
-              <th style={{ width: '50px' }}>
+              <th style={{ width: "50px" }}>
                 <input
                   type="checkbox"
                   checked={
                     brands.length > 0 && selectedBrands.length === brands.length
                   }
                   onChange={toggleSelectAll}
-                  style={{ cursor: 'pointer' }}
+                  style={{ cursor: "pointer" }}
                 />
               </th>
               <th>ID</th>
@@ -244,7 +255,7 @@ const BrandsPage = () => {
                     type="checkbox"
                     checked={selectedBrands.includes(brand.id)}
                     onChange={() => toggleSelectBrand(brand.id)}
-                    style={{ cursor: 'pointer' }}
+                    style={{ cursor: "pointer" }}
                   />
                 </td>
                 <td className="font-medium">{brand.id}</td>
@@ -253,23 +264,23 @@ const BrandsPage = () => {
                   <img
                     src={
                       brand.logoUrl
-                        ? brand.logoUrl.startsWith('http')
+                        ? brand.logoUrl.startsWith("http")
                           ? brand.logoUrl
                           : `http://localhost:8080${brand.logoUrl}`
-                        : 'https://via.placeholder.com/40' // Ảnh mặc định nếu không có logo
+                        : "https://via.placeholder.com/40" // Ảnh mặc định nếu không có logo
                     }
                     alt={brand.name}
                     className="brand-logo-thumbnail"
                     style={{
-                      width: '40px',
-                      height: '40px',
-                      objectFit: 'contain',
-                      border: '1px solid #eee',
+                      width: "40px",
+                      height: "40px",
+                      objectFit: "contain",
+                      border: "1px solid #eee",
                     }}
                     // Thêm xử lý lỗi ảnh nếu link chết
                     onError={(e) => {
                       e.target.src =
-                        'https://via.placeholder.com/40?text=Error';
+                        "https://via.placeholder.com/40?text=Error";
                     }}
                   />
                 </td>

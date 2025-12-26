@@ -545,6 +545,11 @@ $shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
     color: #1e40af !important; 
     border: 1px solid #60a5fa; 
   }
+  &--purple {
+    background-color: #f3e8ff !important; // Tím nhạt
+    color: #7e22ce !important;            // Tím đậm
+    border: 1px solid #a855f7;            // Viền tím (dùng biến $purple-color)
+  }
   &--primary {
     background-color: #e0e7ff !important; 
     color: #3730a3 !important; 
