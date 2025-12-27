@@ -118,6 +118,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -187,21 +188,63 @@ public class OrderServiceImpl implements OrderService {
     // ==============================================================
     @Override
     @Transactional
-    public OrderDTO updateOrderStatus(Long orderId, String status) {
+    public OrderDTO updateOrderStatus(Long orderId, String newStatus) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
 
-        String newStatus = status.toUpperCase();
         String oldStatus = order.getStatus();
 
-        // 👇 Nếu Admin chuyển sang "CANCELLED" và đơn hàng chưa bị hủy trước đó -> CỘNG LẠI KHO
-        if ("CANCELLED".equals(newStatus) && !"CANCELLED".equals(oldStatus)) {
-            restoreStock(order);
+        // Danh sách các trạng thái CẦN TRỪ KHO
+        List<String> stockDeductedStatuses = Arrays.asList("PROCESSING", "SHIPPING", "COMPLETED", "CONFIRMED");
+
+        // Kiểm tra xem trạng thái Cũ và Mới có thuộc nhóm phải trừ kho không?
+        boolean isNewStatusDeducted = stockDeductedStatuses.contains(newStatus);
+        boolean isOldStatusDeducted = stockDeductedStatuses.contains(oldStatus);
+
+        // -----------------------------------------------------------------
+        // 👇 LOGIC 1: TRỪ KHO (Khi chuyển từ "Chưa trừ" -> "Đã trừ")
+        // (Ví dụ: PENDING -> PROCESSING, hoặc PENDING -> SHIPPING)
+        // -----------------------------------------------------------------
+        if (isNewStatusDeducted && !isOldStatusDeducted) {
+            System.out.println("--> BẮT ĐẦU TRỪ KHO CHO ĐƠN: " + orderId);
+            for (OrderItem item : order.getOrderItems()) {
+                Product product = item.getProduct();
+
+                // Trừ số lượng
+                int newStock = product.getStockQuantity() - item.getQuantity();
+
+                // Chặn nếu hết hàng
+                if (newStock < 0) {
+                    throw new RuntimeException("Sản phẩm '" + product.getName() + "' không đủ hàng (Còn: " + product.getStockQuantity() + ", Cần: " + item.getQuantity() + ")");
+                }
+
+                product.setStockQuantity(newStock);
+                productRepository.save(product);
+                System.out.println("   Đã trừ: " + product.getName() + " | Còn lại: " + newStock);
+            }
         }
 
+        // -----------------------------------------------------------------
+        // 👇 LOGIC 2: HOÀN KHO (Khi Hủy đơn mà trước đó đã trừ kho rồi)
+        // -----------------------------------------------------------------
+        if ("CANCELLED".equals(newStatus) && isOldStatusDeducted) {
+            System.out.println("--> HOÀN KHO CHO ĐƠN HỦY: " + orderId);
+            for (OrderItem item : order.getOrderItems()) {
+                Product product = item.getProduct();
+
+                int newStock = product.getStockQuantity() + item.getQuantity();
+
+                product.setStockQuantity(newStock);
+                productRepository.save(product);
+                System.out.println("   Đã hoàn: " + product.getName() + " | Mới: " + newStock);
+            }
+        }
+
+        // Lưu trạng thái mới
         order.setStatus(newStatus);
-        Order savedOrder = orderRepository.save(order);
-        return mapOrderToDTO(savedOrder);
+        Order updatedOrder = orderRepository.save(order);
+
+        return mapOrderToDTO(updatedOrder);
     }
 
     @Override
@@ -235,6 +278,7 @@ public class OrderServiceImpl implements OrderService {
     private OrderDTO mapOrderToDTO(Order order) {
         List<OrderItemDTO> itemDTOs = order.getOrderItems().stream()
                 .map(item -> {
+                    // Logic lấy ảnh (giữ nguyên)
                     String productImageUrl = null;
                     if (item.getProduct() != null
                             && item.getProduct().getImages() != null
@@ -242,11 +286,15 @@ public class OrderServiceImpl implements OrderService {
                         productImageUrl = item.getProduct().getImages().get(0).getUrlImage();
                     }
 
+                    // 👇👇👇 THÊM DÒNG NÀY: LẤY ID SẢN PHẨM AN TOÀN 👇👇👇
+                    Long productId = (item.getProduct() != null) ? item.getProduct().getId() : null;
+
                     return OrderItemDTO.builder()
                             .productName(item.getProductName())
                             .quantity(item.getQuantity())
                             .price(item.getPrice())
                             .imageUrl(productImageUrl)
+                            .productId(productId) // 👈 GÁN VÀO ĐÂY
                             .build();
                 })
                 .collect(Collectors.toList());
@@ -263,4 +311,4 @@ public class OrderServiceImpl implements OrderService {
                 .shippingAddress(order.getShippingAddress())
                 .build();
     }
-}
+    }
