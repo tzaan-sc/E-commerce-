@@ -6,12 +6,10 @@ import { addToCart } from "api/cart";
 import { ROUTERS } from "utils/router";
 import "./style.scss";
 
-// 👇 Nhận prop 'product' từ cha
 const ProductDetail = ({ product }) => {
   const navigate = useNavigate(); 
   const { fetchCartCount } = useCart(); 
 
-  // Không cần state product và loading nữa vì cha đã lo
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('description');
   const [isAdding, setIsAdding] = useState(false); 
@@ -28,7 +26,7 @@ const ProductDetail = ({ product }) => {
     }
   };
 
-  // Logic thêm giỏ hàng (Giữ nguyên)
+  // Logic thêm giỏ hàng
   const processAddToCart = async () => {
     const user = localStorage.getItem("user");
     if (!user) {
@@ -66,7 +64,6 @@ const ProductDetail = ({ product }) => {
       }
   };
 
-  // Nếu chưa có product (dù cha đã check, nhưng check lại cho chắc)
   if (!product) return null;
 
   return (
@@ -148,37 +145,45 @@ const ProductDetail = ({ product }) => {
             </div>
           )}
 
+          {/* 👇 ĐÂY LÀ PHẦN ĐÃ SỬA LOGIC HIỂN THỊ THÔNG SỐ */}
           {activeTab === 'specs' && (
              <div className="specs-text-block">
-               {product.specs && product.specs.length > 0 ? (
-                 <div className="specs-list">
-                   {product.specs.map((spec, index) => {
-                     // Lấy giá trị của thông số (vd: "- CPU: Intel Core i5...")
-                     const specContent = spec.value || spec.detail || spec;
-                     
-                     // Nếu dữ liệu là chuỗi dài, ta sẽ tách nó ra để xuống dòng
-                     if (typeof specContent === 'string') {
-                         // Tách chuỗi dựa trên dấu gạch ngang " - " hoặc xuống dòng "\n"
-                         const lines = specContent.split(/- /g).filter(line => line.trim() !== "");
-                         
-                         return lines.map((line, idx) => (
-                             <p key={`${index}-${idx}`} style={{ marginBottom: '8px', lineHeight: '1.6' }}>
-                                 <strong>• </strong> {line.trim()}
-                             </p>
-                         ));
-                     }
-                     
-                     // Trường hợp dữ liệu đã đẹp sẵn (JSON object)
-                     return (
-                        <p key={index} style={{ marginBottom: '8px' }}>
-                           <strong>{spec.label || spec.name}: </strong> {specContent}
-                        </p>
-                     );
-                   })}
-                 </div>
-               ) : (
-                 <p>Chưa có thông số chi tiết.</p>
-               )}
+               {(() => {
+                 // 1. Lấy dữ liệu từ specifications (tên trong DB) hoặc specs (tên cũ)
+                 const specsData = product.specifications || product.specs;
+
+                 // 2. Nếu không có dữ liệu
+                 if (!specsData) return <p>Chưa có thông số chi tiết.</p>;
+
+                 // 3. Nếu dữ liệu là Chuỗi (String) -> Cắt theo dấu gạch ngang "-"
+                 if (typeof specsData === 'string') {
+                   const list = specsData.split('-').filter(item => item.trim() !== "");
+                   
+                   return (
+                     <div className="specs-list" style={{ paddingLeft: '10px' }}>
+                       {list.map((item, index) => (
+                         <p key={index} style={{ marginBottom: '8px', lineHeight: '1.6', borderBottom: '1px dashed #eee', paddingBottom: '5px' }}>
+                            {/* Replace xuống dòng thừa nếu có để text liền mạch */}
+                            <strong>• {item.trim().replace(/\n/g, " ")}</strong> 
+                         </p>
+                       ))}
+                     </div>
+                   );
+                 }
+
+                 // 4. (Dự phòng) Nếu dữ liệu là Array cũ
+                 if (Array.isArray(specsData)) {
+                    return (
+                      <div className="specs-list">
+                        {specsData.map((item, index) => (
+                          <p key={index}>• {item.value || item}</p>
+                        ))}
+                      </div>
+                    );
+                 }
+
+                 return <p>Định dạng thông số không hỗ trợ.</p>;
+               })()}
              </div>
           )}  
         </div>
