@@ -19,17 +19,10 @@ const ProductDetailPage = () => {
         const response = await axios.get(`http://localhost:8080/api/products/${id}`);
         const data = response.data;
 
-        // 1. Xử lý thông số kỹ thuật
-        let parsedSpecs = [];
-        try {
-          if (data.specifications) {
-            parsedSpecs = JSON.parse(data.specifications);
-          }
-        } catch (e) {
-          parsedSpecs = [{ label: "Thông số", value: data.specifications }];
-        }
-
-        // 2. Xử lý hình ảnh
+        // 👇 ĐÃ SỬA: Không cần parse JSON nữa, giữ nguyên data gốc
+        // Vì data.specifications bây giờ là chuỗi văn bản dài
+        
+        // Xử lý hình ảnh (Giữ nguyên logic của bạn)
         let productImages = [];
         if (data.images && data.images.length > 0) {
             productImages = data.images.map(img => `http://localhost:8080${img.urlImage}`);
@@ -37,7 +30,7 @@ const ProductDetailPage = () => {
             productImages = ["https://via.placeholder.com/600x600?text=No+Image"];
         }
 
-        setProduct({ ...data, specs: parsedSpecs });
+        setProduct(data); // Lưu trực tiếp data
         setImages(productImages);
 
       } catch (error) {
@@ -56,19 +49,17 @@ const ProductDetailPage = () => {
   return (
     <div className="main-container product-detail-page">
        <div className="container">
-          {/* 👇 ĐÃ SỬA: Xóa class 'row' để không chia cột ngang nữa */}
           <div className="product-content-wrapper">
-             
-             {/* 1. Carousel Ảnh nằm trên cùng */}
+             {/* 1. Carousel Ảnh */}
              <div className="product-section-image" style={{ marginBottom: '30px' }}>
                 <Carousel images={images} />
              </div>
 
-             {/* 2. Thông tin chi tiết nằm ngay bên dưới */}
+             {/* 2. Thông tin chi tiết */}
              <div className="product-section-info">
+                {/* 👇 Truyền toàn bộ product vào đây */}
                 <ProductDetail product={product} />
              </div>
-
           </div>
           
           <div style={{ marginTop: '50px' }}>
