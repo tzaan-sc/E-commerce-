@@ -2,6 +2,23 @@
 import React, { memo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from '../../../hooks/useAuth';
+import { GoogleLogin } from "@react-oauth/google";
+import axios from "axios";
+const handleGoogleLogin = async (credentialResponse) => {
+  try {
+    const res = await axios.post(
+      "http://localhost:8080/api/auth/google",
+      {
+        token: credentialResponse.credential,
+      }
+    );
+
+    localStorage.setItem("token", res.data.token);
+    window.location.href = "/";
+  } catch (error) {
+    console.error("Google login failed", error);
+  }
+};
 
 
 const LoginPage = () => {
@@ -74,6 +91,19 @@ const LoginPage = () => {
               >
                 {loading ? "Đang đăng nhập..." : "Đăng Nhập"}
               </button>
+
+              <div className="text-center my-3">
+  <span>Hoặc đăng nhập bằng</span>
+</div>
+
+<div className="d-flex justify-content-center mb-3">
+                <GoogleLogin
+                  onSuccess={handleGoogleLogin}
+                  onError={() => console.log("Google Login Failed")}
+                  clientId="733137263298-rd2c4so8vnreuua7dvtgrmgg90cnu72i.apps.googleusercontent.com" // <-- thêm dòng này
+                />
+              </div>
+
 
               <p className="text-center mt-3">
                 Bạn chưa có tài khoản? <Link to="/dang-ky">Đăng ký</Link>

@@ -221,4 +221,35 @@ public class AuthService {
                 user.getRole()
         );
     }
+
+    /**
+     * Đăng nhập bằng Google
+     */
+    public AuthResponse loginWithGoogle(String email, String fullName) {
+
+        User user = userRepository.findByEmail(email)
+                .orElseGet(() -> {
+                    // Nếu chưa có user → tạo mới
+                    User newUser = User.builder()
+                            .email(email)
+                            .username(fullName)
+                            .password(null) // Google không cần password
+                            .role(Role.CUSTOMER)
+                            .isActive(true)
+                            .build();
+
+                    return userRepository.save(newUser);
+                });
+
+        // Tạo JWT
+        String token = jwtService.generateToken(user);
+
+        return new AuthResponse(
+                token,
+                user.getUsername(),
+                user.getEmail(),
+                user.getRole()
+        );
+    }
+
 }
