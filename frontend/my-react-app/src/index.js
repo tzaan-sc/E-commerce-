@@ -17,15 +17,15 @@ root.render(
   
   // </BrowserRouter>
   <React.StrictMode>
-    <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID">
+    <GoogleOAuthProvider clientId="733137263298-rd2c4so8vnreuua7dvtgrmgg90cnu72i.apps.googleusercontent.com">
       <BrowserRouter>
       {/* 3. BỌC PROVIDER VÀO ĐÂY */}
       {/* Đặt AuthProvider bên ngoài cùng, sau đó là CartProvider */}
-      <useAuth> 
+      
         <CartProvider> {/* <-- CHÍNH LÀ CHỖ CẦN BỌC */}
           <RouterCustom />
         </CartProvider>
-      </useAuth>
+      
     </BrowserRouter>
     </GoogleOAuthProvider>
     

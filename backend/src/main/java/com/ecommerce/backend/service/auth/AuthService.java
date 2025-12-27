@@ -149,6 +149,8 @@ import com.ecommerce.backend.repository.auth.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import java.util.Optional;
+
 
 @Service
 @RequiredArgsConstructor
@@ -218,38 +220,44 @@ public class AuthService {
                 token,
                 user.getUsername(),
                 user.getEmail(),
-                user.getRole()
+                user.getRole(),
+                false
         );
     }
 
     /**
      * Đăng nhập bằng Google
      */
-    public AuthResponse loginWithGoogle(String email, String fullName) {
+    public AuthResponse loginWithGoogle(String email, String name) {
 
-        User user = userRepository.findByEmail(email)
-                .orElseGet(() -> {
-                    // Nếu chưa có user → tạo mới
-                    User newUser = User.builder()
-                            .email(email)
-                            .username(fullName)
-                            .password(null) // Google không cần password
-                            .role(Role.CUSTOMER)
-                            .isActive(true)
-                            .build();
+        Optional<User> optionalUser = userRepository.findByEmail(email);
 
-                    return userRepository.save(newUser);
-                });
+        // 🔹 ĐÃ ĐĂNG KÝ → LOGIN
+        if (optionalUser.isPresent()) {
+            User user = optionalUser.get();
 
-        // Tạo JWT
-        String token = jwtService.generateToken(user);
+            String token = jwtService.generateToken(user);
 
+            return new AuthResponse(
+                    token,
+                    user.getUsername(),
+                    user.getEmail(),
+                    user.getRole(),
+                    false // isNewUser
+            );
+        }
+
+        // 🔹 CHƯA ĐĂNG KÝ → KHÔNG TOKEN
         return new AuthResponse(
-                token,
-                user.getUsername(),
-                user.getEmail(),
-                user.getRole()
+                null,
+                null,
+                email,
+                null,
+                true // isNewUser
         );
     }
+
+
+
 
 }

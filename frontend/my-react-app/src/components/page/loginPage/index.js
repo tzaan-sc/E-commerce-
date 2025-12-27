@@ -1,28 +1,15 @@
 // src/pages/LoginPage.jsx
 import React, { memo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from '../../../hooks/useAuth';
 import { GoogleLogin } from "@react-oauth/google";
 import axios from "axios";
-const handleGoogleLogin = async (credentialResponse) => {
-  try {
-    const res = await axios.post(
-      "http://localhost:8080/api/auth/google",
-      {
-        token: credentialResponse.credential,
-      }
-    );
-
-    localStorage.setItem("token", res.data.token);
-    window.location.href = "/";
-  } catch (error) {
-    console.error("Google login failed", error);
-  }
-};
 
 
 const LoginPage = () => {
   const { login, loading } = useAuth();
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({ email: "", password: "" });
 
   const handleChange = (e) => {
@@ -33,6 +20,40 @@ const LoginPage = () => {
     e.preventDefault();
     await login(formData);
   };
+
+  const handleGoogleLogin = async (credentialResponse) => {
+  try {
+    const res = await axios.post(
+      "http://localhost:8080/api/auth/login/google",
+      { token: credentialResponse.credential }
+    );
+
+    // 👉 USER CHƯA ĐĂNG KÝ
+    if (res.data.isNewUser) {
+      navigate("/dang-ky", {
+        state: { email: res.data.email }
+      });
+      return;
+    }
+
+    // 👉 USER ĐÃ ĐĂNG KÝ
+    localStorage.setItem("token", res.data.token);
+    localStorage.setItem(
+      "user",
+      JSON.stringify({
+        email: res.data.email,
+        role: res.data.role,
+      })
+    );
+
+    navigate("/");
+
+  } catch (error) {
+    console.error("Google login failed", error);
+  }
+};
+
+
 
   return (
     <div className="login-page registration-page container-fluid">
@@ -98,10 +119,10 @@ const LoginPage = () => {
 
 <div className="d-flex justify-content-center mb-3">
                 <GoogleLogin
-                  onSuccess={handleGoogleLogin}
-                  onError={() => console.log("Google Login Failed")}
-                  clientId="733137263298-rd2c4so8vnreuua7dvtgrmgg90cnu72i.apps.googleusercontent.com" // <-- thêm dòng này
-                />
+  onSuccess={handleGoogleLogin}
+  onError={() => console.log("Google Login Failed")}
+/>
+
               </div>
 
 

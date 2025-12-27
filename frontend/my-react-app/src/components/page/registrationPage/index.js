@@ -1,38 +1,25 @@
 import React, { memo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
-import { GoogleLogin } from "@react-oauth/google";
-import axios from "axios";
+import { useLocation } from "react-router-dom";
 import './style.scss';
 
 const RegistrationPage = () => {
   const { register, loading } = useAuth();
-  const [formData, setFormData] = useState({
-    username: '',
-    phone: '',
-    email: '',
-    address: '',
-    password: '',
-    confirmPassword: '',
-  });
+  const location = useLocation();
+
+const [formData, setFormData] = useState({
+  username: '',
+  phone: '',
+  email: location.state?.email || '',
+  address: '',
+  password: '',
+  confirmPassword: '',
+});
+
 
   
-const handleGoogleRegister = async (credentialResponse) => {
-  try {
-    const res = await axios.post(
-      "http://localhost:8080/api/auth/google",
-      {
-        token: credentialResponse.credential,
-      }
-    );
 
-    // Lưu token vào localStorage và chuyển hướng về trang chính
-    localStorage.setItem("token", res.data.token);
-    window.location.href = "/";
-  } catch (error) {
-    console.error("Google registration/login failed", error);
-  }
-};
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -103,6 +90,7 @@ const handleGoogleRegister = async (credentialResponse) => {
                   value={formData.email}
                   onChange={handleChange}
                   required
+                  readOnly={!!location.state?.email}
                 />
               </div>
 
@@ -155,16 +143,7 @@ const handleGoogleRegister = async (credentialResponse) => {
                 Đăng Kí
               </button>
               
-              <div className="text-center my-3">
-  <span>Hoặc đăng ký bằng</span>
-</div>
-
-<div className="d-flex justify-content-center mb-3">
-  <GoogleLogin
-    onSuccess={handleGoogleRegister}
-    onError={() => console.log("Google Login Failed")}
-  />
-</div>
+             
 
 
               <p className="text-center mt-3">
