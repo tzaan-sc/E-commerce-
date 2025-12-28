@@ -29,7 +29,9 @@ const LoginPage = () => {
     );
 
     // 👉 USER CHƯA ĐĂNG KÝ
+    
     if (res.data.isNewUser) {
+      localStorage.clear();
       navigate("/dang-ky", {
         state: { email: res.data.email }
       });
@@ -42,12 +44,13 @@ const LoginPage = () => {
       "user",
       JSON.stringify({
         email: res.data.email,
+        username: res.data.username,
         role: res.data.role,
       })
     );
 
     navigate("/");
-
+  
   } catch (error) {
     console.error("Google login failed", error);
   }
