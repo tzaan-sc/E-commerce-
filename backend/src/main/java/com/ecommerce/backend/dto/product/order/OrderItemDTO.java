@@ -14,4 +14,6 @@ public class OrderItemDTO {
     private Integer quantity;
     private Double price;
     private String imageUrl; // <-- SỬA: THÊM TRƯỜNG NÀY
+    // 👇👇👇 THÊM DÒNG NÀY 👇👇👇
+    private Long productId;
 }
