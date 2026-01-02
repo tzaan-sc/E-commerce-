@@ -1,0 +1,67 @@
+.breadcrumb-nav {
+  background-color: #f3f4f6;
+  padding: 12px 0;
+  margin-bottom: 20px;
+  font-family: "Segoe UI", sans-serif;
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 15px;
+  }
+
+  .breadcrumb-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+
+    .breadcrumb-item {
+      display: flex;
+      align-items: center;
+      font-size: 14px;
+      color: #6b7280;
+
+      // Link bình thường
+      a {
+        text-decoration: none;
+        color: #374151;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        transition: color 0.2s;
+
+        &:hover {
+          color: #d70018; // Hover màu đỏ
+        }
+      }
+
+      // 👇 Style cho dấu mũi tên >
+      .separator {
+        margin: 0 8px;   // Cách đều 2 bên
+        color: #9ca3af;  // Màu xám nhạt
+        stroke-width: 2px; // Độ dày nét
+      }
+
+      // Trang hiện tại (Mục cuối)
+      &.active {
+        .current-text {
+          color: #6b7280;
+          font-weight: 400;
+          
+          max-width: 350px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          
+          @media (max-width: 768px) {
+            max-width: 150px;
+          }
+        }
+      }
+    }
+  }
+}
