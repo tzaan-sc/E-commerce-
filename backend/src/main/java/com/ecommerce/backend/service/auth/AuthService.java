@@ -149,6 +149,8 @@ import com.ecommerce.backend.repository.auth.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import java.util.Optional;
+
 
 @Service
 @RequiredArgsConstructor
@@ -218,7 +220,44 @@ public class AuthService {
                 token,
                 user.getUsername(),
                 user.getEmail(),
-                user.getRole()
+                user.getRole(),
+                false
         );
     }
+
+    /**
+     * Đăng nhập bằng Google
+     */
+    public AuthResponse loginWithGoogle(String email, String name) {
+
+        Optional<User> optionalUser = userRepository.findByEmail(email);
+
+        // 🔹 ĐÃ ĐĂNG KÝ → LOGIN
+        if (optionalUser.isPresent()) {
+            User user = optionalUser.get();
+
+            String token = jwtService.generateToken(user);
+
+            return new AuthResponse(
+                    token,
+                    user.getUsername(),
+                    user.getEmail(),
+                    user.getRole(),
+                    false // isNewUser
+            );
+        }
+
+        // 🔹 CHƯA ĐĂNG KÝ → KHÔNG TOKEN
+        return new AuthResponse(
+                null,
+                null,
+                email,
+                null,
+                true // isNewUser
+        );
+    }
+
+
+
+
 }

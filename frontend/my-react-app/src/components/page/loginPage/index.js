@@ -1,11 +1,15 @@
 // src/pages/LoginPage.jsx
 import React, { memo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from '../../../hooks/useAuth';
+import { GoogleLogin } from "@react-oauth/google";
+import axios from "axios";
 
 
 const LoginPage = () => {
   const { login, loading } = useAuth();
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({ email: "", password: "" });
 
   const handleChange = (e) => {
@@ -16,6 +20,43 @@ const LoginPage = () => {
     e.preventDefault();
     await login(formData);
   };
+
+  const handleGoogleLogin = async (credentialResponse) => {
+  try {
+    const res = await axios.post(
+      "http://localhost:8080/api/auth/login/google",
+      { token: credentialResponse.credential }
+    );
+
+    // 👉 USER CHƯA ĐĂNG KÝ
+    
+    if (res.data.isNewUser) {
+      localStorage.clear();
+      navigate("/dang-ky", {
+        state: { email: res.data.email }
+      });
+      return;
+    }
+
+    // 👉 USER ĐÃ ĐĂNG KÝ
+    localStorage.setItem("token", res.data.token);
+    localStorage.setItem(
+      "user",
+      JSON.stringify({
+        email: res.data.email,
+        username: res.data.username,
+        role: res.data.role,
+      })
+    );
+
+    navigate("/");
+  
+  } catch (error) {
+    console.error("Google login failed", error);
+  }
+};
+
+
 
   return (
     <div className="login-page registration-page container-fluid">
@@ -74,6 +115,19 @@ const LoginPage = () => {
               >
                 {loading ? "Đang đăng nhập..." : "Đăng Nhập"}
               </button>
+
+              <div className="text-center my-3">
+  <span>Hoặc đăng nhập bằng</span>
+</div>
+
+<div className="d-flex justify-content-center mb-3">
+                <GoogleLogin
+  onSuccess={handleGoogleLogin}
+  onError={() => console.log("Google Login Failed")}
+/>
+
+              </div>
+
 
               <p className="text-center mt-3">
                 Bạn chưa có tài khoản? <Link to="/dang-ky">Đăng ký</Link>
