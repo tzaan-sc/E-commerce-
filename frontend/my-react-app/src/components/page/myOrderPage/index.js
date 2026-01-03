@@ -1,40 +1,56 @@
 import React, { memo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { getMyOrders, cancelOrder } from "api/order";
+// Thêm 3 dòng này vào đầu file
+import { addToCart } from "api/cart"; 
+import { useCart } from "context/index"; 
+import { useNavigate } from "react-router-dom";
 
 const MyOrdersPage = () => {
+  
+  const { fetchCartCount } = useCart(); 
+  const navigate = useNavigate();
+
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
 
   // Helper: Hàm dịch trạng thái sang tiếng Việt
-  const translateStatus = (status) => {
-    if (!status) return 'Không rõ';
-    const map = {
-      'PENDING': 'Chờ xác nhận',
-      'SHIPPING': 'Đang giao',
-      'COMPLETED': 'Đã giao',
-      'CANCELLED': 'Đã hủy',
-      'CONFIRMED': 'Đã xác nhận',
-    };
-    return map[status.toUpperCase()] || status;
-  };
+  // --- TRONG FILE MyOrdersPage (Khách hàng) ---
 
-  // --- SỬA HÀM NÀY (Đã dùng hàm translateStatus) ---
-  const getStatusBadge = (status) => {
-    const statusUpper = status?.toUpperCase();
-    const statusConfig = {
-      // ✅ Đổi PENDING sang warning (Vàng cam) để dễ thấy hơn
-      PENDING: { class: "warning", text: translateStatus('PENDING') }, 
-      SHIPPING: { class: "info", text: translateStatus('SHIPPING') }, 
-      COMPLETED: { class: "success", text: translateStatus('COMPLETED') }, 
-      CANCELLED: { class: "danger", text: translateStatus('CANCELLED') },
-      CONFIRMED: { class: "secondary", text: translateStatus('CONFIRMED') },
-    };
-    // Sửa: Lấy text từ hàm dịch
-    const config = statusConfig[statusUpper] || statusConfig.PENDING;
-    return <span className={`badge bg-${config.class}`}>{config.text}</span>;
+// 1. Sửa hàm dịch: Thêm case PROCESSING
+const translateStatus = (status) => {
+  if (!status) return 'Không rõ';
+  const map = {
+    'PENDING': 'Chờ xác nhận',
+    'PROCESSING': 'Đang xử lý', // 👈 THÊM DÒNG NÀY (Quan trọng nhất)
+    'CONFIRMED': 'Đã xác nhận', // (Giữ lại để tương thích ngược nếu cần)
+    'SHIPPING': 'Đang giao',
+    'COMPLETED': 'Đã giao',
+    'CANCELLED': 'Đã hủy',
   };
+  return map[status.toUpperCase()] || status;
+};
+
+// 2. Sửa hàm lấy màu badge: Thêm case PROCESSING
+const getStatusBadge = (status) => {
+  const statusUpper = status?.toUpperCase();
+  const statusConfig = {
+    PENDING: { class: "warning", text: translateStatus('PENDING') },
+    
+    // 👇 THÊM DÒNG NÀY: Để trạng thái 'Đang xử lý' có màu xanh dương (info) hoặc tím (primary)
+    PROCESSING: { class: "primary", text: translateStatus('PROCESSING') }, 
+    
+    SHIPPING: { class: "info", text: translateStatus('SHIPPING') },
+    COMPLETED: { class: "success", text: translateStatus('COMPLETED') },
+    CANCELLED: { class: "danger", text: translateStatus('CANCELLED') },
+    CONFIRMED: { class: "secondary", text: translateStatus('CONFIRMED') },
+  };
+  
+  const config = statusConfig[statusUpper] || { class: "secondary", text: status };
+  return <span className={`badge bg-${config.class}`}>{config.text}</span>;
+};
+
 
   useEffect(() => {
     fetchOrders();
@@ -71,9 +87,45 @@ const MyOrdersPage = () => {
     }
   };
 
-  const handleReorder = (order) => {
-    console.log("Mua lại:", order);
-    alert("Đã thêm sản phẩm vào giỏ hàng!");
+const handleReorder = async (order) => {
+    try {
+      console.log("Check Order:", order); // Giữ lại để debug
+
+      // 1. 👇 SỬA LẠI TÊN BIẾN Ở ĐÂY (Backend trả về là 'items')
+      const items = order.items || []; 
+
+      if (!items || items.length === 0) {
+        alert("Không tìm thấy sản phẩm trong đơn hàng này!");
+        return;
+      }
+
+      // 2. Duyệt qua từng món
+      const addPromises = items.map(async (item) => {
+        // 👇 QUAN TRỌNG: Cố gắng tìm ID sản phẩm ở mọi ngóc ngách
+        // Backend có thể trả về: productId, id, hoặc product.id
+        const productId = item.productId || item.id || (item.product ? item.product.id : null);
+        
+        const quantity = item.quantity || 1;
+
+        if (productId) {
+           return await addToCart(productId, quantity);
+        } else {
+           console.error("❌ LỖI: Không tìm thấy ID sản phẩm trong món này:", item);
+        }
+      });
+
+      // 3. Đợi và thông báo
+      await Promise.all(addPromises);
+      fetchCartCount();
+
+      if (window.confirm("Đã thêm sản phẩm vào giỏ! Đến giỏ hàng ngay?")) {
+        navigate("/customer/home/gio-hang");
+      }
+
+    } catch (error) {
+      console.error("Lỗi mua lại:", error);
+      alert("Lỗi xử lý! Vui lòng kiểm tra Console (F12) để xem chi tiết.");
+    }
   };
 
   const filteredOrders = orders.filter((order) => {

@@ -1,4 +1,3 @@
-// components/page/searchPage/index.jsx
 import { useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import ProductCard from "components/user/productCard";
@@ -6,6 +5,8 @@ import FilterSidebar from "components/user/filterSidebar";
 import apiClient from "api/axiosConfig";
 import { addToCart } from "api/cart";
 import { useCart } from "context/index";
+// 👇 1. Import Breadcrumb
+import Breadcrumb from "components/common/Breadcrumb";
 import "./style.scss";
 
 const SearchPage = () => {
@@ -108,8 +109,18 @@ const SearchPage = () => {
     }
   };
 
+  // 👇 2. Tạo Breadcrumb Items
+  const breadcrumbItems = [
+    { label: "Tìm kiếm", link: "/search" },
+    { label: query ? `Kết quả: "${query}"` : "Tất cả sản phẩm", link: null }
+  ];
+
   return (
     <div className="search-page">
+      
+      {/* 👇 3. Hiển thị Breadcrumb */}
+      <Breadcrumb items={breadcrumbItems} />
+
       <div className="container">
         <div className="search-page-header">
           <h2 className="search-title">
