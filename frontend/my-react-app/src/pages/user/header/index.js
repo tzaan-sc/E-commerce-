@@ -168,6 +168,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ROUTERS } from "utils/router";
 import { useAuth } from "hooks/useAuth";
 import { useCart } from "context/index"; // Import Cart Context
+import axios from "axios";
+
 
 import { 
   DEFAULT_MENU, 
@@ -186,6 +188,10 @@ const Header = () => {
   const [menus, setMenus] = useState(DEFAULT_MENU); 
   const [searchQuery, setSearchQuery] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
+  const [suggestions, setSuggestions] = useState([]);
+const [showSuggest, setShowSuggest] = useState(false);
+const [loadingSuggest, setLoadingSuggest] = useState(false);
+
 
   // Kiểm tra xem đang ở trang customer hay user thường
   const isCustomerPage = location.pathname.includes("/customer");
@@ -213,6 +219,39 @@ const Header = () => {
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [location.pathname]); // Chạy lại khi đổi trang
+
+  // goiytimkiem
+  const fetchSuggestions = async (keyword) => {
+  if (!keyword.trim()) {
+    setSuggestions([]);
+    return;
+  }
+
+  try {
+    setLoadingSuggest(true);
+    const res = await axios.get(
+      `http://localhost:8080/api/products/suggest?q=${keyword}`
+    );
+    setSuggestions(res.data || []);
+  } catch (error) {
+    console.error("Lỗi gợi ý:", error);
+    setSuggestions([]);
+  } finally {
+    setLoadingSuggest(false);
+  }
+};
+
+  useEffect(() => {
+  if (!showSuggest) return;
+
+  const delay = setTimeout(() => {
+    fetchSuggestions(searchQuery);
+  }, 300); // debounce 300ms
+
+  return () => clearTimeout(delay);
+}, [searchQuery, showSuggest]);
+
+
 
   // 2. XỬ LÝ SEARCH
   const handleSearch = (e) => {
@@ -345,13 +384,51 @@ const Header = () => {
               
               {/* SEARCH */}
               <form className="header__search" onSubmit={handleSearch}>
-                <input 
+                {/* <input 
                   type="text" 
                   placeholder="Tìm kiếm sản phẩm..." 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyPress={handleKeyPress}
-                />
+                /> */}
+                <input 
+  type="text" 
+  placeholder="Tìm kiếm sản phẩm..." 
+  value={searchQuery}
+  onChange={(e) => setSearchQuery(e.target.value)}
+  onFocus={() => setShowSuggest(true)}
+  onBlur={() => setTimeout(() => setShowSuggest(false), 200)}
+  onKeyPress={handleKeyPress}
+/>
+{showSuggest && (
+  <div className="suggest-box">
+    {loadingSuggest && (
+      <div className="suggest-item">Đang tìm...</div>
+    )}
+
+    {!loadingSuggest && suggestions.length === 0 && (
+      <div className="suggest-item empty">Không có kết quả</div>
+    )}
+
+    {!loadingSuggest && suggestions.map(item => (
+      <div
+        key={item.id}
+        className="suggest-item"
+        onClick={() => {
+          setSearchQuery(item.name);
+          setShowSuggest(false);
+          navigate(
+            `${isCustomerPage ? ROUTERS.CUSTOMER.SEARCH : ROUTERS.USER.SEARCH}?q=${item.name}`
+          );
+        }}
+      >
+        {item.name}
+      </div>
+    ))}
+  </div>
+)}
+
+
                 <button type="submit"><GrSearch /></button>
               </form>
 

@@ -362,3 +362,25 @@ $hover-bg: #f0f0f0;
     }
   }
 }
+
+// goi y tim kiem 
+.suggest-box {
+  position: absolute;
+  background: white;
+  border: 1px solid #ddd;
+  width: 300px;
+  top: 100%;
+  border-color: #0066cc;
+  //top: calc(100% - 19px);
+  //z-index: 9999;           
+  //transform: translateX(8%); // 👈 kéo ngược lại nửa width
+}
+
+.suggest-item {
+  padding: 8px;
+  cursor: pointer;
+}
+
+.suggest-item:hover {
+  background: #f2f2f2;
+}
