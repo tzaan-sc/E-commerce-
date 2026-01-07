@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import apiClient from "../../../api/axiosConfig";
 import { Save, Upload } from "lucide-react";
 import {
@@ -23,6 +23,7 @@ import {
   Mail,
   Shield,
   Activity,
+  Package, // 👇 ADDED: Icon for Inventory
 } from "lucide-react";
 import useGenericApi from "hooks/useGenericApi";
 import "./style.scss";
@@ -32,6 +33,8 @@ import AccountsPage from "../accountPage";
 import BrandsPage from "../brandPage";
 import UsagePurposePage from "../usagepurposePage";
 import ScreenSizePage from "../screensizePage";
+import InventoryPage from "../inventory/InventoryPage"; // 👇 ADDED: Import InventoryPage
+
 // Router simulation
 const AdminDashboard = () => {
   const [currentPage, setCurrentPage] = useState("dashboard");
@@ -40,6 +43,7 @@ const AdminDashboard = () => {
   const menuItems = [
     { id: "dashboard", name: "Dashboard", icon: LayoutDashboard },
     { id: "products", name: "Sản phẩm", icon: Laptop },
+    { id: "inventory", name: "Kho hàng", icon: Package }, // 👇 ADDED: Inventory Menu Item
     { id: "orders", name: "Đơn hàng", icon: ShoppingCart },
     { id: "accounts", name: "Tài khoản", icon: Users },
     {
@@ -67,10 +71,12 @@ const AdminDashboard = () => {
 
   const renderPage = () => {
     switch (currentPage) {
-      case "dashboard": // 👇 THAY ĐỔI: Truyền setter xuống DashboardPage
+      case "dashboard":
         return <DashboardPage setCurrentPage={setCurrentPage} />;
       case "products":
         return <ProductsPage />;
+      case "inventory": // 👇 ADDED: Render InventoryPage
+        return <InventoryPage />;
       case "orders":
         return <OrdersPage />;
       case "accounts":
@@ -367,8 +373,6 @@ const DashboardPage = ({ setCurrentPage }) => {
     </div>
   );
 };
-
-
 
 const API_BASE = "http://localhost:8080/api/users";
 export default AdminDashboard;
