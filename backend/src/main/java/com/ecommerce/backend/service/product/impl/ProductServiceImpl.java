@@ -260,6 +260,7 @@ import com.ecommerce.backend.repository.product.UsagePurposeRepository;
 import com.ecommerce.backend.service.product.ProductService;
 import com.ecommerce.backend.util.SlugUtil;
 import com.ecommerce.backend.entity.product.ImageProduct;
+import com.ecommerce.backend.dto.product.ProductSuggest.ProductSuggestDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -510,6 +511,33 @@ public class ProductServiceImpl implements ProductService {
             }
         }
 
+
         return products;
+    }
+    // ==========================================
+// 🔍 SEARCH SUGGEST (GỢI Ý TÌM KIẾM)
+// ==========================================
+
+    @Override
+    public List<String> suggestKeywords(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return List.of();
+        }
+
+        // Chuẩn hóa keyword: bỏ dấu, lowercase
+        String normalized = keyword.trim().toLowerCase();
+
+        return productRepository.findTop5Keyword(normalized);
+    }
+
+    @Override
+    public List<ProductSuggestDto> suggestProducts(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return List.of();
+        }
+
+        String normalized = SlugUtil.removeDiacritics(keyword.trim().toLowerCase());
+
+        return productRepository.findTop5Product(normalized);
     }
 }

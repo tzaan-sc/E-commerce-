@@ -1,6 +1,7 @@
 package com.ecommerce.backend.repository.product;
 
 import com.ecommerce.backend.entity.product.Product;
+import com.ecommerce.backend.dto.product.ProductSuggest.ProductSuggestDto;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -72,4 +73,24 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             @Param("minPrice") Double minPrice,
             @Param("maxPrice") Double maxPrice
     );
+    @Query(value = """
+    SELECT DISTINCT LOWER(p.name)
+    FROM products p
+    WHERE LOWER(p.name) LIKE CONCAT(:keyword, '%')
+    ORDER BY p.name
+    LIMIT 5
+""", nativeQuery = true)
+    List<String> findTop5Keyword(@Param("keyword") String keyword);
+    @Query(value = """
+    SELECT 
+        p.id AS id,
+        p.name AS name,
+        p.price AS price,
+        p.slug AS slug
+    FROM products p
+    WHERE LOWER(p.name) LIKE CONCAT('%', :keyword, '%')
+    LIMIT 5
+""", nativeQuery = true)
+    List<ProductSuggestDto> findTop5Product(@Param("keyword") String keyword);
+
 }

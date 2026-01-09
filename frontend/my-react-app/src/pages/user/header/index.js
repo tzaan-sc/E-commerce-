@@ -188,7 +188,11 @@ const Header = () => {
   const [menus, setMenus] = useState(DEFAULT_MENU); 
   const [searchQuery, setSearchQuery] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
-  const [suggestions, setSuggestions] = useState([]);
+ const [suggestions, setSuggestions] = useState({
+  keywords: [],
+  products: []
+});
+
 const [showSuggest, setShowSuggest] = useState(false);
 const [loadingSuggest, setLoadingSuggest] = useState(false);
 
@@ -223,23 +227,26 @@ const [loadingSuggest, setLoadingSuggest] = useState(false);
   // goiytimkiem
   const fetchSuggestions = async (keyword) => {
   if (!keyword.trim()) {
-    setSuggestions([]);
+    setSuggestions({ keywords: [], products: [] });
     return;
   }
 
   try {
     setLoadingSuggest(true);
-    const res = await axios.get(
-      `http://localhost:8080/api/products/suggest?q=${keyword}`
-    );
-    setSuggestions(res.data || []);
-  } catch (error) {
-    console.error("Lỗi gợi ý:", error);
-    setSuggestions([]);
+const res = await axios.get(
+  `http://localhost:8080/api/products/suggest?keyword=${keyword}`
+);
+
+
+   setSuggestions(res.data);
+
+  } catch (e) {
+    setSuggestions({ keywords: [], products: [] });
   } finally {
     setLoadingSuggest(false);
   }
 };
+
 
   useEffect(() => {
   if (!showSuggest) return;
@@ -402,31 +409,58 @@ const [loadingSuggest, setLoadingSuggest] = useState(false);
 />
 {showSuggest && (
   <div className="suggest-box">
+
     {loadingSuggest && (
       <div className="suggest-item">Đang tìm...</div>
     )}
 
-    {!loadingSuggest && suggestions.length === 0 && (
+    {!loadingSuggest && suggestions.keywords.length === 0 &&
+     suggestions.products.length === 0 && (
       <div className="suggest-item empty">Không có kết quả</div>
     )}
 
-    {!loadingSuggest && suggestions.map(item => (
-      <div
-        key={item.id}
-        className="suggest-item"
-        onClick={() => {
-          setSearchQuery(item.name);
-          setShowSuggest(false);
-          navigate(
-            `${isCustomerPage ? ROUTERS.CUSTOMER.SEARCH : ROUTERS.USER.SEARCH}?q=${item.name}`
-          );
-        }}
-      >
-        {item.name}
+    {/* GỢI Ý TỪ KHÓA */}
+    {suggestions.keywords.length > 0 && (
+      <div className="suggest-section">
+        <div className="suggest-title">Từ khóa gợi ý</div>
+        {suggestions.keywords.map((kw, i) => (
+          <div
+            key={i}
+            className="suggest-item keyword"
+            onMouseDown={() => {
+              setSearchQuery(kw);
+              setShowSuggest(false);
+              navigate(`${ROUTERS.USER.SEARCH}?q=${kw}`);
+            }}
+          >
+            🔍 {kw}
+          </div>
+        ))}
       </div>
-    ))}
+    )}
+
+    {/* GỢI Ý SẢN PHẨM */}
+    {suggestions.products.length > 0 && (
+      <div className="suggest-section">
+        <div className="suggest-title">Sản phẩm</div>
+        {suggestions.products.map(p => (
+          <div
+            key={p.id}
+            className="suggest-item product"
+            onMouseDown={() => navigate(`/product/${p.id}`)}
+          >
+            <div className="name">{p.name}</div>
+            <div className="price">
+              {p.price?.toLocaleString()}₫
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+
   </div>
 )}
+
 
 
                 <button type="submit"><GrSearch /></button>

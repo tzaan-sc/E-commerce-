@@ -10,7 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
+import java.util.Map;
+import java.util.HashMap;
 import java.util.List;
 
 @RestController
@@ -136,4 +137,20 @@ public class ProductController {
 
         return ResponseEntity.ok(products);
     }
+
+    // ==========================================
+// 👇 GỢI Ý TÌM KIẾM (SEARCH SUGGEST)
+// ==========================================
+    @GetMapping("/suggest")
+    public ResponseEntity<Map<String, Object>> suggest(
+            @RequestParam(required = false, defaultValue = "") String keyword
+    ) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("keywords", productService.suggestKeywords(keyword));
+        result.put("products", productService.suggestProducts(keyword));
+        return ResponseEntity.ok(result);
+    }
+
+
+
 }

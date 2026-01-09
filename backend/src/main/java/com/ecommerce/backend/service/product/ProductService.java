@@ -2,6 +2,7 @@ package com.ecommerce.backend.service.product;
 import com.ecommerce.backend.util.SlugUtil;
 import com.ecommerce.backend.dto.product.CreateProductRequest;
 import com.ecommerce.backend.dto.product.UpdateProductRequest;
+import com.ecommerce.backend.dto.product.ProductSuggest.ProductSuggestDto;
 import com.ecommerce.backend.entity.product.Product;
 
 import java.util.List;
@@ -28,4 +29,10 @@ public interface ProductService {
             String sortBy
     );
 
+
+    List<String> suggestKeywords(String keyword);
+
+    List<ProductSuggestDto> suggestProducts(String keyword);
+
 }
+
