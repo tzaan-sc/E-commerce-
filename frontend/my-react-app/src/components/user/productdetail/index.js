@@ -17,7 +17,6 @@ const ProductDetail = ({ product }) => {
   const formatPrice = (price) =>
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 
-  // Logic tăng giảm số lượng
   const handleQuantityChange = (delta) => {
     if (!product || product.stockQuantity <= 0) return;
     const newQuantity = quantity + delta;
@@ -26,7 +25,6 @@ const ProductDetail = ({ product }) => {
     }
   };
 
-  // Logic thêm giỏ hàng
   const processAddToCart = async () => {
     const user = localStorage.getItem("user");
     if (!user) {
@@ -66,7 +64,7 @@ const ProductDetail = ({ product }) => {
 
   if (!product) return null;
 
-  return (
+ return (
     <div className="info-section">
       <h1 className="product-title">{product.name}</h1>
 
@@ -119,7 +117,6 @@ const ProductDetail = ({ product }) => {
         <button className="btn btn-secondary icon-btn"><AiOutlineShareAlt size={20} /></button>
       </div>
 
-      {/* Phần Tabs Mô tả/Thông số */}
       <div className="product-tabs-container">
         <div className="tabs-header">
           <div 
@@ -145,50 +142,101 @@ const ProductDetail = ({ product }) => {
             </div>
           )}
 
-          {/* 👇 ĐÂY LÀ PHẦN ĐÃ SỬA LOGIC HIỂN THỊ THÔNG SỐ */}
           {activeTab === 'specs' && (
              <div className="specs-text-block">
                {(() => {
-                 // 1. Lấy dữ liệu từ specifications (tên trong DB) hoặc specs (tên cũ)
-                 const specsData = product.specifications || product.specs;
+                 const spec = product.specification;
+                 const displaySpecs = [];
 
-                 // 2. Nếu không có dữ liệu
-                 if (!specsData) return <p>Chưa có thông số chi tiết.</p>;
+                 if (spec) {
+                    // Thêm các trường cơ bản từ Entity
+                    if (spec.cpu) displaySpecs.push({ label: "Vi xử lý (CPU)", value: spec.cpu });
+                    if (spec.vga) displaySpecs.push({ label: "Card đồ họa (VGA)", value: spec.vga });
+                    if (spec.screenDetail) displaySpecs.push({ label: "Màn hình", value: spec.screenDetail });
+                    if (spec.resolution) displaySpecs.push({ label: "Độ phân giải", value: spec.resolution });
+                    if (spec.storageType) displaySpecs.push({ label: "Loại ổ cứng", value: spec.storageType });
+                    
+                    // Logic tách tìm thông số từ trường otherSpecs
+                    if (spec.otherSpecs) {
+                        const text = spec.otherSpecs;
+                        // Danh sách từ khóa cần tìm
+                        const targetKeywords = [
+                            "Loại card đồ họa",
+                            "Hệ điều hành",
+                            "Loại CPU",
+                            "Cổng giao tiếp",
+                            "Dung lượng RAM",
+                            "Trọng lượng",
+                            "Kích thước"
+                        ];
 
-                 // 3. Nếu dữ liệu là Chuỗi (String) -> Cắt theo dấu gạch ngang "-"
-                 if (typeof specsData === 'string') {
-                   const list = specsData.split('-').filter(item => item.trim() !== "");
-                   
-                   return (
-                     <div className="specs-list" style={{ paddingLeft: '10px' }}>
-                       {list.map((item, index) => (
-                         <p key={index} style={{ marginBottom: '8px', lineHeight: '1.6', borderBottom: '1px dashed #eee', paddingBottom: '5px' }}>
-                            {/* Replace xuống dòng thừa nếu có để text liền mạch */}
-                            <strong>• {item.trim().replace(/\n/g, " ")}</strong> 
-                         </p>
-                       ))}
-                     </div>
-                   );
+                        // Tìm tất cả vị trí của từ khóa có trong văn bản
+                        let matches = [];
+                        targetKeywords.forEach(kw => {
+                            const index = text.indexOf(kw);
+                            if (index !== -1) {
+                                matches.push({ label: kw, index: index });
+                            }
+                        });
+
+                        // Sắp xếp các từ khóa theo thứ tự xuất hiện trong văn bản
+                        matches.sort((a, b) => a.index - b.index);
+
+                        // Cắt văn bản để lấy giá trị cho từng nhãn
+                        matches.forEach((match, i) => {
+                            const startValue = match.index + match.label.length;
+                            const endValue = (i + 1 < matches.length) ? matches[i + 1].index : text.length;
+                            
+                            let value = text.substring(startValue, endValue).trim();
+                            
+                            // Dọn dẹp dấu ":" hoặc dấu "-" ở đầu giá trị nếu có
+                            value = value.replace(/^[:\-\s]+/, "").replace(/[\-\s]+$/, "");
+
+                            if (value) {
+                                displaySpecs.push({ label: match.label, value: value });
+                            }
+                        });
+
+                        // Nếu không tìm thấy từ khóa nào đặc biệt, tách theo dấu "-" như cũ
+                        if (matches.length === 0) {
+                            text.split('-').filter(i => i.trim() !== "").forEach((item, idx) => {
+                                const parts = item.split(':');
+                                displaySpecs.push({
+                                    label: parts.length > 1 ? parts[0].trim() : "Thông số khác",
+                                    value: parts.length > 1 ? parts.slice(1).join(':').trim() : parts[0].trim()
+                                });
+                            });
+                        }
+                    }
                  }
 
-                 // 4. (Dự phòng) Nếu dữ liệu là Array cũ
-                 if (Array.isArray(specsData)) {
-                    return (
-                      <div className="specs-list">
-                        {specsData.map((item, index) => (
-                          <p key={index}>• {item.value || item}</p>
-                        ))}
-                      </div>
-                    );
+                 if (displaySpecs.length === 0) {
+                    return <p style={{ padding: '20px', color: '#666' }}>Chưa có thông số chi tiết.</p>;
                  }
 
-                 return <p>Định dạng thông số không hỗ trợ.</p>;
+                 return (
+                   <div className="specs-table-wrapper" style={{ marginTop: '10px' }}>
+                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                       <tbody>
+                         {displaySpecs.map((item, index) => (
+                           <tr key={index} style={{ backgroundColor: index % 2 === 0 ? '#f9f9f9' : '#fff' }}>
+                             <td style={{ padding: '12px', border: '1px solid #eee', color: '#666', width: '35%', fontWeight: '500' }}>
+                                {item.label}
+                             </td>
+                             <td style={{ padding: '12px', border: '1px solid #eee', color: '#333' }}>
+                                {item.value}
+                             </td>
+                           </tr>
+                         ))}
+                       </tbody>
+                     </table>
+                   </div>
+                 );
                })()}
              </div>
           )}  
         </div>
       </div>
-      
     </div>
   );
 };

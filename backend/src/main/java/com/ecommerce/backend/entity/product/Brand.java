@@ -1,5 +1,6 @@
 package com.ecommerce.backend.entity.product;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -34,6 +35,7 @@ public class Brand {
     @Transient // Đánh dấu để không tạo cột trong Database
     private long productCount;
     @OneToMany(mappedBy = "brand")
+    @JsonBackReference
     // Thiết lập quan hệ 1-N (OneToMany) với bảng Product.
     // Một Brand có thể có nhiều Product.
     // mappedBy = "brand" nghĩa là khóa ngoại nằm bên lớp Product,

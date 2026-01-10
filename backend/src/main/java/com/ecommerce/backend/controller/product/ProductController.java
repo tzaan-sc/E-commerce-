@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/products")
@@ -30,26 +31,44 @@ public class ProductController {
 
     @PostMapping("/import")
     public ResponseEntity<?> importExcel(@RequestParam("file") MultipartFile file) {
+        // 1. Kiểm tra định dạng file ngay lập tức
         if (!hasExcelFormat(file)) {
-            return ResponseEntity.badRequest().body("Vui lòng upload file Excel (.xlsx)!");
+            return ResponseEntity.badRequest().body(Map.of("message", "Vui lòng upload file Excel (.xlsx)!"));
         }
+
         try {
+            // 2. Gọi service thực hiện import
             productImportService.importProducts(file);
-            return ResponseEntity.ok("✅ Nhập sản phẩm thành công!");
+
+            // 3. Trả về JSON thành công để Frontend xử lý
+            return ResponseEntity.ok(Map.of(
+                    "status", "success",
+                    "message", "✅ Nhập sản phẩm từ file thành công!"
+            ));
+        } catch (RuntimeException e) {
+            // 4. Bắt lỗi RuntimeException (chứa thông tin "Dòng X: ...") từ Service ném ra
+            return ResponseEntity.badRequest().body(Map.of(
+                    "status", "error",
+                    "message", "❌ " + e.getMessage()
+            ));
         } catch (Exception e) {
+            // 5. Bắt các lỗi hệ thống khác (lỗi đọc file, lỗi kết nối DB)
             e.printStackTrace();
-            return ResponseEntity.badRequest().body("❌ Lỗi: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "status", "error",
+                    "message", "❌ Lỗi hệ thống: " + e.getMessage()
+            ));
         }
     }
 
+    // Hàm hỗ trợ kiểm tra định dạng file (nếu chưa có)
     private boolean hasExcelFormat(MultipartFile file) {
         String contentType = file.getContentType();
-        // Kiểm tra null an toàn hơn
-        return contentType != null &&
-                (contentType.equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") ||
-                        contentType.equals("application/vnd.ms-excel"));
+        return contentType != null && (
+                contentType.equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") || // .xlsx
+                        contentType.equals("application/vnd.ms-excel") // .xls
+        );
     }
-
     // ==========================================
     // 👇 CRUD CƠ BẢN
     // ==========================================

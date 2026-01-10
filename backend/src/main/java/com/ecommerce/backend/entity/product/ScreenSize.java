@@ -1,5 +1,6 @@
     package com.ecommerce.backend.entity.product;
 
+    import com.fasterxml.jackson.annotation.JsonBackReference;
     import jakarta.persistence.*;
     import lombok.AllArgsConstructor;
     import lombok.Builder;
@@ -25,5 +26,6 @@
         @Transient
         private long productCount;
         @OneToMany(mappedBy = "screenSize")
+        @JsonBackReference
         private List<Product> products;
     }

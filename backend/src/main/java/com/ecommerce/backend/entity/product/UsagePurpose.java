@@ -1,5 +1,6 @@
 package com.ecommerce.backend.entity.product;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,6 +26,6 @@ public class UsagePurpose {
     @Transient
     private long productCount;
     @OneToMany(mappedBy = "usagePurpose")
-
+    @JsonBackReference
     private List<Product> products;
 }

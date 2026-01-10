@@ -4,28 +4,42 @@ import com.ecommerce.backend.entity.product.ProductVariant;
 import com.ecommerce.backend.enums.TransactionType;
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.CreationTimestamp;
+
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "inventory_transactions")
 @Data
 public class InventoryTransaction {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne
     @JoinColumn(name = "variant_id")
     private ProductVariant variant;
 
+    // 👇 DÒNG NÀY QUAN TRỌNG: Lưu dạng chữ (IMPORT) thay vì số (0)
     @Enumerated(EnumType.STRING)
-    private TransactionType type; // Nhập, Xuất, Kiểm kê...
+    @Column(length = 20)
+    private TransactionType type;
 
-    private Integer quantityChange; // Số lượng thay đổi (VD: +10 hoặc -5)
-    private Integer balanceAfter;   // Tồn kho SAU khi giao dịch (Snapshot)
+    @Column(name = "quantity_change")
+    private Integer quantityChange; // +10 hoặc -5
 
-    private Long referenceId;       // ID tham chiếu (ID Phiếu nhập hoặc ID Đơn hàng)
-    private String note;            // Ghi chú (VD: Đơn hàng #123, Nhập hàng Tết...)
+    @Column(name = "balance_after")
+    private Integer balanceAfter;   // Tồn kho lúc đó (Snapshot)
 
-    private String createdBy;       // Người thực hiện (Admin A)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @Column(name = "reference_id")
+    private Long referenceId;       // ID phiếu nhập hoặc ID đơn hàng
+
+    private String note;
+
+    @Column(name = "created_by")
+    private String createdBy;
+
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
 }
