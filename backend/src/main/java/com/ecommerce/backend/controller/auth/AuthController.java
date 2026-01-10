@@ -116,6 +116,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.jackson2.JacksonFactory;
+import org.springframework.beans.factory.annotation.Value;
+
+import java.util.Collections;
+
 
 import java.util.Map;
 
@@ -126,6 +134,8 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    @Value("${google.client.id}")
+    private String googleClientId;
     private final UserService userService; // 👇 Inject UserService để dùng logic OTP
 
     /**
@@ -158,6 +168,45 @@ public class AuthController {
         AuthResponse response = authService.login(request.getEmail(), request.getPassword());
         return ResponseEntity.ok(response);
     }
+
+    /**
+     * Đăng nhập bằng Google
+     */
+    @PostMapping("/login/google")
+    public ResponseEntity<?> loginWithGoogle(@RequestBody Map<String, String> body) {
+        try {
+            String token = body.get("token");
+
+            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
+                    new NetHttpTransport(),
+                    new JacksonFactory()
+            )
+                    .setAudience(Collections.singletonList(googleClientId))
+                    .build();
+
+            GoogleIdToken idToken = verifier.verify(token);
+
+            if (idToken == null) {
+                return ResponseEntity.badRequest().body(
+                        Map.of("error", "Google token không hợp lệ")
+                );
+            }
+
+            GoogleIdToken.Payload payload = idToken.getPayload();
+            String email = payload.getEmail();
+            String name = (String) payload.get("name");
+
+            // 👉 Gọi AuthService xử lý login/register Google
+            AuthResponse response = authService.loginWithGoogle(email, name);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Đăng nhập Google thất bại"));
+        }
+    }
+
 
     // ============================================================
     // 👇 TÍNH NĂNG QUÊN MẬT KHẨU BẰNG OTP (MỚI)
