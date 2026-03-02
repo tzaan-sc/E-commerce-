@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/admin/variants")
+@RequestMapping("/api/variants")
 @RequiredArgsConstructor
 public class VariantController {
 
@@ -21,9 +21,9 @@ public class VariantController {
         return ResponseEntity.ok(variantService.getAllVariants());
     }
 
-    // Lấy theo Product ID (Cho trang Quản lý SP)
+    // Lấy theo Product ID
     @GetMapping("/product/{productId}")
-    public ResponseEntity<List<ProductVariantDTO>> getByProduct(@PathVariable Long productId) {
+    public ResponseEntity<List<ProductVariantDTO>> getVariantsByProduct(@PathVariable Long productId) {
         return ResponseEntity.ok(variantService.getVariantsByProduct(productId));
     }
 

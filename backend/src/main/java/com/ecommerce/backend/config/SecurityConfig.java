@@ -153,6 +153,8 @@ public class SecurityConfig {
 //                        // Chỉ CUSTOMER được truy cập
 //                        .requestMatchers("/api/customer/**").hasRole("CUSTOMER")
 //
+//                         .requestMatchers("/api/variants/**").permitAll() // Cho phép ai cũng xem được biến thể
+//
 //                        // Các API còn lại phải đăng nhập
 //                        .anyRequest().authenticated()
 //                )

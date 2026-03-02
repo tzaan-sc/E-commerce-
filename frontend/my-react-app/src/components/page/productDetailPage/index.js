@@ -4,7 +4,8 @@ import axios from 'axios';
 import Carousel from 'components/user/carousel';
 import ProductDetail from 'components/user/productdetail';
 import FeaturedProducts from 'components/user/featuredProducts';
-import Breadcrumb from 'components/common/Breadcrumb'; // 👈 1. Import Breadcrumb
+import Breadcrumb from 'components/common/Breadcrumb'; 
+import { getVariantsByProductId } from 'services/variantApi';
 import './style.scss';
 
 const ProductDetailPage = () => {
@@ -13,27 +14,46 @@ const ProductDetailPage = () => {
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // 👇 2. STATE CHO BIẾN THỂ (Đã bỏ comment)
+  const [variants, setVariants] = useState([]); 
+  const [selectedVariant, setSelectedVariant] = useState(null);
+
   useEffect(() => {
-    const fetchProduct = async () => {
+    const fetchProductData = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(
-          `http://localhost:8080/api/products/${id}`
-        );
-        const data = response.data;
 
-        // Xử lý hình ảnh (Giữ nguyên logic của bạn)
+        // A. Gọi API lấy thông tin gốc
+        const response = await axios.get(`http://localhost:8080/api/products/${id}`);
+        const data = response.data;
+        setProduct(data);
+
+        // B. Xử lý hình ảnh gốc (Giữ nguyên logic của bạn)
         let productImages = [];
         if (data.images && data.images.length > 0) {
           productImages = data.images.map(
-            (img) => `http://localhost:8080${img.urlImage}`
+            (img) => `http://localhost:8080/api/uploads/products/${img.urlImage}` // Lưu ý: check lại đường dẫn ảnh cho khớp backend
           );
         } else {
           productImages = ['https://via.placeholder.com/600x600?text=No+Image'];
         }
-
-        setProduct(data);
         setImages(productImages);
+
+        // C. Gọi API lấy Biến thể (Logic Mới) 👇
+        const variantsData = await getVariantsByProductId(id);
+        setVariants(variantsData);
+
+        // D. Tự động chọn biến thể đầu tiên (nếu có)
+        if (variantsData && variantsData.length > 0) {
+          setSelectedVariant(variantsData[0]);
+          
+          // (Tùy chọn) Nếu biến thể có ảnh riêng, thêm nó vào đầu Carousel
+          if (variantsData[0].image) {
+             // Logic thêm ảnh biến thể vào đầu mảng images nếu muốn
+             // setImages([variantsData[0].image, ...productImages]);
+          }
+        }
+
       } catch (error) {
         console.error('Lỗi tải sản phẩm:', error);
       } finally {
@@ -41,42 +61,42 @@ const ProductDetailPage = () => {
       }
     };
 
-    if (id) fetchProduct();
+    if (id) fetchProductData();
   }, [id]);
 
-  if (loading)
-    return <div className="loading-container">Đang tải dữ liệu...</div>;
-  if (!product)
-    return <div className="error-container">Không tìm thấy sản phẩm</div>;
+  if (loading) return <div className="loading-container">Đang tải dữ liệu...</div>;
+  if (!product) return <div className="error-container">Không tìm thấy sản phẩm</div>;
 
-  // 👇 2. Tạo dữ liệu cho Breadcrumb (Logic mới)
+  // Breadcrumb
   const breadcrumbItems = [
     { label: 'Laptop', link: '/laptop' },
     {
       label: product.brand?.name || 'Thương hiệu',
       link: `/laptop?brand=${product.brand?.id}`,
     },
-    { label: product.name, link: null }, // Trang hiện tại
+    { label: product.name, link: null },
   ];
 
   return (
     <div className="main-container product-detail-page">
       <div className="container">
-        {/* 👇 3. Hiển thị Breadcrumb ở đầu container */}
         <Breadcrumb items={breadcrumbItems} />
 
         <div className="product-content-wrapper">
           {/* 1. Carousel Ảnh */}
-          <div
-            className="product-section-image"
-            style={{ marginBottom: '30px' }}
-          >
+          <div className="product-section-image" style={{ marginBottom: '30px' }}>
             <Carousel images={images} />
           </div>
 
           {/* 2. Thông tin chi tiết */}
           <div className="product-section-info">
-            <ProductDetail product={product} />
+            {/* 👇 TRUYỀN PROPS XUỐNG CHO COMPONENT CON */}
+            <ProductDetail 
+                product={product} 
+                variants={variants}                   // Danh sách biến thể
+                selectedVariant={selectedVariant}     // Biến thể đang chọn
+                setSelectedVariant={setSelectedVariant} // Hàm để đổi biến thể
+            />
           </div>
         </div>
 

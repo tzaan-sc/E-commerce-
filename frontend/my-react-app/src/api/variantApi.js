@@ -1,24 +1,26 @@
 import apiClient from "./axiosConfig";
 
 const variantApi = {
-  // Lấy tất cả (Dùng cho trang Kho)
+  // 1. Lấy tất cả
+  // Cũ: /admin/variants -> Mới: /variants
   getAll: () => {
-    return apiClient.get("/admin/variants");
+    return apiClient.get("/variants"); 
   },
 
-  // Lấy danh sách biến thể của 1 sản phẩm (Dùng cho Popup này)
+  // 2. Lấy danh sách biến thể của 1 sản phẩm (Quan trọng cho trang chi tiết)
+  // Cũ: /admin/variants/product/... -> Mới: /variants/product/...
   getByProduct: (productId) => {
-    return apiClient.get(`/admin/variants/product/${productId}`);
+    return apiClient.get(`/variants/product/${productId}`);
   },
 
-  // Thêm mới hoặc Cập nhật
+  // 3. Thêm mới hoặc Cập nhật
   save: (data) => {
-    return apiClient.post("/admin/variants", data);
+    return apiClient.post("/variants", data);
   },
 
-  // Xóa biến thể
+  // 4. Xóa biến thể
   delete: (id) => {
-    return apiClient.delete(`/admin/variants/${id}`);
+    return apiClient.delete(`/variants/${id}`);
   }
 };
 
