@@ -11,6 +11,7 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+
     // Bắt lỗi RuntimeException (là lỗi bạn ném ra khi xóa không được)
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Object> handleRuntimeException(RuntimeException ex) {
@@ -23,4 +24,6 @@ public class GlobalExceptionHandler {
 
         return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST); // Trả về 400 thay vì 500
     }
+
+
 }
