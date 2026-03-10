@@ -33,7 +33,8 @@ import AccountsPage from "../accountPage";
 import BrandsPage from "../brandPage";
 import UsagePurposePage from "../usagepurposePage";
 import ScreenSizePage from "../screensizePage";
-import InventoryPage from "../inventory/InventoryPage"; // 👇 ADDED: Import InventoryPage
+import PromotionPage from "../promotionPage";
+// import InventoryPage from "../inventory/InventoryPage"; // 👇 ADDED: Import InventoryPage
 
 // Router simulation
 const AdminDashboard = () => {
@@ -43,7 +44,9 @@ const AdminDashboard = () => {
   const menuItems = [
     { id: "dashboard", name: "Dashboard", icon: LayoutDashboard },
     { id: "products", name: "Sản phẩm", icon: Laptop },
-    { id: "inventory", name: "Kho hàng", icon: Package }, // 👇 ADDED: Inventory Menu Item
+    // { id: "inventory", name: "Kho hàng", icon: Package }, // 👇 ADDED: Inventory Menu Item
+    
+    { id: "promotions", name: "Khuyến mãi", icon: Tag },
     { id: "orders", name: "Đơn hàng", icon: ShoppingCart },
     { id: "accounts", name: "Tài khoản", icon: Users },
     {
@@ -75,8 +78,10 @@ const AdminDashboard = () => {
         return <DashboardPage setCurrentPage={setCurrentPage} />;
       case "products":
         return <ProductsPage />;
-      case "inventory": // 👇 ADDED: Render InventoryPage
-        return <InventoryPage />;
+      // case "inventory": // 👇 ADDED: Render InventoryPage
+      //   return <InventoryPage />;
+      case "promotions":
+        return <PromotionPage />;
       case "orders":
         return <OrdersPage />;
       case "accounts":
