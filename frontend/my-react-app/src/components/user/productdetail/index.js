@@ -5,7 +5,6 @@ import { useCart } from "../../../context/index";
 import { addToCart } from "api/cart"; 
 import { ROUTERS } from "utils/router";
 import ReviewList from "../ReviewList";
-import ReviewForm from "../ReviewForm";
 import AverageStar from "../AverageStar";
 import "./style.scss";
 
@@ -152,18 +151,9 @@ const ProductDetail = ({ product }) => {
             </div>
           )}
           {activeTab === 'review' && (
-  <div className="review-box" style={{ marginTop: '20px' }}>
+  <div className="review-box">
 
     <AverageStar productId={product.id} />
-
-    {user ? (
-      <ReviewForm
-        productId={product.id}
-        userId={user.id}
-      />
-    ) : (
-      <p>Vui lòng đăng nhập để đánh giá sản phẩm</p>
-    )}
 
     <ReviewList productId={product.id} />
 

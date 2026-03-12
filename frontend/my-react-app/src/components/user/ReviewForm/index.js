@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { createReview } from "../../../api/reviewApi";
 
 function ReviewForm({ productId, userId }) {
-    console.log("productId nhận được:", productId);
     const [star, setStar] = useState(5);
     const [comment, setComment] = useState("");
 
