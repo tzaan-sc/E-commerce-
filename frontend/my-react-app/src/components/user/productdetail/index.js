@@ -4,6 +4,9 @@ import { useNavigate } from "react-router-dom";
 import { useCart } from "../../../context/index"; 
 import { addToCart } from "api/cart"; 
 import { ROUTERS } from "utils/router";
+import ReviewList from "../ReviewList";
+import ReviewForm from "../ReviewForm";
+import AverageStar from "../AverageStar";
 import "./style.scss";
 
 const ProductDetail = ({ product }) => {
@@ -13,6 +16,7 @@ const ProductDetail = ({ product }) => {
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('description');
   const [isAdding, setIsAdding] = useState(false); 
+  const user = JSON.parse(localStorage.getItem("user") || "null");
 
   const formatPrice = (price) =>
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
@@ -131,6 +135,12 @@ const ProductDetail = ({ product }) => {
           >
             Thông số kỹ thuật
           </div>
+          <div 
+    className={`tab-item ${activeTab === 'review' ? 'active' : ''}`}
+    onClick={() => setActiveTab('review')}
+  >
+    Đánh giá
+  </div>
         </div>
 
         <div className="tabs-content-area">
@@ -141,6 +151,24 @@ const ProductDetail = ({ product }) => {
               </div>
             </div>
           )}
+          {activeTab === 'review' && (
+  <div className="review-box" style={{ marginTop: '20px' }}>
+
+    <AverageStar productId={product.id} />
+
+    {user ? (
+      <ReviewForm
+        productId={product.id}
+        userId={user.id}
+      />
+    ) : (
+      <p>Vui lòng đăng nhập để đánh giá sản phẩm</p>
+    )}
+
+    <ReviewList productId={product.id} />
+
+  </div>
+)}
 
           {activeTab === 'specs' && (
              <div className="specs-text-block">
