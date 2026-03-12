@@ -1,7 +1,9 @@
 package com.ecommerce.backend.entity.product;
 
+import com.ecommerce.backend.entity.promotion.Promotion;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 import java.util.List;
 import java.util.ArrayList;
@@ -17,6 +19,7 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "Tên sản phẩm không được để trống")
     @Column(nullable = false, length = 200)
     private String name;
 
@@ -32,17 +35,30 @@ public class Product {
     @Column(nullable = false)
     private Integer stockQuantity = 0;
 
+    private String status = "ACTIVE";
+
     // --- LIÊN KẾT BẢNG THÔNG SỐ (1-1) ---
     @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @PrimaryKeyJoinColumn
-// Giữ nguyên để render spec bên trong product
-    @JsonManagedReference
+
+    @ManyToOne
+    @JoinColumn(name = "promotion_id")
+    private Promotion promotion;
+
+    // Thông số kỹ thuật (Lưu dưới dạng Embeddable hoặc JSON)
+    @Embedded
     private ProductSpecification specification;
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
+    private List<ProductVariant> variants;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonManagedReference
     @Builder.Default
     private List<ImageProduct> images = new ArrayList<>();
+
+    // 👇 BẠN HÃY THÊM DÒNG NÀY VÀO ĐÂY
+    private String imageUrl;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "brand_id")

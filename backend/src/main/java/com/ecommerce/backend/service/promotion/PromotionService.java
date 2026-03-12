@@ -1,8 +1,9 @@
 package com.ecommerce.backend.service.promotion;
 
 import com.ecommerce.backend.entity.promotion.Promotion;
+// 👇 Nhớ import Enum vào
+import com.ecommerce.backend.entity.promotion.PromotionStatus;
 import com.ecommerce.backend.dto.promotion.PromotionDTO;
-import com.ecommerce.backend.entity.promotion.Promotion;
 import com.ecommerce.backend.repository.promotion.PromotionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -28,8 +29,12 @@ public class PromotionService {
         Promotion promotion = new Promotion();
         mapDtoToEntity(dto, promotion);
 
-        // Mặc định lấy status từ Frontend gửi lên, nếu không có thì là ACTIVE
-        promotion.setStatus(dto.getStatus() != null ? dto.getStatus() : "ACTIVE");
+        // ✅ ĐÃ SỬA: Chuyển đổi String từ DTO sang Enum, dùng PromotionStatus.ACTIVE nếu null
+        if (dto.getStatus() != null) {
+            promotion.setStatus(PromotionStatus.valueOf(dto.getStatus()));
+        } else {
+            promotion.setStatus(PromotionStatus.ACTIVE);
+        }
 
         promotion = promotionRepository.save(promotion);
         return convertToDTO(promotion);
@@ -42,9 +47,9 @@ public class PromotionService {
 
         mapDtoToEntity(dto, promotion);
 
-        // Chỉ cập nhật trạng thái nếu Frontend gửi lên ACTIVE hoặc INACTIVE
+        // ✅ ĐÃ SỬA: Chuyển đổi String sang Enum khi cập nhật
         if (dto.getStatus() != null && (dto.getStatus().equals("ACTIVE") || dto.getStatus().equals("INACTIVE"))) {
-            promotion.setStatus(dto.getStatus());
+            promotion.setStatus(PromotionStatus.valueOf(dto.getStatus()));
         }
 
         promotion = promotionRepository.save(promotion);
@@ -60,7 +65,9 @@ public class PromotionService {
     public void toggleStatus(Long id, boolean isActivate) {
         Promotion promotion = promotionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy khuyến mãi id: " + id));
-        promotion.setStatus(isActivate ? "ACTIVE" : "INACTIVE");
+
+        // ✅ ĐÃ SỬA: Gán trực tiếp giá trị của Enum thay vì chuỗi String
+        promotion.setStatus(isActivate ? PromotionStatus.ACTIVE : PromotionStatus.INACTIVE);
         promotionRepository.save(promotion);
     }
 
@@ -90,7 +97,8 @@ public class PromotionService {
 
     // Tính toán trạng thái dựa vào thời gian thực
     private String computeRealStatus(Promotion promotion) {
-        if ("INACTIVE".equals(promotion.getStatus())) {
+        // ✅ ĐÃ SỬA: So sánh Enum thay vì so sánh chuỗi
+        if (PromotionStatus.INACTIVE.equals(promotion.getStatus())) {
             return "INACTIVE";
         }
 

@@ -1,50 +1,45 @@
 package com.ecommerce.backend.entity.product;
 
+import com.ecommerce.backend.entity.product.variant.*;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.*;
 
 @Entity
 @Table(name = "product_variants")
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class ProductVariant {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @NotBlank(message = "SKU không được để trống")
+    @Column(unique = true)
     private String sku;
 
+    @NotNull(message = "Giá không được để trống")
+    @PositiveOrZero
     private Double price;
 
-    // Giá nhập để tính giá trị tồn kho trong Excel
-    private Double importPrice;
+    @NotNull(message = "Số lượng không được để trống")
+    @Min(0)
+    private Integer stockQuantity;
 
-    @Column(name = "stock_quantity")
-    @Builder.Default
-    private Integer stockQuantity = 0;
+    private Boolean isActive = true;
 
-    // --- CÁC TRƯỜNG CHI TIẾT ĐỂ XUẤT EXCEL ---
-    private String ramCapacity;     // Ví dụ: 16GB
-    private String storageCapacity; // Ví dụ: 512GB SSD
-    private String color;           // Ví dụ: Space Gray
-
-    @Column(columnDefinition = "TEXT")
-    private String note;            // Ghi chú vị trí kho hoặc bảo hành
-
-    private String image;
-
-    @Version
-    private Long version;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id", nullable = false)
-    @JsonBackReference
-    @ToString.Exclude
+    @ManyToOne
+    @JoinColumn(name = "product_id")
     private Product product;
+
+    // Cấu hình chi tiết
+    @ManyToOne @JoinColumn(name = "ram_id") private Ram ram;
+    @ManyToOne @JoinColumn(name = "gpu_id") private Gpu gpu;
+    @ManyToOne @JoinColumn(name = "chip_id") private Chip chip;
+    @ManyToOne @JoinColumn(name = "storage_id") private Storage storage;
+    @ManyToOne @JoinColumn(name = "color_id") private Color color;
 }

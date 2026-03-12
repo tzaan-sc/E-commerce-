@@ -94,9 +94,9 @@ public class ProductImportService {
                         .build();
 
                 // XỬ LÝ BÓC TÁCH THÔNG SỐ KỸ THUẬT
-                ProductSpecification spec = parseSpecifications(rawSpecifications);
-                spec.setProduct(product);
-                product.setSpecification(spec);
+//                ProductSpecification spec = parseSpecifications(rawSpecifications);
+//                spec.setProduct(product);
+//                product.setSpecification(spec);
 
                 // 4. XỬ LÝ ẢNH
                 List<ImageProduct> images = new ArrayList<>();
@@ -141,16 +141,16 @@ public class ProductImportService {
         }
     }
 
-    private ProductSpecification parseSpecifications(String rawText) {
-        ProductSpecification spec = new ProductSpecification();
-        spec.setCpu(extractValue(rawText, "Loại CPU", "Cổng giao tiếp"));
-        spec.setVga(extractValue(rawText, "Loại card đồ họa", "Dung lượng RAM"));
-        spec.setScreenDetail(extractValue(rawText, "Kích thước màn hình", "Công nghệ màn hình"));
-        spec.setResolution(extractValue(rawText, "Độ phân giải màn hình", "Loại CPU"));
-        spec.setStorageType(extractValue(rawText, "Ổ cứng", "Kích thước màn hình"));
-        spec.setOtherSpecs(rawText);
-        return spec;
-    }
+//    private ProductSpecification parseSpecifications(String rawText) {
+//        ProductSpecification spec = new ProductSpecification();
+//        spec.setCpu(extractValue(rawText, "Loại CPU", "Cổng giao tiếp"));
+//        spec.setVga(extractValue(rawText, "Loại card đồ họa", "Dung lượng RAM"));
+//        spec.setScreenDetail(extractValue(rawText, "Kích thước màn hình", "Công nghệ màn hình"));
+//        spec.setResolution(extractValue(rawText, "Độ phân giải màn hình", "Loại CPU"));
+//        spec.setStorageType(extractValue(rawText, "Ổ cứng", "Kích thước màn hình"));
+//        spec.setOtherSpecs(rawText);
+//        return spec;
+//    }
 
     private String extractValue(String text, String startKey, String endKey) {
         if (text == null || !text.contains(startKey)) return "N/A";

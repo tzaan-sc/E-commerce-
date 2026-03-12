@@ -15,9 +15,27 @@ public class ProductVariantDTO {
     private Double importPrice;
     private Integer stockQuantity;
     private String image;
+    private Boolean isActive; // Khớp với form.isActive ở Frontend
 
-    // --- CÁC TRƯỜNG MỚI ĐÃ ĐỒNG BỘ VỚI ENTITY ---
-    private String ramCapacity;      // Dòng này sẽ fix lỗi getRamCapacity()
-    private String storageCapacity;
-    private String color;
+    // --- CÁC TRƯỜNG MỚI ĐÃ ĐỒNG BỘ VỚI FRONTEND (VariantFormModal.js) ---
+
+    // RAM
+    private Long ramId;
+    private String ramSize;
+
+    // GPU
+    private Long gpuId;
+    private String gpuName;
+
+    // CPU / Chip
+    private Long chipId;
+    private String chipName;
+
+    // Storage (Ổ cứng)
+    private Long storageId;
+    private String storageDisplay;
+
+    // Màu sắc
+    private Long colorId;
+    private String colorName;
 }

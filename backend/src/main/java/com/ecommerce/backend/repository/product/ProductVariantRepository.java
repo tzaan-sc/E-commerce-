@@ -5,17 +5,20 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional; // <--- Nhớ thêm import này
+import java.util.Optional;
 
 @Repository
 public interface ProductVariantRepository extends JpaRepository<ProductVariant, Long> {
 
-    // 1. Tìm biến thể bằng SKU (Cần thiết cho logic Dry Run)
-    Optional<ProductVariant> findBySku(String sku);
-
-    // 2. Tìm tất cả biến thể của 1 sản phẩm
+    // Lấy danh sách biến thể theo ID Sản phẩm
     List<ProductVariant> findByProductId(Long productId);
 
-    // 3. Kiểm tra trùng SKU
+    // Kiểm tra trùng SKU khi Thêm mới
     boolean existsBySku(String sku);
+
+    // Kiểm tra trùng SKU khi Cập nhật (trừ chính biến thể đang sửa)
+    boolean existsBySkuAndIdNot(String sku, Long id);
+
+    // Tìm theo SKU (Dùng cho import Excel hoặc tìm kiếm)
+    Optional<ProductVariant> findBySku(String sku);
 }

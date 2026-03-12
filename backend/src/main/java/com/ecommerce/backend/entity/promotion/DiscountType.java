@@ -1,6 +1,6 @@
 package com.ecommerce.backend.entity.promotion;
 
 public enum DiscountType {
-    PERCENTAGE,
-    FIXED_AMOUNT
+    PERCENTAGE, // Giảm theo %
+    FIXED_AMOUNT // Giảm số tiền cố định
 }

@@ -49,9 +49,9 @@ const PromotionForm = ({ promotion, onSaved, onBack, showToast }) => {
       const payload = {
         ...form,
         discountValue: Number(form.discountValue),
-        startDate: new Date(form.startDate).toISOString(),
-        endDate: new Date(form.endDate).toISOString(),
-      };
+        startDate: form.startDate, 
+        endDate: form.endDate,    
+    };
       if (isEdit) {
         await apiClient.put(`/promotions/${promotion.id}`, payload);
         showToast("Cập nhật khuyến mãi thành công!");

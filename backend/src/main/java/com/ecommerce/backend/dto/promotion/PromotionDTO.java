@@ -14,11 +14,11 @@ public class PromotionDTO {
     private DiscountType discountType;
     private Double discountValue;
 
-    // Sửa 2 trường này: Thêm @JsonFormat để khớp với toISOString() của React
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
+    /// Sửa lại pattern thành "yyyy-MM-dd'T'HH:mm" (bỏ hết phần giây đi)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm")
     private LocalDateTime startDate;
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm")
     private LocalDateTime endDate;
 
     private String status;

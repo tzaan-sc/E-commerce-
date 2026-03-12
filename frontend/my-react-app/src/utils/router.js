@@ -14,7 +14,8 @@ export const ROUTERS = {
     USAGE_PURPOSE: "/usage-purpose/:id",
   },
   ADMIN: {
-    DASHBOARD: "/admin/dashboard",               
+    DASHBOARD: "/admin/dashboard",
+                   
   },
 
   CUSTOMER: { 

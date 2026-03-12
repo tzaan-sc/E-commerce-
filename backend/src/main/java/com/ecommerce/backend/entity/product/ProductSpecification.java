@@ -1,40 +1,33 @@
 package com.ecommerce.backend.entity.product;
 
-import jakarta.persistence.*;
-import lombok.*;
-import com.fasterxml.jackson.annotation.JsonBackReference;
+import jakarta.persistence.Embeddable;
+import lombok.Data;
 
-@Entity
-@Table(name = "product_specifications")
+@Embeddable
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class ProductSpecification {
-    @Id
-    private Long id; // ID này sẽ trùng với Product ID (Shared Primary Key)
-
-    @OneToOne
-    @MapsId
-    @JoinColumn(name = "product_id")
-    @JsonBackReference // Tránh vòng lặp vô hạn khi xuất JSON
-    private Product product;
-
-    @Column(length = 255)
-    private String cpu;
-
-    @Column(length = 255)
-    private String vga;
-
-    @Column(name = "screen_detail", columnDefinition = "TEXT")
-    private String screenDetail;
-
-    @Column(length = 100)
+    // Độ phân giải (VD: 1920x1080)
     private String resolution;
 
-    @Column(name = "storage_type", length = 100)
-    private String storageType;
+    // Tần số quét (VD: 144Hz)
+    private String refreshRate;
 
-    @Column(columnDefinition = "TEXT")
-    private String otherSpecs; // Các thông số phụ khác
+    // Loại tấm nền (VD: IPS, OLED)
+    private String panelType;
+
+    // Dung lượng pin (VD: 90Wh)
+    private String battery;
+
+    // Trọng lượng (VD: 2.3kg)
+    private String weight;
+
+    // Hệ điều hành (VD: Windows 11)
+    private String os;
+
+    // Các kết nối không dây
+    private String wifi;
+    private String bluetooth;
+
+    // Cổng kết nối (Lưu chuỗi dài các cổng)
+    private String ports;
 }
