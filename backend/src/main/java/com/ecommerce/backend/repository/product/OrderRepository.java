@@ -21,7 +21,7 @@
             JOIN o.orderItems i
             WHERE o.user.id = :userId
             AND i.product.id = :productId
-            AND o.status = 'SUCCESS'
+            AND o.status = 'COMPLETED'
             """)
         boolean hasPurchased(@Param("userId") Long userId,
                              @Param("productId") Long productId);

@@ -19,4 +19,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     @Query("SELECT AVG(r.star) FROM Review r WHERE r.product.id = :productId AND r.approved = true")
     Double getAverageStar(@Param("productId") Long productId);
+
+    // ⭐ kiểm tra user đã review chưa
+    boolean existsByUserIdAndProductId(Long userId, Long productId);
 }
