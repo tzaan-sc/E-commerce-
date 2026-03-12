@@ -90,4 +90,11 @@ public class Review {
     public void setProduct(Product product) {
         this.product = product;
     }
+
+    public String getUserName() {
+        if (user != null) {
+            return user.getUsername();
+        }
+        return null;
+    }
 }

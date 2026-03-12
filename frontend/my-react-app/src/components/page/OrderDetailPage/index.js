@@ -130,18 +130,7 @@ const [selectedProduct, setSelectedProduct] = useState(null);
 {(item.price * item.quantity).toLocaleString("vi-VN")} ₫
 </span>
 
-{/* ⭐ NÚT ĐÁNH GIÁ */}
-{order.status === "COMPLETED" && (
-<button
-className="btn btn-sm btn-outline-primary mt-2"
-onClick={() => {
-  setSelectedProduct(item.productId);
-  setShowReview(true);
-}}
->
-Đánh giá
-</button>
-)}
+
 
 </div>
                   </div>
@@ -228,6 +217,18 @@ onClick={() => {
                   {statusInfo.icon}
                   <strong className="ms-2">{statusInfo.text}</strong>
                 </div>
+                {/* NÚT ĐÁNH GIÁ */}
+  {order.status === "COMPLETED" && (
+    <button
+      className="btn btn-outline-success w-100"
+      onClick={() => {
+        setSelectedProduct(order.items[0].productId);
+        setShowReview(true);
+      }}
+    >
+      ⭐ Đánh giá
+    </button>
+  )}
 
               </div>
             </div>

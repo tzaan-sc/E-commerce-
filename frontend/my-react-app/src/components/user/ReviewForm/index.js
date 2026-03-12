@@ -1,65 +1,76 @@
 import React, { useState } from "react";
 import { createReview } from "../../../api/reviewApi";
+import "./style.scss";
 
 function ReviewForm({ productId, userId }) {
-    const [star, setStar] = useState(5);
-    const [comment, setComment] = useState("");
 
-    const submitReview = async () => {
+  const [star, setStar] = useState(0);
+  const [hoverStar, setHoverStar] = useState(0);
+  const [comment, setComment] = useState("");
 
-        const data = {
-            userId: userId,
-            productId: productId,
-            star: Number(star),
-            comment: comment,
-            image: ""
-        };
+  const submitReview = async () => {
 
-        try{
-            await createReview(data);
-            alert("Đánh giá thành công");
-        }catch(err){
-            console.log(err.response?.data);
-            alert("Gửi đánh giá thất bại");
-        }
+    const data = {
+      userId: userId,
+      productId: productId,
+      star: star,
+      comment: comment,
+      image: ""
     };
 
-    return (
-        <div>
+    try {
+      await createReview(data);
+      alert("Đánh giá thành công");
 
-            <h5>Gửi đánh giá</h5>
+      // reset form
+      setStar(0);
+      setHoverStar(0);
+      setComment("");
 
-            <select
-            value={star}
-            onChange={(e)=>setStar(Number(e.target.value))}
-            >
-                <option value="5">5⭐</option>
-                <option value="4">4⭐</option>
-                <option value="3">3⭐</option>
-                <option value="2">2⭐</option>
-                <option value="1">1⭐</option>
-            </select>
+    } catch (err) {
+      console.log(err.response?.data);
+      alert("Gửi đánh giá thất bại");
+    }
+  };
 
-            <br/><br/>
+  return (
 
-            <textarea
-                placeholder="Nhập đánh giá..."
-                value={comment}
-                onChange={(e)=>setComment(e.target.value)}
-                style={{width:"100%",height:"80px"}}
-            />
+    <div className="review-form">
 
-            <br/><br/>
+      <h4>Gửi đánh giá</h4>
 
-            <button
-            className="btn btn-primary"
-            onClick={submitReview}
-            >
-                Gửi đánh giá
-            </button>
+      {/* STAR */}
+      <div className="star-select">
 
-        </div>
-    );
+        {[1,2,3,4,5].map((s)=>(
+          <span
+            key={s}
+            className={`star ${(hoverStar || star) >= s ? "active" : ""}`}
+            onClick={()=>setStar(s)}
+            onMouseEnter={()=>setHoverStar(s)}
+            onMouseLeave={()=>setHoverStar(0)}
+          >
+            ★
+          </span>
+        ))}
+
+      </div>
+
+      {/* COMMENT */}
+      <textarea
+        placeholder="Chia sẻ cảm nhận của bạn về sản phẩm..."
+        value={comment}
+        onChange={(e)=>setComment(e.target.value)}
+      />
+
+      {/* BUTTON */}
+      <button onClick={submitReview}>
+        Gửi đánh giá
+      </button>
+
+    </div>
+
+  );
 }
 
 export default ReviewForm;
