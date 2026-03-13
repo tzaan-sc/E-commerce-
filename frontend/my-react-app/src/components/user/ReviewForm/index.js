@@ -8,30 +8,28 @@ function ReviewForm({ productId, userId }) {
   const [hoverStar, setHoverStar] = useState(0);
   const [comment, setComment] = useState("");
 
-  const submitReview = async () => {
-
-    const data = {
-      userId: userId,
-      productId: productId,
-      star: star,
-      comment: comment,
-      image: ""
-    };
-
-    try {
-      await createReview(data);
-      alert("Đánh giá thành công");
-
-      // reset form
-      setStar(0);
-      setHoverStar(0);
-      setComment("");
-
-    } catch (err) {
-      console.log(err.response?.data);
-      alert("Gửi đánh giá thất bại");
-    }
+const submitReview = async () => {
+  const data = {
+    userId: userId,
+    productId: productId,
+    star: star,
+    comment: comment,
+    image: ""
   };
+
+  try {
+    await createReview(data);
+    alert("Đánh giá thành công");
+
+    setStar(0);
+    setHoverStar(0);
+    setComment("");
+
+  } catch (err) {
+    console.log(err.response?.data);
+    alert(err.response?.data?.message || "Gửi đánh giá thất bại");
+  }
+};
 
   return (
 

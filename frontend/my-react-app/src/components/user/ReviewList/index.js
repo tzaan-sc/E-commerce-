@@ -14,7 +14,6 @@ function ReviewList({ productId }) {
   const fetchReviews = async () => {
     try {
       const res = await getReviews(productId, starFilter);
-       console.log(res.data);
       setReviews(res.data);
     } catch (error) {
       console.log(error);
