@@ -1,6 +1,7 @@
 import React, { memo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { getMyOrders, cancelOrder } from "api/order";
+import ReviewForm from "components/user/ReviewForm";
 // Thêm 3 dòng này vào đầu file
 import { addToCart } from "api/cart"; 
 import { useCart } from "context/index"; 
@@ -14,6 +15,10 @@ const MyOrdersPage = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
+  const [showReview, setShowReview] = useState(false);
+const [selectedProduct, setSelectedProduct] = useState(null);
+
+const user = JSON.parse(localStorage.getItem("user"));
 
   // Helper: Hàm dịch trạng thái sang tiếng Việt
   // --- TRONG FILE MyOrdersPage (Khách hàng) ---
@@ -280,37 +285,82 @@ const handleReorder = async (order) => {
 
                   {/* PHẦN NÚT BẤM */}
                   <div>
-                    <Link
-                      to={`/customer/home/don-mua/${order.id}`}
-                      className="btn btn-outline-primary btn-sm me-2"
-                    >
-                      Xem chi tiết
-                    </Link>
+  <Link
+    to={`/customer/home/don-mua/${order.id}`}
+    className="btn btn-outline-primary btn-sm me-2"
+  >
+    Xem chi tiết
+  </Link>
 
-                    {order.status === "COMPLETED" && (
-                      <button
-                        className="btn btn-primary btn-sm"
-                        onClick={() => handleReorder(order)}
-                      >
-                        Mua lại
-                      </button>
-                    )}
+  {order.status === "COMPLETED" && (
+    <>
+      <button
+  className="btn btn-warning btn-sm me-2"
+  onClick={() => {
+    setSelectedProduct(order.items[0].productId);
+    setShowReview(true);
+  }}
+>
+  Đánh giá
+</button>
 
-                    {order.status === "PENDING" && (
-                      <button
-                        className="btn btn-outline-danger btn-sm"
-                        onClick={() => handleCancelOrder(order.id)}
-                      >
-                        Hủy đơn
-                      </button>
-                    )}
-                  </div>
+      <button
+        className="btn btn-primary btn-sm"
+        onClick={() => handleReorder(order)}
+      >
+        Mua lại
+      </button>
+    </>
+  )}
+
+  {order.status === "PENDING" && (
+    <button
+      className="btn btn-outline-danger btn-sm"
+      onClick={() => handleCancelOrder(order.id)}
+    >
+      Hủy đơn
+    </button>
+  )}
+</div>
                 </div>
               </div>
             </div>
           ))}
         </div>
       )}
+      {showReview && (
+<div
+style={{
+position: "fixed",
+top: 0,
+left: 0,
+width: "100%",
+height: "100%",
+background: "rgba(0,0,0,0.5)",
+display: "flex",
+justifyContent: "center",
+alignItems: "center",
+zIndex: 999
+}}
+>
+
+<div className="bg-white p-4 rounded shadow-lg" style={{width:"420px"}}>
+
+<ReviewForm
+productId={selectedProduct}
+userId={user.id}
+/>
+
+<button
+className="btn btn-secondary mt-3"
+onClick={() => setShowReview(false)}
+>
+Đóng
+</button>
+
+</div>
+</div>
+)}
     </div>
   );
 };
