@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { getReviews } from "../../../api/reviewApi";
+import ReviewForm from "../ReviewForm"; // 🔥 THÊM
 import "./style.scss";
 
 function ReviewList({ productId }) {
@@ -33,12 +34,13 @@ function ReviewList({ productId }) {
 
       <h3 className="review-title">Đánh giá sản phẩm</h3>
 
+      {/* 🔥 FORM GỬI REVIEW */}
+      <ReviewForm productId={productId} onSuccess={fetchReviews} />
+
       {/* STATISTIC */}
       <div className="review-statistic">
-
         {[5,4,3,2,1].map((star)=>(
           <div key={star} className="stat-row">
-
             <span className="stat-label">{star}⭐</span>
 
             <div className="stat-bar">
@@ -51,15 +53,12 @@ function ReviewList({ productId }) {
             <span className="stat-percent">
               {percent(star)}%
             </span>
-
           </div>
         ))}
-
       </div>
 
       {/* FILTER */}
       <div className="review-filter">
-
         <button onClick={() => setStarFilter(null)}>
           Tất cả
         </button>
@@ -69,7 +68,6 @@ function ReviewList({ productId }) {
             {star}⭐
           </button>
         ))}
-
       </div>
 
       {reviews.length === 0 && (
@@ -84,7 +82,6 @@ function ReviewList({ productId }) {
           <div className="review-header">
 
             <div className="review-user">
-
               <div className="avatar">
                 {r.userName?.charAt(0) || "U"}
               </div>
@@ -92,7 +89,6 @@ function ReviewList({ productId }) {
               <span className="username">
                 {r.userName || "User"}
               </span>
-
             </div>
 
             <div className="review-star">
@@ -102,19 +98,28 @@ function ReviewList({ productId }) {
           </div>
 
           <div className="review-body">
-  <div className="review-comment">
-    {r.comment}
-  </div>
 
-  {r.image && (
-    <img
-      src={r.image}
-      className="review-image"
-      alt="review"
-    />
-  )}
-</div>
+            <div className="review-comment">
+              {r.comment}
+            </div>
 
+            {r.image && (
+              <img
+                src={r.image}
+                className="review-image"
+                alt="review"
+              />
+            )}
+
+            {/* 🔥 HIỂN THỊ REPLY ADMIN */}
+            {r.reply && (
+              <div className="review-reply">
+                <strong>Phản hồi từ shop:</strong>
+                <p>{r.reply}</p>
+              </div>
+            )}
+
+          </div>
 
         </div>
 

@@ -4,6 +4,15 @@ import com.ecommerce.backend.entity.product.Review;
 import com.ecommerce.backend.repository.product.ReviewRepository;
 import com.ecommerce.backend.service.auth.ReviewService;
 import com.ecommerce.backend.dto.auth.ReviewRequest;
+import com.ecommerce.backend.entity.auth.User;
+import com.ecommerce.backend.repository.auth.UserRepository;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import java.time.LocalDateTime;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -21,13 +30,45 @@ public class ReviewController {
     @Autowired
     private ReviewRepository reviewRepository;
 
+    @Autowired
+    private UserRepository userRepository;
 
-    // ⭐ gửi đánh giá
+    // 🔥 LẤY USERNAME TỪ TOKEN
+    private String getCurrentUsername() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        if (auth.getPrincipal() instanceof UserDetails) {
+            return ((UserDetails) auth.getPrincipal()).getUsername();
+        }
+
+        return auth.getName();
+    }
+
+    // 🔥 FIX LỖI: tìm user bằng username HOẶC email
+    private User getCurrentUser() {
+        String username = getCurrentUsername();
+
+        System.out.println("USERNAME = " + username); // debug
+
+        Optional<User> userOpt = userRepository.findByUsername(username);
+
+        if (userOpt.isEmpty()) {
+            userOpt = userRepository.findByEmail(username);
+        }
+
+        return userOpt.orElseThrow(() ->
+                new RuntimeException("Không tìm thấy user: " + username)
+        );
+    }
+
+    // ⭐ USER: gửi đánh giá
     @PostMapping("/reviews")
     public ResponseEntity<?> createReview(@RequestBody ReviewRequest request) {
 
+        User user = getCurrentUser();
+
         Review review = reviewService.createReview(
-                request.getUserId(),
+                user.getId(),
                 request.getProductId(),
                 request.getStar(),
                 request.getComment(),
@@ -37,29 +78,26 @@ public class ReviewController {
         return ResponseEntity.ok(review);
     }
 
-
-    // ⭐ admin duyệt đánh giá
+    // ⭐ ADMIN: duyệt đánh giá
     @PutMapping("/reviews/{id}/approve")
     public ResponseEntity<?> approveReview(@PathVariable Long id) {
 
         Review review = reviewRepository.findById(id).orElseThrow();
 
         review.setApproved(true);
-
         reviewRepository.save(review);
 
         return ResponseEntity.ok("Approved");
     }
 
-
-    // ⭐ admin xóa review
+    // ⭐ ADMIN: xóa review
     @DeleteMapping("/reviews/{id}")
-    public void deleteReview(@PathVariable Long id) {
+    public ResponseEntity<?> deleteReview(@PathVariable Long id) {
         reviewRepository.deleteById(id);
+        return ResponseEntity.ok("Deleted");
     }
 
-
-    // ⭐ lấy review theo product
+    // ⭐ USER: lấy review đã duyệt
     @GetMapping("/reviews/product/{productId}")
     public List<Review> getReviews(
             @PathVariable Long productId,
@@ -73,10 +111,44 @@ public class ReviewController {
         return reviewRepository.findByProductIdAndApprovedTrue(productId);
     }
 
-
-    // ⭐ tính trung bình sao
+    // ⭐ USER: tính trung bình sao
     @GetMapping("/reviews/avg/{productId}")
     public Double getAvg(@PathVariable Long productId){
         return reviewService.getAverageStar(productId);
+    }
+
+    // ⭐ ADMIN: reply review
+    @PutMapping("/reviews/{id}/reply")
+    public ResponseEntity<?> replyReview(
+            @PathVariable Long id,
+            @RequestBody String replyContent
+    ) {
+        Review review = reviewRepository.findById(id).orElseThrow();
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        boolean isAdmin = auth.getAuthorities()
+                .stream()
+                .anyMatch(a ->
+                        a.getAuthority().equals("ADMIN") ||
+                                a.getAuthority().equals("ROLE_ADMIN")
+                );
+
+        if (!isAdmin) {
+            return ResponseEntity.status(403).body("Chỉ admin mới được trả lời");
+        }
+
+        review.setReply(replyContent);
+        review.setRepliedAt(LocalDateTime.now());
+
+        reviewRepository.save(review);
+
+        return ResponseEntity.ok(review);
+    }
+
+    // ⭐ ADMIN: lấy review chưa duyệt
+    @GetMapping("/reviews/unapproved")
+    public List<Review> getUnapprovedReviews() {
+        return reviewRepository.findByApprovedFalse();
     }
 }

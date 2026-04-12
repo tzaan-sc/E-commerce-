@@ -29,6 +29,25 @@ public class Review {
     @ManyToOne
     @JoinColumn(name = "product_id")
     private Product product;
+    @Column(columnDefinition = "TEXT")
+    private String reply;
+
+    private LocalDateTime repliedAt;
+    public String getReply() {
+        return reply;
+    }
+
+    public void setReply(String reply) {
+        this.reply = reply;
+    }
+
+    public LocalDateTime getRepliedAt() {
+        return repliedAt;
+    }
+
+    public void setRepliedAt(LocalDateTime repliedAt) {
+        this.repliedAt = repliedAt;
+    }
 
     // getter setter
     public Long getId() {

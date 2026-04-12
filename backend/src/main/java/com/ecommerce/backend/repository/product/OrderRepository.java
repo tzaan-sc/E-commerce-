@@ -8,6 +8,7 @@
 
     public interface OrderRepository extends JpaRepository<Order, Long> {
         // 2. THÊM DÒNG NÀY VÀO
+        List<Order> findByUserId(Long userId);
         List<Order> findByUser(User user);
         long countByUser(User user);
         List<Order> findAllByOrderByCreatedAtDesc();

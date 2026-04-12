@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import apiClient from "../../../api/axiosConfig";
 import { Save, Upload } from "lucide-react";
+import ReviewManagement from "../../../components/admin/reviewPage";
 import {
   LayoutDashboard,
   Laptop,
@@ -45,6 +46,7 @@ const AdminDashboard = () => {
     { id: "products", name: "Sản phẩm", icon: Laptop },
     { id: "inventory", name: "Kho hàng", icon: Package }, // 👇 ADDED: Inventory Menu Item
     { id: "orders", name: "Đơn hàng", icon: ShoppingCart },
+    { id: "reviews", name: "Đánh giá", icon: Tag },
     { id: "accounts", name: "Tài khoản", icon: Users },
     {
       id: "categories",
@@ -81,6 +83,8 @@ const AdminDashboard = () => {
         return <OrdersPage />;
       case "accounts":
         return <AccountsPage />;
+      case "reviews":
+        return <ReviewManagement />;
       case "brands":
         return <BrandsPage />;
       case "usage":
