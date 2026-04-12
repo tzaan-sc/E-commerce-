@@ -1,27 +1,27 @@
 // src/router.js
 import { Routes, Route } from "react-router-dom";
 
-import MainLayout from "./pages/user/mainLayout";
-import CustomerLayout from "pages/customer/customerLayout";
-import HomePage from "./components/page/homePage";
-import LaptopPage from "components/page/laptopPage";
-import LoginPage from "./components/page/loginPage";
-import RegistrationPage from "./components/page/registrationPage";
-import ProductDetailPage from "./components/page/productDetailPage";
-import ProfilePage from "./components/page/profilePage";
-import CartPage from "./components/page/cartPage";
-import MyOrdersPage from "components/page/myOrderPage";
-import OrderDetailPage from "components/page/OrderDetailPage";
-import BrandProductsPage from "./components/page/brandProducts"
-import UsagePurposeProductsPage from "./components/page/usagePurposeProducts"
-import CheckoutPage from "./components/user/checkoutPage";
-// ====== Import các trang Admin ======
+import MainLayout from "./components/layout/MainLayout";
+import CustomerLayout from "./components/layout/CustomerLayout";
+import HomePage from "./pages/Home";
+import LaptopPage from "./pages/Laptop";
+import LoginPage from "./pages/Auth/Login";
+import RegistrationPage from "./pages/Auth/Register";
+import ProductDetailPage from "./pages/ProductDetail";
+import ProfilePage from "./pages/customer/Profile";
+import CartPage from "./pages/Cart";
+import MyOrdersPage from "./pages/customer/MyOrder";
+import OrderDetailPage from "./pages/customer/OrderDetail";
+import BrandProductsPage from "./pages/Search/BrandProducts";
+import UsagePurposeProductsPage from "./pages/Search/UsagePurposeProducts";
+import CheckoutPage from "./pages/Checkout";
 
+// ====== Import các trang Admin ======
 import { ROUTERS } from "./utils/router";
-import AdminDashboard from "pages/admin/dashboardPage";
-import SearchPage from "./components/page/searchPage";  
-import ForgotPasswordPage from "./components/page/forgotPasswordPage";
-import ResetPasswordPage from "./components/page/forgotPasswordPage"; 
+import AdminDashboard from "./pages/admin/dashboardPage";
+import SearchPage from "./pages/Search/SearchPage";  
+import ForgotPasswordPage from "./pages/Auth/ForgotPassword";
+import ResetPasswordPage from "./pages/Auth/ForgotPassword"; 
 import ProtectedRoute from "./components/ProtectedRoute"; // 1. Import cái này vào
 // ROUTER CHÍNH
 // ========================
