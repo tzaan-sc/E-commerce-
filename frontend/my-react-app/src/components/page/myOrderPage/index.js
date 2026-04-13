@@ -244,7 +244,7 @@ const handleReorder = async (order) => {
                     </small>
                   )}
                   {order.paymentMethod && (
-                    <span className="badge bg-primary ms-2" style={{fontSize:'11px', fontWeight:'500'}}>
+                    <span className="badge bg-primary ms-2" style={{fontSize:'11px', fontWeight:'0'}}>
                       {order.paymentMethod === 'COD' ? 'COD' : 'Online'}
                     </span>
                   )}

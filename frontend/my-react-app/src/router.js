@@ -23,6 +23,7 @@ import SearchPage from "./components/page/searchPage";
 import ForgotPasswordPage from "./components/page/forgotPasswordPage";
 import ResetPasswordPage from "./components/page/forgotPasswordPage"; 
 import ProtectedRoute from "./components/ProtectedRoute"; // 1. Import cái này vào
+import QRPaymentPage from "./components/page/qrPaymentPage";
 // ROUTER CHÍNH
 // ========================
 const RouterCustom = () => {
@@ -38,6 +39,7 @@ const RouterCustom = () => {
         <Route path={ROUTERS.USER.SEARCH} element={<SearchPage />}/>
         <Route path={ROUTERS.USER.FORGOTPASSWORD} element={<ForgotPasswordPage />}/>
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/payment/qr" element={<ProtectedRoute roles={["CUSTOMER"]}><QRPaymentPage /></ProtectedRoute>} />
         {/* <Route path={ROUTERS.USER.BRAND} element={<BrandProductsPage />} />
         <Route path={ROUTERS.USER.USAGE_PURPOSE} element={<UsagePurposeProductsPage />} /> */}
       </Route>

@@ -11,4 +11,5 @@ public interface OrderService {
     List<OrderDTO> getAllOrdersForAdmin(String status);
     OrderDTO updateOrderStatus(Long orderId, String status);
     OrderDTO confirmReceived(String email, Long orderId); // User xác nhận đã nhận hàng
+    OrderDTO confirmPayment(String email, Long orderId); // User xác nhận thanh toán VIETQR
 }

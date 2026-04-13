@@ -11,3 +11,6 @@ export const getOrderDetail = (orderId) =>
 // Xác nhận đã nhận hàng (DELIVERED → COMPLETED)
 export const confirmReceived = (orderId) => 
   apiClient.put(`/orders/${orderId}/confirm-received`);
+// Xác nhận thanh toán VIETQR (PENDING -> CONFIRMED)
+export const confirmPayment = (orderId) => 
+  apiClient.put(`/orders/${orderId}/confirm-payment`);

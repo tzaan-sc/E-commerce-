@@ -80,6 +80,21 @@ public class OrderController {
         OrderDTO updatedOrder = orderService.confirmReceived(username, orderId);
         return ResponseEntity.ok(updatedOrder);
     }
+    // Xác nhận thanh toán VIETQR (Bỏ qua - Thay thế bằng Webhook của SePay)
+    /*
+    @PutMapping("/{orderId}/confirm-payment")
+    public ResponseEntity<OrderDTO> confirmPayment(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long orderId
+    ) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
+        String username = userDetails.getUsername();
+        OrderDTO updatedOrder = orderService.confirmPayment(username, orderId);
+        return ResponseEntity.ok(updatedOrder);
+    }
+    */
     @GetMapping("/admin")
     public ResponseEntity<List<OrderDTO>> getAllOrdersForAdmin(
             @AuthenticationPrincipal UserDetails userDetails,

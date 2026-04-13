@@ -85,6 +85,28 @@ public class OrderServiceImpl implements OrderService {
         return mapOrderToDTO(orderRepository.save(order));
     }
 
+    // --- KHÁCH HÀNG XÁC NHẬN THANH TOÁN (VIETQR) ---
+    @Override
+    @Transactional
+    public OrderDTO confirmPayment(String email, Long orderId) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
+
+        if (order.getUser() == null || !order.getUser().getId().equals(user.getId())) {
+            throw new SecurityException("Bạn không có quyền thao tác đơn hàng này");
+        }
+
+        if (!"PENDING".equalsIgnoreCase(order.getStatus())) {
+            throw new IllegalStateException("Đơn hàng không ở trạng thái chờ thanh toán.");
+        }
+
+        order.setStatus("CONFIRMED");
+        return mapOrderToDTO(orderRepository.save(order));
+    }
+
     @Override
     public OrderDTO getOrderDetail(String email, Long orderId) {
         User user = userRepository.findByEmail(email)
