@@ -18,9 +18,9 @@ const QRPaymentPage = () => {
   const [error, setError] = useState(null);
 
   // Cấu hình mã ngân hàng VietQR của bạn (Thay đổi tuỳ ngân hàng)
-  const bankBin = "970422"; // MB Bank BIN
-  const targetAccount = "0123456789"; 
-  const accountName = "ECOMMERCE STORE";
+  const bankBin = "970436"; // Vietcom Bank BIN
+  const targetAccount = "1032850611"; 
+  const accountName = "Ngo Thu Van";
   
   const addInfo = `ORDER_${orderId}`;
   const qrUrl = `https://img.vietqr.io/image/${bankBin}-${targetAccount}-compact2.png?amount=${amount}&addInfo=${addInfo}&accountName=${encodeURIComponent(accountName)}`;
