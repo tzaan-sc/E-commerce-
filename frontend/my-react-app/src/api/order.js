@@ -8,3 +8,6 @@ export const cancelOrder = (orderId) =>
 // export const getOrderById = (id) => apiClient.get(`/orders/${id}`);
 export const getOrderDetail = (orderId) => 
   apiClient.get(`/orders/${orderId}`);
+// Xác nhận đã nhận hàng (DELIVERED → COMPLETED)
+export const confirmReceived = (orderId) => 
+  apiClient.put(`/orders/${orderId}/confirm-received`);

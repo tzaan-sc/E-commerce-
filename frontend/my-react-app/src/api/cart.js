@@ -15,7 +15,8 @@ export const checkoutSelected = (selectedIds, formData) => {
     note: formData.note,           // Ghi chú
     address: formData.address,     // Địa chỉ giao hàng
     phone: formData.phone,         // Số điện thoại
-    fullName: formData.fullName    // Tên người nhận
+    fullName: formData.fullName,   // Tên người nhận
+    paymentMethod: formData.paymentMethod || "COD" // Phương thức thanh toán
   };
 
   return apiClient.post(`${API_URL}/checkout-selected`, payload);

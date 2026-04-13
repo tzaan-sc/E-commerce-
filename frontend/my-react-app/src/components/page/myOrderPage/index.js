@@ -1,6 +1,6 @@
 import React, { memo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { getMyOrders, cancelOrder } from "api/order";
+import { getMyOrders, cancelOrder, confirmReceived } from "api/order";
 // Thêm 3 dòng này vào đầu file
 import { addToCart } from "api/cart"; 
 import { useCart } from "context/index"; 
@@ -23,10 +23,11 @@ const translateStatus = (status) => {
   if (!status) return 'Không rõ';
   const map = {
     'PENDING': 'Chờ xác nhận',
-    'PROCESSING': 'Đang xử lý', // 👈 THÊM DÒNG NÀY (Quan trọng nhất)
-    'CONFIRMED': 'Đã xác nhận', // (Giữ lại để tương thích ngược nếu cần)
+    'PROCESSING': 'Đang xử lý',
+    'CONFIRMED': 'Đã xác nhận',
     'SHIPPING': 'Đang giao',
-    'COMPLETED': 'Đã giao',
+    'DELIVERED': 'Đã giao',
+    'COMPLETED': 'Hoàn thành',
     'CANCELLED': 'Đã hủy',
   };
   return map[status.toUpperCase()] || status;
@@ -37,14 +38,12 @@ const getStatusBadge = (status) => {
   const statusUpper = status?.toUpperCase();
   const statusConfig = {
     PENDING: { class: "warning", text: translateStatus('PENDING') },
-    
-    // 👇 THÊM DÒNG NÀY: Để trạng thái 'Đang xử lý' có màu xanh dương (info) hoặc tím (primary)
-    PROCESSING: { class: "primary", text: translateStatus('PROCESSING') }, 
-    
+    PROCESSING: { class: "primary", text: translateStatus('PROCESSING') },
+    CONFIRMED: { class: "secondary", text: translateStatus('CONFIRMED') },
     SHIPPING: { class: "info", text: translateStatus('SHIPPING') },
+    DELIVERED: { class: "info", text: translateStatus('DELIVERED') },
     COMPLETED: { class: "success", text: translateStatus('COMPLETED') },
     CANCELLED: { class: "danger", text: translateStatus('CANCELLED') },
-    CONFIRMED: { class: "secondary", text: translateStatus('CONFIRMED') },
   };
   
   const config = statusConfig[statusUpper] || { class: "secondary", text: status };
@@ -83,6 +82,20 @@ const getStatusBadge = (status) => {
       } catch (err) {
         console.error("Lỗi hủy đơn hàng:", err);
         alert(err.response?.data?.message || "Không thể hủy đơn hàng này.");
+      }
+    }
+  };
+
+  // --- KHÁCH HÀNG XÁC NHẬN ĐÃ NHẬN HÀNG ---
+  const handleConfirmReceived = async (orderId) => {
+    if (window.confirm("Xác nhận bạn đã nhận được hàng?")) {
+      try {
+        await confirmReceived(orderId);
+        alert("Đã xác nhận nhận hàng thành công!");
+        fetchOrders();
+      } catch (err) {
+        console.error("Lỗi xác nhận nhận hàng:", err);
+        alert(err.response?.data?.message || "Không thể xác nhận. Vui lòng thử lại.");
       }
     }
   };
@@ -176,10 +189,18 @@ const handleReorder = async (order) => {
           </li>
           <li className="nav-item">
             <button
+              className={`nav-link ${filter === "delivered" ? "active" : ""}`}
+              onClick={() => setFilter("delivered")}
+            >
+              Đã giao
+            </button>
+          </li>
+          <li className="nav-item">
+            <button
               className={`nav-link ${filter === "completed" ? "active" : ""}`}
               onClick={() => setFilter("completed")}
             >
-              Đã giao
+              Hoàn thành
             </button>
           </li>
           <li className="nav-item">
@@ -221,6 +242,11 @@ const handleReorder = async (order) => {
                     <small className="text-muted ms-3">
                       {new Date(order.createdAt).toLocaleDateString("vi-VN")}
                     </small>
+                  )}
+                  {order.paymentMethod && (
+                    <span className="badge bg-primary ms-2" style={{fontSize:'11px', fontWeight:'500'}}>
+                      {order.paymentMethod === 'COD' ? 'COD' : 'Online'}
+                    </span>
                   )}
                 </div>
                 {getStatusBadge(order.status)}
@@ -302,6 +328,15 @@ const handleReorder = async (order) => {
                         onClick={() => handleCancelOrder(order.id)}
                       >
                         Hủy đơn
+                      </button>
+                    )}
+
+                    {order.status === "DELIVERED" && (
+                      <button
+                        className="btn btn-outline-danger btn-sm"
+                        onClick={() => handleConfirmReceived(order.id)}
+                      >
+                        Đã nhận được hàng
                       </button>
                     )}
                   </div>

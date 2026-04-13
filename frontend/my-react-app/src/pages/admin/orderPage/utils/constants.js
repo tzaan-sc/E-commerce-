@@ -4,8 +4,9 @@ export const STATUS_STEPS = [
   { value: "PENDING", label: "Chờ xác nhận", step: 0 },
   { value: "PROCESSING", label: "Đang xử lý", step: 1 },
   { value: "SHIPPING", label: "Đang giao", step: 2 },
-  { value: "COMPLETED", label: "Đã giao", step: 3 },
-  { value: "CANCELLED", label: "Đã hủy", step: 4 },
+  { value: "DELIVERED", label: "Đã giao", step: 3 },
+  { value: "COMPLETED", label: "Hoàn thành", step: 4 },
+  { value: "CANCELLED", label: "Đã hủy", step: 5 },
 ];
 
 export const formatOrderId = (id) => {
@@ -19,7 +20,8 @@ export const translateStatus = (status) => {
     PENDING: "Chờ xác nhận",
     PROCESSING: "Đang xử lý",
     SHIPPING: "Đang giao",
-    COMPLETED: "Đã giao",
+    DELIVERED: "Đã giao",
+    COMPLETED: "Hoàn thành",
     CANCELLED: "Đã hủy",
     CONFIRMED: "Đã xác nhận",
   };
@@ -31,6 +33,7 @@ export const getStatusClass = (status) => {
   const statusUpper = status.toUpperCase();
   const statusMap = {
     COMPLETED: "success",
+    DELIVERED: "info",
     SHIPPING: "info",
     PROCESSING: "primary",
     PENDING: "warning",
@@ -40,7 +43,12 @@ export const getStatusClass = (status) => {
 };
 
 export const isOptionDisabled = (optionValue, currentStatus) => {
+  // Đơn đã hoàn thành hoặc hủy thì khóa hết
   if (currentStatus === "COMPLETED" || currentStatus === "CANCELLED") {
+    return true;
+  }
+  // Admin không được chọn COMPLETED (chỉ user xác nhận nhận hàng mới được)
+  if (optionValue === "COMPLETED") {
     return true;
   }
   const currentStepObj = STATUS_STEPS.find((s) => s.value === currentStatus);

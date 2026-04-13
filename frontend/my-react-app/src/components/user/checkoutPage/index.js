@@ -14,6 +14,7 @@ const CheckoutPage = () => {
 
   const [step, setStep] = useState('form'); 
   const [formData, setFormData] = useState({ fullName: '', email: '', phone: '', address: '', note: '' });
+  const [paymentMethod, setPaymentMethod] = useState('COD');
   const [originalData, setOriginalData] = useState({}); 
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
@@ -98,7 +99,7 @@ const CheckoutPage = () => {
   const handleConfirmOrder = async () => {
     setIsLoading(true);
     try {
-      await checkoutSelected(selectedIds, formData); 
+      await checkoutSelected(selectedIds, { ...formData, paymentMethod }); 
       setStep('success');
     } catch (error) {
       alert('Có lỗi xảy ra: ' + (error.response?.data?.message || error.message));
@@ -164,6 +165,17 @@ const CheckoutPage = () => {
                 <p><strong>Ghi chú:</strong> {formData.note}</p>
             </div>
 
+            <div style={{background:'#f9f9f9', padding:'15px', borderRadius:'8px', marginBottom:'20px', border:'1px solid #e5e7eb'}}>
+                <h3 style={{fontSize:'16px', marginBottom:'12px', marginTop:'0'}}>Phương thức thanh toán</h3>
+                <label style={{display:'flex', alignItems:'center', gap:'10px', cursor:'pointer', padding:'10px', borderRadius:'6px', border: paymentMethod === 'COD' ? '2px solid #2563eb' : '1px solid #d1d5db', background: paymentMethod === 'COD' ? '#eff6ff' : '#fff'}}>
+                    <input type="radio" name="paymentMethod" value="COD" checked={paymentMethod === 'COD'} onChange={(e) => setPaymentMethod(e.target.value)} />
+                    <div>
+                        <div style={{fontWeight:'600', color:'#111827'}}>💵 Thanh toán khi nhận hàng (COD)</div>
+                        <div style={{fontSize:'13px', color:'#6b7280'}}>Bạn sẽ thanh toán bằng tiền mặt khi nhận được hàng</div>
+                    </div>
+                </label>
+            </div>
+
             <h3>Sản phẩm ({displayItems?.length})</h3>
             <div className="order-items">
                 {displayItems?.map(item => (
@@ -215,7 +227,7 @@ const CheckoutPage = () => {
         <div className="checkout-content success" style={{textAlign:'center', padding:'40px'}}>
             <CheckCircle size={60} color="green" />
             <h2>Đặt Hàng Thành Công!</h2>
-            <p>Cảm ơn bạn đã mua hàng.</p>
+            <p>Đặt hàng thành công. Thanh toán khi nhận hàng.</p>
             <button className="btn-primary" onClick={() => navigate("/customer/home/don-mua")}>
                 Xem đơn hàng của tôi
             </button>

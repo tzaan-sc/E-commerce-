@@ -67,6 +67,19 @@ public class OrderController {
         OrderDTO updatedOrder = orderService.cancelOrder(username, orderId);
         return ResponseEntity.ok(updatedOrder);
     }
+    // Xác nhận đã nhận hàng (DELIVERED → COMPLETED)
+    @PutMapping("/{orderId}/confirm-received")
+    public ResponseEntity<OrderDTO> confirmReceived(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long orderId
+    ) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
+        String username = userDetails.getUsername();
+        OrderDTO updatedOrder = orderService.confirmReceived(username, orderId);
+        return ResponseEntity.ok(updatedOrder);
+    }
     @GetMapping("/admin")
     public ResponseEntity<List<OrderDTO>> getAllOrdersForAdmin(
             @AuthenticationPrincipal UserDetails userDetails,

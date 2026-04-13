@@ -81,13 +81,16 @@ public class CartServiceImpl implements CartService {
         }
 
         // 2. Tạo đơn hàng (Order)
+        long orderCount = orderRepository.countByUser(user);
         Order order = Order.builder()
                 .user(user)
                 .customerName(request.getFullName())
                 .phone(request.getPhone())
                 .shippingAddress(request.getAddress())
                 .note(request.getNote())
+                .paymentMethod(request.getPaymentMethod() != null ? request.getPaymentMethod() : "COD")
                 .status("PENDING") // Trạng thái chờ xác nhận
+                .userOrderNumber((int) orderCount + 1)
                 .totalAmount(0.0)
                 .build();
 
