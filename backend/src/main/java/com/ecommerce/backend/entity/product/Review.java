@@ -135,4 +135,13 @@ public class Review {
         }
         return null;
     }
+    @Column(columnDefinition = "TEXT")
+    private String userReply;
+    public String getUserReply() {
+        return userReply;
+    }
+
+    public void setUserReply(String userReply) {
+        this.userReply = userReply;
+    }
 }

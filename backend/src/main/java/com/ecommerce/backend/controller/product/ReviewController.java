@@ -156,4 +156,24 @@ public class ReviewController {
     public List<Review> getAllReviews() {
         return reviewRepository.findAll();
     }
+    @PutMapping("/reviews/{id}/user-reply")
+    public ResponseEntity<?> userReply(
+            @PathVariable Long id,
+            @RequestBody String content
+    ) {
+        Review review = reviewRepository.findById(id).orElseThrow();
+
+        User user = getCurrentUser();
+
+        // ❌ không phải chủ review
+        if (!review.getUser().getId().equals(user.getId())) {
+            return ResponseEntity.status(403).body("Không phải review của bạn");
+        }
+
+        review.setUserReply(content);
+
+        reviewRepository.save(review);
+
+        return ResponseEntity.ok(review);
+    }
 }
