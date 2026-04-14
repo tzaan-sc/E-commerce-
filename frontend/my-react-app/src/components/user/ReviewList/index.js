@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { getReviews } from "../../../api/reviewApi";
-import ReviewForm from "../ReviewForm"; // 🔥 THÊM
+import ReviewForm from "../ReviewForm";
 import "./style.scss";
 
 function ReviewList({ productId }) {
 
   const [reviews, setReviews] = useState([]);
   const [starFilter, setStarFilter] = useState(null);
+
+  // 🔥 state lưu input reply
+  const [replyInputs, setReplyInputs] = useState({});
 
   useEffect(() => {
     fetchReviews();
@@ -29,13 +32,38 @@ function ReviewList({ productId }) {
   const percent = (star) =>
     total === 0 ? 0 : Math.round((countStar(star) / total) * 100);
 
+  // 🔥 USER REPLY
+  const handleUserReply = async (id) => {
+    const content = replyInputs[id];
+    if (!content) return;
+
+    const token = localStorage.getItem("token");
+
+    try {
+      await fetch(`http://localhost:8080/api/reviews/${id}/user-reply`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "text/plain",
+          Authorization: `Bearer ${token}`,
+        },
+        body: content,
+      });
+
+      fetchReviews();
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
   return (
     <div className="review-container">
 
       <h3 className="review-title">Đánh giá sản phẩm</h3>
 
-      {/* 🔥 FORM GỬI REVIEW */}
-      <ReviewForm productId={productId} onSuccess={fetchReviews} />
+      {/* 🔥 FORM FULL NGANG */}
+      <div className="review-form-wrapper">
+        <ReviewForm productId={productId} onSuccess={fetchReviews} />
+      </div>
 
       {/* STATISTIC */}
       <div className="review-statistic">
@@ -111,11 +139,40 @@ function ReviewList({ productId }) {
               />
             )}
 
-            {/* 🔥 HIỂN THỊ REPLY ADMIN */}
+            {/* 🔥 SHOP REPLY */}
             {r.reply && (
               <div className="review-reply">
-                <strong>Phản hồi từ shop:</strong>
+                <strong>Shop:</strong>
                 <p>{r.reply}</p>
+              </div>
+            )}
+
+            {/* 🔥 USER REPLY */}
+            {r.userReply && (
+              <div className="user-reply">
+                <strong>Bạn:</strong>
+                <p>{r.userReply}</p>
+              </div>
+            )}
+
+            {/* 🔥 INPUT USER REPLY */}
+            {r.reply && !r.userReply && (
+              <div className="reply-box">
+                <input
+                  type="text"
+                  placeholder="Phản hồi lại shop..."
+                  value={replyInputs[r.id] || ""}
+                  onChange={(e) =>
+                    setReplyInputs({
+                      ...replyInputs,
+                      [r.id]: e.target.value,
+                    })
+                  }
+                />
+
+                <button onClick={() => handleUserReply(r.id)}>
+                  Gửi
+                </button>
               </div>
             )}
 
