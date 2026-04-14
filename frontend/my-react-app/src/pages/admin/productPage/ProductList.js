@@ -15,8 +15,8 @@ const ProductList = ({
   const perPage = 5;
   const fileInputRef = useRef(null);
 
-  const filtered = products.filter(p => {
-    const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
+  const filtered = (Array.isArray(products) ? products : []).filter(p => {
+    const matchSearch = p.name?.toLowerCase().includes(search.toLowerCase()) || false;
     const matchBrand = !filterBrand || p.brandId === Number(filterBrand);
     const matchPurpose = !filterPurpose || p.purposeId === Number(filterPurpose);
     const matchStatus = !filterStatus || p.status === filterStatus;

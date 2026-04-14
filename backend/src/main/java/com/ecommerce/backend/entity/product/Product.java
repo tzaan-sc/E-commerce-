@@ -37,9 +37,7 @@ public class Product {
 
     private String status = "ACTIVE";
 
-    // --- LIÊN KẾT BẢNG THÔNG SỐ (1-1) ---
-    @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @PrimaryKeyJoinColumn
+    // --- LIÊN KẾT BẢNG KHUYẾN MÃI ---
 
     @ManyToOne
     @JoinColumn(name = "promotion_id")
@@ -50,6 +48,7 @@ public class Product {
     private ProductSpecification specification;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
+    @JsonManagedReference
     private List<ProductVariant> variants;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
