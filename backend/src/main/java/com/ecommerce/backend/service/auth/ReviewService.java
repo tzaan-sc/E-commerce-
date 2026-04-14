@@ -23,7 +23,7 @@ public class ReviewService {
     @Autowired
     private OrderRepository orderRepository;
 
-    // ✅ Tạo đánh giá
+    // ✅ Tạo đánh giá (FIX: mỗi orderItem chỉ review 1 lần)
     public Review createReview(Long userId, Long productId, int star, String comment, String image) {
 
         System.out.println("=== CREATE REVIEW ===");
@@ -33,13 +33,13 @@ public class ReviewService {
         // ✅ Lấy danh sách đơn hàng của user
         List<Order> orders = orderRepository.findByUserId(userId);
 
-        boolean hasPurchased = false;
+        OrderItem targetItem = null;
 
         for (Order order : orders) {
 
             String status = order.getStatus();
 
-            // ✅ CHẤP NHẬN COMPLETED (theo hệ thống của bạn)
+            // ✅ chỉ cho review khi đã nhận hàng
             if (status == null ||
                     !(status.equalsIgnoreCase("COMPLETED") || status.equalsIgnoreCase("DELIVERED"))) {
                 continue;
@@ -47,29 +47,26 @@ public class ReviewService {
 
             for (OrderItem item : order.getOrderItems()) {
 
-                // ⚠️ tránh null product
+                // tránh null product
                 if (item.getProduct() != null &&
                         item.getProduct().getId().equals(productId)) {
 
-                    hasPurchased = true;
-                    break;
+                    // 🔥 check item này đã review chưa
+                    boolean reviewed = reviewRepository.existsByOrderItemId(item.getId());
+
+                    if (!reviewed) {
+                        targetItem = item; // lấy item chưa review
+                        break;
+                    }
                 }
             }
 
-            if (hasPurchased) break;
+            if (targetItem != null) break;
         }
 
-        System.out.println("hasPurchased: " + hasPurchased);
-
-        // ❌ chưa mua → không cho đánh giá
-        if (!hasPurchased) {
-            throw new RuntimeException("Bạn phải mua và nhận hàng mới được đánh giá");
-        }
-
-        // ❌ đã đánh giá rồi → chặn
-        boolean reviewed = reviewRepository.existsByUserIdAndProductId(userId, productId);
-        if (reviewed) {
-            throw new RuntimeException("Bạn đã đánh giá sản phẩm này rồi");
+        // ❌ chưa mua hoặc đã review hết các lần mua
+        if (targetItem == null) {
+            throw new RuntimeException("Bạn đã đánh giá hết các lần mua sản phẩm này hoặc chưa mua");
         }
 
         // ❌ validate số sao
@@ -89,15 +86,15 @@ public class ReviewService {
         review.setUser(user);
         review.setProduct(product);
 
+        // 🔥 QUAN TRỌNG: gắn orderItem
+        review.setOrderItem(targetItem);
+
         review.setStar(star);
         review.setComment(comment);
         review.setImage(image);
         review.setCreatedAt(LocalDateTime.now());
 
-        // mặc định chưa duyệt
         review.setApproved(false);
-
-        // chưa có phản hồi
         review.setReply(null);
         review.setRepliedAt(null);
 

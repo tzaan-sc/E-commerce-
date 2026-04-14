@@ -1,6 +1,7 @@
 package com.ecommerce.backend.entity.product;
 
 import com.ecommerce.backend.entity.auth.User;
+import com.ecommerce.backend.entity.product.OrderItem;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -22,6 +23,13 @@ public class Review {
 
     private LocalDateTime createdAt;
 
+    @Column(columnDefinition = "TEXT")
+    private String reply;
+
+    private LocalDateTime repliedAt;
+
+    // ================= RELATION =================
+
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
@@ -29,27 +37,14 @@ public class Review {
     @ManyToOne
     @JoinColumn(name = "product_id")
     private Product product;
-    @Column(columnDefinition = "TEXT")
-    private String reply;
 
-    private LocalDateTime repliedAt;
-    public String getReply() {
-        return reply;
-    }
+    // 🔥 QUAN TRỌNG: gắn với từng lần mua
+    @ManyToOne
+    @JoinColumn(name = "order_item_id")
+    private OrderItem orderItem;
 
-    public void setReply(String reply) {
-        this.reply = reply;
-    }
+    // ================= GETTER SETTER =================
 
-    public LocalDateTime getRepliedAt() {
-        return repliedAt;
-    }
-
-    public void setRepliedAt(LocalDateTime repliedAt) {
-        this.repliedAt = repliedAt;
-    }
-
-    // getter setter
     public Long getId() {
         return id;
     }
@@ -108,6 +103,30 @@ public class Review {
 
     public void setProduct(Product product) {
         this.product = product;
+    }
+
+    public OrderItem getOrderItem() {
+        return orderItem;
+    }
+
+    public void setOrderItem(OrderItem orderItem) {
+        this.orderItem = orderItem;
+    }
+
+    public String getReply() {
+        return reply;
+    }
+
+    public void setReply(String reply) {
+        this.reply = reply;
+    }
+
+    public LocalDateTime getRepliedAt() {
+        return repliedAt;
+    }
+
+    public void setRepliedAt(LocalDateTime repliedAt) {
+        this.repliedAt = repliedAt;
     }
 
     public String getUserName() {

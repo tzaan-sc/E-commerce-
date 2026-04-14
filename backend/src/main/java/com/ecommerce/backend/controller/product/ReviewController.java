@@ -151,4 +151,9 @@ public class ReviewController {
     public List<Review> getUnapprovedReviews() {
         return reviewRepository.findByApprovedFalse();
     }
+
+    @GetMapping("/reviews")
+    public List<Review> getAllReviews() {
+        return reviewRepository.findAll();
+    }
 }
