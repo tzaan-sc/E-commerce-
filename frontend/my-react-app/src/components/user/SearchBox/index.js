@@ -11,6 +11,7 @@ function SearchBox() {
 
   const navigate = useNavigate();
 
+  // 🔥 debounce search
   useEffect(() => {
     if (!keyword.trim()) {
       setSuggestions([]);
@@ -18,18 +19,19 @@ function SearchBox() {
       return;
     }
 
-    const delayDebounce = setTimeout(() => {
-      fetchSuggest(keyword); // ✅ truyền keyword chuẩn
+    const delay = setTimeout(() => {
+      fetchSuggest(keyword);
     }, 300);
 
-    return () => clearTimeout(delayDebounce);
+    return () => clearTimeout(delay);
   }, [keyword]);
 
+  // 🔥 gọi API
   const fetchSuggest = async (kw) => {
     try {
       setLoading(true);
 
-      const data = await suggestSearch(kw); // ✅ data là array luôn
+      const data = await suggestSearch(kw); // ✅ data là array
 
       console.log("DATA:", data); // debug
 
@@ -43,6 +45,7 @@ function SearchBox() {
     }
   };
 
+  // 🔥 click item
   const handleClick = (slug) => {
     navigate(`/product/${slug}`);
     setShow(false);
@@ -58,6 +61,14 @@ function SearchBox() {
         onChange={(e) => setKeyword(e.target.value)}
         onFocus={() => keyword && setShow(true)}
         onBlur={() => setTimeout(() => setShow(false), 200)}
+
+        // 🔥 ENTER → SEARCH PAGE
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && keyword.trim()) {
+            navigate(`/search?q=${encodeURIComponent(keyword.trim())}`);
+            setShow(false);
+          }
+        }}
       />
 
       {show && (

@@ -163,10 +163,10 @@ import { memo, useState, useEffect } from "react";
 import "./style.scss";
 import { BsFillPersonFill } from "react-icons/bs";
 import { GrSearch } from "react-icons/gr";
-//import SearchBox from "../../../components/user/SearchBox";
 import { AiOutlineShoppingCart } from "react-icons/ai";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ROUTERS } from "utils/router";
+import { suggestSearch } from "api/searchApi";
 import { useAuth } from "hooks/useAuth";
 import { useCart } from "context/index"; // Import Cart Context
 
@@ -186,6 +186,8 @@ const Header = () => {
 
   const [menus, setMenus] = useState(DEFAULT_MENU); 
   const [searchQuery, setSearchQuery] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+const [showSuggest, setShowSuggest] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
 
   // Kiểm tra xem đang ở trang customer hay user thường
@@ -214,7 +216,25 @@ const Header = () => {
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [location.pathname]); // Chạy lại khi đổi trang
+useEffect(() => {
+  if (!searchQuery.trim()) {
+    setSuggestions([]);
+    setShowSuggest(false);
+    return;
+  }
 
+  const delay = setTimeout(async () => {
+    try {
+      const data = await suggestSearch(searchQuery);
+      setSuggestions(data);
+      setShowSuggest(true);
+    } catch (e) {
+      console.error("Suggest error:", e);
+    }
+  }, 300);
+
+  return () => clearTimeout(delay);
+}, [searchQuery]);
   // 2. XỬ LÝ SEARCH
   const handleSearch = (e) => {
     e.preventDefault();
@@ -347,17 +367,43 @@ const Header = () => {
               {/* SEARCH */}
               <form className="header__search" onSubmit={handleSearch}>
                 <input 
-                  type="text" 
-                  placeholder="Tìm kiếm sản phẩm..." 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                />
+  type="text" 
+  placeholder="Tìm kiếm sản phẩm..." 
+  value={searchQuery}
+  onChange={(e) => setSearchQuery(e.target.value)}
+  onKeyPress={handleKeyPress}
+  onFocus={() => searchQuery && setShowSuggest(true)}
+  onBlur={() => setTimeout(() => setShowSuggest(false), 200)}
+/>
                 <button type="submit"><GrSearch /></button>
               </form>
-              {/* <div className="header__search">
-  <SearchBox />
-</div> */}
+              {showSuggest && (
+  <div className="suggest-box">
+    {suggestions.length === 0 && (
+      <div className="no-result">Không tìm thấy</div>
+    )}
+
+    {suggestions.map((item) => (
+      <div
+        key={item.id}
+        className="suggest-item"
+        onClick={() => {
+          navigate(`/product/${item.slug}`);
+          setShowSuggest(false);
+        }}
+      >
+        <img src={item.image || "/no-image.png"} alt={item.name} />
+
+        <div className="info">
+          <div className="name">{item.name}</div>
+          <div className="price">
+            {item.price?.toLocaleString()}₫
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+)}
 
               {/* CART */}
               <div className="header__cart">
