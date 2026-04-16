@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
@@ -72,4 +73,17 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             @Param("minPrice") Double minPrice,
             @Param("maxPrice") Double maxPrice
     );
+    @Query("""
+    SELECT DISTINCT p FROM Product p
+    LEFT JOIN FETCH p.images img
+    WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+    ORDER BY 
+        CASE 
+            WHEN LOWER(p.name) LIKE LOWER(CONCAT(:keyword, '%')) THEN 0
+            ELSE 1
+        END,
+        LENGTH(p.name) ASC
+""")
+    List<Product> searchSuggest(@Param("keyword") String keyword, Pageable pageable);
+
 }

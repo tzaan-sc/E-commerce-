@@ -163,6 +163,7 @@ import { memo, useState, useEffect } from "react";
 import "./style.scss";
 import { BsFillPersonFill } from "react-icons/bs";
 import { GrSearch } from "react-icons/gr";
+import SearchBox from "../../../components/user/SearchBox";
 import { AiOutlineShoppingCart } from "react-icons/ai";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ROUTERS } from "utils/router";
@@ -344,7 +345,7 @@ const Header = () => {
             <div className="header__utilities">
               
               {/* SEARCH */}
-              <form className="header__search" onSubmit={handleSearch}>
+              {/* <form className="header__search" onSubmit={handleSearch}>
                 <input 
                   type="text" 
                   placeholder="Tìm kiếm sản phẩm..." 
@@ -353,7 +354,10 @@ const Header = () => {
                   onKeyPress={handleKeyPress}
                 />
                 <button type="submit"><GrSearch /></button>
-              </form>
+              </form> */}
+              <div className="header__search">
+  <SearchBox />
+</div>
 
               {/* CART */}
               <div className="header__cart">
