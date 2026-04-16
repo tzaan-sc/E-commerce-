@@ -19,20 +19,19 @@ function SearchBox() {
     }
 
     const delayDebounce = setTimeout(() => {
-      fetchSuggest();
+      fetchSuggest(keyword); // ✅ truyền keyword chuẩn
     }, 300);
 
     return () => clearTimeout(delayDebounce);
   }, [keyword]);
 
-  const fetchSuggest = async () => {
+  const fetchSuggest = async (kw) => {
     try {
       setLoading(true);
 
-      const res = await suggestSearch(keyword);
+      const data = await suggestSearch(kw); // ✅ data là array luôn
 
-      // ✅ FIX quan trọng
-      const data = res?.data || [];
+      console.log("DATA:", data); // debug
 
       setSuggestions(Array.isArray(data) ? data : []);
       setShow(true);
