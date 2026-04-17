@@ -388,8 +388,9 @@ useEffect(() => {
         key={item.id}
         className="suggest-item"
         onClick={() => {
-          navigate(`/product/${item.slug}`);
+          navigate(`${ROUTERS.USER.PRODUCTDETAIL}?slug=${item.slug}`);
           setShowSuggest(false);
+          setSearchQuery("");
         }}
       >
         <img src={item.image || "/no-image.png"} alt={item.name} />

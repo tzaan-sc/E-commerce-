@@ -17,21 +17,27 @@
   }
 }
 
+/* 🔥 FIX QUAN TRỌNG NHẤT */
 .suggest-box {
   position: absolute;
-  top: 110%;
+  top: calc(100% + 6px); // 👈 thay vì 110%
+  left: 0;
   width: 100%;
+
   background: #fff;
   border-radius: 10px;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
-  z-index: 100;
-  overflow: hidden;
 
-  // 🔥 thêm max-height + scroll
-  max-height: 350px;
+  z-index: 9999; // 👈 tăng cao để nổi lên trên header
+
+  max-height: 320px;
   overflow-y: auto;
+
+  /* 👇 thêm cái này để không phá layout */
+  pointer-events: auto;
 }
 
+/* item */
 .suggest-item {
   display: flex;
   align-items: center;
@@ -76,8 +82,7 @@
   }
 }
 
-/* 🔥 loading + empty state */
-
+/* loading + empty */
 .loading,
 .no-result {
   padding: 12px;
