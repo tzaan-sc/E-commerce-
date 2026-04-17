@@ -1,0 +1,25 @@
+.average-star {
+  margin-bottom: 20px;
+  padding: 15px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  background: #fff;
+
+  .star-score {
+    font-size: 28px;
+    font-weight: bold;
+    color: #333;
+  }
+
+  .star-icons {
+    color: #ffc107;
+    font-size: 22px;
+    margin-top: 5px;
+  }
+
+  .total-review {
+    margin-top: 5px;
+    font-size: 14px;
+    color: #777;
+  }
+}

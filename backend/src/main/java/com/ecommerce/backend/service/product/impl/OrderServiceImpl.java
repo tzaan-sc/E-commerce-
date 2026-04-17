@@ -185,6 +185,7 @@ public class OrderServiceImpl implements OrderService {
                             .quantity(item.getQuantity())
                             .price(item.getPrice())
                             .imageUrl(productImageUrl)
+                            .productId(item.getProduct().getId()) // ⭐ THÊM DÒNG NÀY
                             .build();
                 })
                 .collect(Collectors.toList());

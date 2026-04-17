@@ -6,6 +6,7 @@ const Sidebar = ({ collapsed, onToggle, activeMenu, onMenuChange }) => {
   const menuItems = [
     { id: 'products', icon: Package, label: 'Sản phẩm' },
     { id: 'orders', icon: ShoppingCart, label: 'Đơn hàng' },
+    { id: 'reviews', icon: Star, label: 'Đánh giá' },
     { id: 'accounts', icon: Users, label: 'Tài khoản' },
     { id: 'categories', icon: Tag, label: 'Danh mục' }
   ];

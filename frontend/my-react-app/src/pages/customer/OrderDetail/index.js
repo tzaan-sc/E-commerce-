@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import ReviewForm from "components/user/ReviewForm";
 import { getOrderDetail } from "api/order"; // Đảm bảo bạn có API này
 
 // 💡 Gợi ý: Dùng thư viện icon cho đẹp
@@ -30,7 +32,11 @@ const getStatusInfo = (status) => {
 
 const OrderDetailPage = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("user"));
   const [order, setOrder] = useState(null);
+  const [showReview, setShowReview] = useState(false);
+const [selectedProduct, setSelectedProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -119,10 +125,14 @@ const OrderDetailPage = () => {
                     </div>
                     
                     <div className="text-end ms-3" style={{ minWidth: "120px" }}>
-                      <span className="fw-bold text-dark fs-6">
-                        {(item.price * item.quantity).toLocaleString("vi-VN")} ₫
-                      </span>
-                    </div>
+
+<span className="fw-bold text-dark fs-6">
+{(item.price * item.quantity).toLocaleString("vi-VN")} ₫
+</span>
+
+
+
+</div>
                   </div>
                 ))}
               </div>
@@ -207,6 +217,18 @@ const OrderDetailPage = () => {
                   {statusInfo.icon}
                   <strong className="ms-2">{statusInfo.text}</strong>
                 </div>
+                {/* NÚT ĐÁNH GIÁ */}
+  {order.status === "COMPLETED" && (
+    <button
+      className="btn btn-outline-success w-100"
+      onClick={() => {
+        setSelectedProduct(order.items[0].productId);
+        setShowReview(true);
+      }}
+    >
+      ⭐ Đánh giá
+    </button>
+  )}
 
               </div>
             </div>
@@ -214,6 +236,40 @@ const OrderDetailPage = () => {
 
         </div> {/* Hết .row */}
       </div>
+      {showReview && (
+<div
+style={{
+position: "fixed",
+top: 0,
+left: 0,
+width: "100%",
+height: "100%",
+background: "rgba(0,0,0,0.5)",
+display: "flex",
+justifyContent: "center",
+alignItems: "center",
+zIndex: 999
+}}
+>
+
+<div className="bg-white p-4 rounded shadow" style={{width:"400px"}}>
+
+
+<ReviewForm
+productId={selectedProduct}
+userId={user.id}
+/>
+
+<button
+className="btn btn-secondary mt-3"
+onClick={() => setShowReview(false)}
+>
+Đóng
+</button>
+
+</div>
+</div>
+)}
     </div>
   );
 };
