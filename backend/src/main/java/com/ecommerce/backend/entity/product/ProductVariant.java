@@ -3,7 +3,6 @@ package com.ecommerce.backend.entity.product;
 import com.ecommerce.backend.entity.product.variant.*;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -35,11 +34,7 @@ public class ProductVariant {
 
     @ManyToOne
     @JoinColumn(name = "product_id")
-    @JsonIgnore
     private Product product;
-
-    @OneToMany(mappedBy = "productVariant", cascade = CascadeType.ALL, orphanRemoval = true)
-    private java.util.List<VariantImage> images = new java.util.ArrayList<>();
 
     // Cấu hình chi tiết
     @ManyToOne @JoinColumn(name = "ram_id") private Ram ram;

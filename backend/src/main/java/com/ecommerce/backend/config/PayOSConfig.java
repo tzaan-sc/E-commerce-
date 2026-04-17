@@ -1,0 +1,26 @@
+package com.ecommerce.backend.config;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import vn.payos.PayOS;
+
+@Configuration
+public class PayOSConfig {
+
+    // Lấy thông tin từ file cấu hình (application.properties/yml)
+    // Nếu chưa cấu hình, dùng chuỗi trống ngăn sinh lỗi (tạm thời)
+    @Value("${payos.client.id:YOUR_PAYOS_CLIENT_ID}")
+    private String clientId;
+
+    @Value("${payos.api.key:YOUR_PAYOS_API_KEY}")
+    private String apiKey;
+
+    @Value("${payos.checksum.key:YOUR_PAYOS_CHECKSUM_KEY}")
+    private String checksumKey;
+
+    @Bean
+    public PayOS payOS() {
+        return new PayOS(clientId, apiKey, checksumKey);
+    }
+}

@@ -9,4 +9,5 @@ public class CheckoutRequest {
     private String address;             // Địa chỉ giao hàng (Lưu riêng cho đơn này)
     private String phone;               // SĐT giao hàng (Lưu riêng cho đơn này)
     private String fullName;            // Tên người nhận
+    private String paymentMethod = "COD"; // Phương thức thanh toán: COD (mặc định) hoặc ONLINE
 }

@@ -27,6 +27,7 @@ public class OrderServiceImpl implements OrderService {
     private final ProductRepository productRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public List<OrderDTO> getOrdersByUsername(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
@@ -61,7 +62,54 @@ public class OrderServiceImpl implements OrderService {
         return mapOrderToDTO(orderRepository.save(order));
     }
 
+    // --- KHÁCH HÀNG XÁC NHẬN ĐÃ NHẬN HÀNG ---
     @Override
+    @Transactional
+    public OrderDTO confirmReceived(String email, Long orderId) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
+
+        // Check quyền sở hữu
+        if (order.getUser() == null || !order.getUser().getId().equals(user.getId())) {
+            throw new SecurityException("Bạn không có quyền thao tác đơn hàng này");
+        }
+
+        // Chỉ cho phép xác nhận khi đơn đang ở trạng thái DELIVERED
+        if (!"DELIVERED".equalsIgnoreCase(order.getStatus())) {
+            throw new IllegalStateException("Chỉ có thể xác nhận nhận hàng khi đơn ở trạng thái 'Đã giao'. Trạng thái hiện tại: " + order.getStatus());
+        }
+
+        order.setStatus("COMPLETED");
+        return mapOrderToDTO(orderRepository.save(order));
+    }
+
+    // --- KHÁCH HÀNG XÁC NHẬN THANH TOÁN (VIETQR) ---
+    @Override
+    @Transactional
+    public OrderDTO confirmPayment(String email, Long orderId) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
+
+        if (order.getUser() == null || !order.getUser().getId().equals(user.getId())) {
+            throw new SecurityException("Bạn không có quyền thao tác đơn hàng này");
+        }
+
+        if (!"PENDING".equalsIgnoreCase(order.getStatus())) {
+            throw new IllegalStateException("Đơn hàng không ở trạng thái chờ thanh toán.");
+        }
+
+        order.setStatus("CONFIRMED");
+        return mapOrderToDTO(orderRepository.save(order));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public OrderDTO getOrderDetail(String email, Long orderId) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
@@ -151,6 +199,7 @@ public class OrderServiceImpl implements OrderService {
                 .customerName(order.getCustomerName())
                 .phone(order.getPhone())
                 .shippingAddress(order.getShippingAddress())
+                .paymentMethod(order.getPaymentMethod())
                 .build();
     }
 }

@@ -100,7 +100,8 @@ const OrdersPage = () => {
           <option value="pending">Chờ xác nhận</option>
           <option value="processing">Đang xử lý</option>
           <option value="shipping">Đang giao</option>
-          <option value="completed">Đã giao</option>
+          <option value="delivered">Đã giao</option>
+          <option value="completed">Hoàn thành</option>
           <option value="cancelled">Đã hủy</option>
         </select>
       </div>

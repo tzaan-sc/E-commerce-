@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { User, MapPin, Phone, Mail, CheckCircle, AlertCircle } from 'lucide-react';
 import { checkoutSelected } from "api/cart"; 
 import { updateUserProfile } from "api/user"; 
+import { createPayosLink } from "api/payment";
 import apiClient from "api/axiosConfig";
 import "./style.scss"; 
 
@@ -14,6 +15,7 @@ const CheckoutPage = () => {
 
   const [step, setStep] = useState('form'); 
   const [formData, setFormData] = useState({ fullName: '', email: '', phone: '', address: '', note: '' });
+  const [paymentMethod, setPaymentMethod] = useState('COD');
   const [originalData, setOriginalData] = useState({}); 
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
@@ -98,8 +100,16 @@ const CheckoutPage = () => {
   const handleConfirmOrder = async () => {
     setIsLoading(true);
     try {
-      await checkoutSelected(selectedIds, formData); 
-      setStep('success');
+      const res = await checkoutSelected(selectedIds, { ...formData, paymentMethod }); 
+      const createdOrder = res.data;
+      if (paymentMethod === 'VIETQR') {
+         navigate(`/payment/qr?orderId=${createdOrder.id}&amount=${createdOrder.totalAmount}`);
+      } else if (paymentMethod === 'PAYOS') {
+         const payosRes = await createPayosLink(createdOrder.id);
+         window.location.href = payosRes.data.checkoutUrl;
+      } else {
+         setStep('success');
+      }
     } catch (error) {
       alert('Có lỗi xảy ra: ' + (error.response?.data?.message || error.message));
     } finally {
@@ -164,6 +174,31 @@ const CheckoutPage = () => {
                 <p><strong>Ghi chú:</strong> {formData.note}</p>
             </div>
 
+            <div style={{background:'#f9f9f9', padding:'15px', borderRadius:'8px', marginBottom:'20px', border:'1px solid #e5e7eb'}}>
+                <h3 style={{fontSize:'16px', marginBottom:'12px', marginTop:'0'}}>Phương thức thanh toán</h3>
+                <label style={{display:'flex', alignItems:'center', gap:'10px', cursor:'pointer', padding:'10px', borderRadius:'6px', border: paymentMethod === 'COD' ? '2px solid #2563eb' : '1px solid #d1d5db', background: paymentMethod === 'COD' ? '#eff6ff' : '#fff'}}>
+                    <input type="radio" name="paymentMethod" value="COD" checked={paymentMethod === 'COD'} onChange={(e) => setPaymentMethod(e.target.value)} />
+                    <div>
+                        <div style={{fontWeight:'600', color:'#111827'}}>💵 Thanh toán khi nhận hàng (COD)</div>
+                        <div style={{fontSize:'13px', color:'#6b7280'}}>Bạn sẽ thanh toán bằng tiền mặt khi nhận được hàng</div>
+                    </div>
+                </label>
+                <label style={{display:'flex', alignItems:'center', gap:'10px', cursor:'pointer', padding:'10px', borderRadius:'6px', border: paymentMethod === 'VIETQR' ? '2px solid #2563eb' : '1px solid #d1d5db', background: paymentMethod === 'VIETQR' ? '#eff6ff' : '#fff', marginTop: '10px'}}>
+                    <input type="radio" name="paymentMethod" value="VIETQR" checked={paymentMethod === 'VIETQR'} onChange={(e) => setPaymentMethod(e.target.value)} />
+                    <div>
+                        <div style={{fontWeight:'600', color:'#111827'}}>📱 Thanh toán qua quét mã QR (VIETQR Cũ)</div>
+                        <div style={{fontSize:'13px', color:'#6b7280'}}>Quét mã QR qua ứng dụng ngân hàng để thanh toán</div>
+                    </div>
+                </label>
+                <label style={{display:'flex', alignItems:'center', gap:'10px', cursor:'pointer', padding:'10px', borderRadius:'6px', border: paymentMethod === 'PAYOS' ? '2px solid #2563eb' : '1px solid #d1d5db', background: paymentMethod === 'PAYOS' ? '#eff6ff' : '#fff', marginTop: '10px'}}>
+                    <input type="radio" name="paymentMethod" value="PAYOS" checked={paymentMethod === 'PAYOS'} onChange={(e) => setPaymentMethod(e.target.value)} />
+                    <div>
+                        <div style={{fontWeight:'600', color:'#111827'}}>💳 Thanh toán tự động cực nhanh (PayOS)</div>
+                        <div style={{fontSize:'13px', color:'#6b7280'}}>Xác nhận ngay lập tức, hỗ trợ mọi ngân hàng</div>
+                    </div>
+                </label>
+            </div>
+
             <h3>Sản phẩm ({displayItems?.length})</h3>
             <div className="order-items">
                 {displayItems?.map(item => (
@@ -215,7 +250,7 @@ const CheckoutPage = () => {
         <div className="checkout-content success" style={{textAlign:'center', padding:'40px'}}>
             <CheckCircle size={60} color="green" />
             <h2>Đặt Hàng Thành Công!</h2>
-            <p>Cảm ơn bạn đã mua hàng.</p>
+            <p>Đặt hàng thành công. Thanh toán khi nhận hàng.</p>
             <button className="btn-primary" onClick={() => navigate("/customer/home/don-mua")}>
                 Xem đơn hàng của tôi
             </button>

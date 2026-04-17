@@ -60,5 +60,7 @@
       "username": "admin",
       "password": "12345678"
     }
-  ]
+  ],
+  "java.compile.nullAnalysis.mode": "automatic",
+  "java.configuration.updateBuildConfiguration": "interactive"
 }

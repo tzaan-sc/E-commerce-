@@ -61,6 +61,10 @@ public class Order {
     @Column(name = "total_amount")
     private Double totalAmount;
 
+    // Phương thức thanh toán: COD hoặc ONLINE
+    @Column(name = "payment_method", length = 20)
+    private String paymentMethod;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 

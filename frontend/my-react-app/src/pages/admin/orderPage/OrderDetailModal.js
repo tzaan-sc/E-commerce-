@@ -14,7 +14,7 @@ const OrderDetailModal = ({ order, onClose, onSaveStatus }) => {
     onSaveStatus(order.id, editingStatus);
   };
 
-  const isLocked = order.status === "COMPLETED" || order.status === "CANCELLED";
+  const isLocked = order.status === "COMPLETED" || order.status === "CANCELLED" || order.status === "DELIVERED";
 
   return (
     <div className="modal-overlay" onClick={onClose}>

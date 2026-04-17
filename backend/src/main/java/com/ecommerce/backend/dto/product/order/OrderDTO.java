@@ -22,4 +22,5 @@ public class OrderDTO {
     private String customerName;    // Tên (Lấy từ order.getCustomerName())
     private String phone;           // SĐT (Lấy từ order.getPhone())
     private String shippingAddress;
+    private String paymentMethod;   // Phương thức thanh toán: COD hoặc ONLINE
 }
