@@ -15,7 +15,7 @@ import OrderDetailPage from "./pages/customer/OrderDetail";
 import BrandProductsPage from "./pages/Search/BrandProducts";
 import UsagePurposeProductsPage from "./pages/Search/UsagePurposeProducts";
 import CheckoutPage from "./pages/Checkout";
-
+import UserPromotionPage from "./pages/promotionPage/index";
 // ====== Import các trang Admin ======
 import { ROUTERS } from "./utils/router";
 import AdminDashboard from "./pages/admin/dashboardPage";
@@ -33,6 +33,7 @@ const RouterCustom = () => {
         <Route index element={<HomePage />} />
         <Route path={ROUTERS.USER.LAPTOP} element={<LaptopPage />} />
         <Route path={ROUTERS.USER.LOGIN} element={<LoginPage />} />
+        <Route path={ROUTERS.USER.PROMOTIONS} element={<UserPromotionPage />} />
         <Route path={ROUTERS.USER.REGISTER} element={<RegistrationPage />} />
         <Route path={ROUTERS.USER.PRODUCTDETAIL} element={<ProductDetailPage />}/>
         <Route path={ROUTERS.USER.SEARCH} element={<SearchPage />}/>
@@ -72,6 +73,7 @@ const RouterCustom = () => {
         <Route path="thong-tin-ca-nhan" element={<ProfilePage />} />
         <Route path="don-mua" element={<MyOrdersPage />} />
         <Route path="don-mua/:id" element={<OrderDetailPage />} />
+        <Route path="khuyen-mai" element={<UserPromotionPage />} />
         <Route path="gio-hang" element={<CartPage />} />
         <Route path="thanh-toan" element={<CheckoutPage />} />
         <Route path="laptop" element={<LaptopPage />} /> 

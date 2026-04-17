@@ -1,146 +1,109 @@
-$primary-color: #2563eb;
-$border-color: #e5e7eb;
+$price-color: #d70018;
+$border-color: #e2e8f0;
 
 .product-carousel-wrapper {
   width: 100%;
+  max-width: 600px; // Giới hạn chiều rộng để ảnh không quá to gây loãng
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  position: sticky;
-  top: 20px;
+  gap: 16px;
 
-  // --- 1. ẢNH LỚN ---
+  // Khung ảnh lớn
   .main-stage {
     position: relative;
     width: 100%;
-    aspect-ratio: 1 / 1; // Vuông
-    overflow: hidden;
-    border-radius: 8px;
-    background-color: #fff;
+    aspect-ratio: 1 / 1; // Tạo khung vuông chuẩn
+    background: #fff;
+    border-radius: 16px;
     border: 1px solid $border-color;
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
 
     .carousel-slide {
       width: 100%;
       height: 100%;
-      padding: 20px;
       display: flex;
       align-items: center;
       justify-content: center;
       
       img {
-        max-width: 100%;
-        max-height: 100%;
-        object-fit: contain;
+        max-width: 90%;
+        max-height: 90%;
+        object-fit: contain; // Giữ nguyên tỉ lệ ảnh không bị méo
+        transition: opacity 0.3s ease;
       }
     }
 
-    // Nút Next/Prev ảnh lớn
     .carousel-nav {
       position: absolute;
       top: 50%;
       transform: translateY(-50%);
-      background: rgba(255, 255, 255, 0.8);
+      background: rgba(255, 255, 255, 0.9);
       border: 1px solid $border-color;
-      border-radius: 50%;
       width: 40px;
       height: 40px;
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
+      z-index: 10;
       transition: all 0.2s;
-      opacity: 0; // Ẩn mặc định
-      z-index: 2;
-      
+
       &:hover {
-        background: $primary-color;
-        color: white;
-        border-color: $primary-color;
+        background: #fff;
+        color: $price-color;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
       }
       &.prev { left: 10px; }
       &.next { right: 10px; }
     }
-
-    &:hover .carousel-nav {
-        opacity: 1; // Hiện khi hover
-    }
   }
 
-  // --- 2. THUMBNAILS CONTAINER (MỚI) ---
+  // Dàn ảnh nhỏ phía dưới
   .thumbnail-container {
+    width: 100%;
+    
+    .thumbnail-list {
       display: flex;
-      align-items: stretch; // Kéo giãn chiều cao nút bằng chiều cao ảnh
-      gap: 8px;
-      width: 100%;
-      justify-content: space-between;
+      justify-content: center; // Căn giữa dàn ảnh phụ
+      gap: 10px;
+      overflow-x: auto;
+      padding: 4px;
+      
+      &::-webkit-scrollbar { height: 4px; }
 
-      // Nút điều hướng nhỏ cho Thumbnail
-      .thumb-nav-btn {
-          background: #fff;
-          border: 1px solid $border-color;
-          border-radius: 4px;
-          cursor: pointer;
-          color: #666;
-          padding: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 32px; // Chiều rộng nút
-          // height: auto; // Chiều cao tự động theo container
-          transition: 0.2s;
-          flex-shrink: 0;
+      .thumbnail-item {
+        flex: 0 0 75px;
+        height: 75px;
+        border-radius: 10px;
+        border: 2px solid transparent;
+        background: #fff;
+        cursor: pointer;
+        padding: 4px;
+        transition: all 0.2s;
+        border: 1px solid $border-color;
 
-          &:hover:not(:disabled) {
-              background: $primary-color;
-              color: white;
-              border-color: $primary-color;
-          }
-          &:disabled {
-              color: #ccc;
-              cursor: default;
-              opacity: 0.5;
-              background: #f9f9f9;
-          }
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          border-radius: 6px;
+        }
+
+        &.active {
+          border-color: $price-color;
+          box-shadow: 0 0 0 1px $price-color;
+        }
+
+        &:hover:not(.active) {
+          border-color: #cbd5e1;
+        }
       }
-
-      .thumbnail-list {
-          display: grid;
-          grid-template-columns: repeat(5, 1fr); // Luôn hiển thị 5 cột
-          gap: 10px;
-          flex: 1; // Chiếm hết khoảng trống giữa 2 nút
-
-          .thumbnail-item {
-              aspect-ratio: 1/1;
-              border-radius: 6px;
-              overflow: hidden;
-              cursor: pointer;
-              padding: 2px;
-              border: 1px solid $border-color;
-              background: #fff;
-              opacity: 0.6;
-              transition: all 0.2s;
-
-              img {
-                  width: 100%;
-                  height: 100%;
-                  object-fit: contain;
-                  border-radius: 4px;
-              }
-
-              &:hover {
-                  opacity: 1;
-                  border-color: #999;
-              }
-
-              &.active {
-                  opacity: 1;
-                  border-color: $primary-color;
-                  box-shadow: 0 0 0 1px $primary-color;
-              }
-          }
-      }
+    }
   }
 }

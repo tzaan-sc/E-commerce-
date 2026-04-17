@@ -1,44 +1,51 @@
-// src/pages/admin/productPage/VariantManagement.js
 import React, { useState } from "react";
-import { ArrowLeft, Plus, Edit, Trash2, Cpu, Monitor, Package, HardDrive, Palette, Layers } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, Cpu, Monitor, Package, HardDrive, Palette, Layers, Image as ImageIcon } from "lucide-react"; 
 import { formatPrice, StatusBadge, BASE_URL } from "./helpers";
 import VariantFormModal from "./VariantFormModal";
+import axios from "axios";
 
 const VariantManagement = ({ product, onBack, showToast, onUpdateProduct, fetchAllData, ramList, gpuList, chipList, storageList, colorList }) => {
   const [variants, setVariants] = useState(product?.variants || []);
   const [showForm, setShowForm] = useState(false);
   const [editVariant, setEditVariant] = useState(null);
 
-  const handleSave = (variantData) => {
-    let updated;
-    if (editVariant) {
-      updated = variants.map(v => v.id === variantData.id ? variantData : v);
-      showToast("Cập nhật biến thể thành công!");
-    } else {
-      updated = [...variants, { ...variantData, id: Date.now() }];
-      showToast("Thêm biến thể thành công!");
+  const handleSave = async (variantData) => {
+    try {
+      const payload = { ...variantData, productId: product.id };
+      const response = await axios.post(`${BASE_URL}/api/variants`, payload);
+
+      if (response.data) {
+        showToast(editVariant ? "Cập nhật biến thể thành công!" : "Thêm biến thể thành công!");
+        const savedVariant = response.data;
+        let updated;
+        if (editVariant) {
+          updated = variants.map(v => v.id === savedVariant.id ? savedVariant : v);
+        } else {
+          updated = [...variants, savedVariant];
+        }
+        setVariants(updated);
+        onUpdateProduct({ ...product, variants: updated });
+        setShowForm(false);
+        setEditVariant(null);
+        if (fetchAllData) fetchAllData();
+      }
+    } catch (error) {
+      console.error("Lỗi khi lưu biến thể:", error);
+      showToast(error.response?.data?.message || "Lỗi không thể lưu vào Database", "error");
     }
-    setVariants(updated);
-    onUpdateProduct({ ...product, variants: updated });
-    setShowForm(false);
-    setEditVariant(null);
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Xóa biến thể?")) return;
+    if (!window.confirm("Xóa vĩnh viễn biến thể này khỏi Database?")) return;
     try {
-      // Giả sử API delete biến thể
-      // await fetch(`${BASE_URL}/api/products/variants/${id}`, { method: "DELETE" });
-      
-      // Update local state temporarily
+      await axios.delete(`${BASE_URL}/api/variants/${id}`);
       const updated = variants.filter(v => v.id !== id);
       setVariants(updated);
       onUpdateProduct({ ...product, variants: updated });
-      
-      fetchAllData();
-      showToast("Đã xoá biến thể");
-    } catch {
-      showToast("Lỗi xoá biến thể", "error");
+      if (fetchAllData) fetchAllData();
+      showToast("Đã xoá biến thể thành công");
+    } catch (error) {
+      showToast("Lỗi khi xóa biến thể trong Database", "error");
     }
   };
 
@@ -81,30 +88,67 @@ const VariantManagement = ({ product, onBack, showToast, onUpdateProduct, fetchA
           <div style={{ gridColumn: "1/-1", textAlign: "center", padding: 60, color: "#9ca3af", background: "#fff", borderRadius: 14, border: "2px dashed #e5e7eb" }}>
             <Layers size={40} style={{ marginBottom: 10, opacity: 0.3 }} />
             <p style={{ margin: 0, fontWeight: 600 }}>Chưa có biến thể nào</p>
-            <p style={{ margin: "6px 0 0", fontSize: 13 }}>Click "Thêm biến thể" để bắt đầu</p>
           </div>
         ) : variants.map(v => (
-          <div key={v.id} style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", padding: 18, boxShadow: "0 2px 8px rgba(0,0,0,0.05)", transition: "box-shadow 0.2s" }}>
+          <div key={v.id} style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", padding: 18, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+            
+            {/* ✅ LOGIC HIỂN THỊ ẢNH ĐÃ FIX ĐƯỜNG DẪN BASE_URL */}
+            <div style={{ display: "flex", gap: 8, marginBottom: 15, overflowX: "auto", paddingBottom: 5 }}>
+              {((v.imageUrls && v.imageUrls.length > 0) || (v.images && v.images.length > 0)) ? (
+                (v.imageUrls || v.images).map((img, index) => {
+                  const rawSrc = typeof img === 'string' ? img : img.imageUrl;
+                  if (!rawSrc) return null;
+
+                  // Nếu link chưa có http/https thì ghép BASE_URL vào
+                  const fullSrc = rawSrc.startsWith("http") ? rawSrc : `${BASE_URL}${rawSrc}`;
+                  
+                  return (
+                    <img 
+                      key={index} 
+                      src={fullSrc} 
+                      alt="variant" 
+                      style={{ width: 55, height: 55, objectFit: "cover", borderRadius: 8, border: "1px solid #f1f5f9", flexShrink: 0 }} 
+                      onError={(e) => { 
+                        e.target.onerror = null; 
+                        e.target.src = "https://placehold.co/55x55/e2e8f0/94a3b8?text=Loi+Link"; 
+                      }}
+                    />
+                  );
+                })
+              ) : (
+                <div style={{ width: "100%", height: 55, background: "#f8fafc", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", border: "1px dashed #e2e8f0" }}>
+                  <ImageIcon size={16} style={{ color: "#94a3b8", marginRight: 6 }} />
+                  <span style={{ fontSize: 11, color: "#94a3b8" }}>Chưa có ảnh</span>
+                </div>
+              )}
+            </div>
+
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
               <div>
-                <span style={{ fontSize: 11, fontWeight: 700, color: "#7c3aed", textTransform: "uppercase", letterSpacing: "0.05em" }}>SKU</span>
-                <p style={{ margin: "2px 0 0", fontSize: 13, fontWeight: 600, color: "#1e293b" }}>{v.sku}</p>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#7c3aed", textTransform: "uppercase" }}>SKU</span>
+                <p style={{ margin: "2px 0 0", fontSize: 13, fontWeight: 600 }}>{v.sku}</p>
               </div>
               <StatusBadge status={v.isActive} />
             </div>
+
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
               {[
-                [Cpu, "CPU", v.chipName], [Monitor, "GPU", v.gpuName],
-                [Package, "RAM", v.ramSize], [HardDrive, "Lưu trữ", v.storageDisplay],
-                [Palette, "Màu", v.colorName],
+                [Cpu, "CPU", v.chipName || v.chip?.cpuName], 
+                [Monitor, "GPU", v.gpuName || v.gpu?.gpuName],
+                [Package, "RAM", v.ramSize || v.ram?.ramSize], 
+                [HardDrive, "Lưu trữ", v.storageDisplay || (v.storage ? `${v.storage.capacity} ${v.storage.storageType}` : "")],
+                [Palette, "Màu", v.colorName || v.color?.colorName],
               ].map(([Icon, label, val], i) => (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 7, background: "#f8fafc", padding: "7px 10px", borderRadius: 8 }}>
                   <Icon size={13} style={{ color: "#7c3aed", flexShrink: 0 }} />
                   <span style={{ fontSize: 12, color: "#6b7280" }}>{label}: </span>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "#1e293b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{val}</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {val || "N/A"}
+                  </span>
                 </div>
               ))}
             </div>
+
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 12, borderTop: "1px solid #f1f5f9" }}>
               <div>
                 <p style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#2563eb" }}>{formatPrice(v.price)}</p>

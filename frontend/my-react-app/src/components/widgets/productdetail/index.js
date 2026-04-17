@@ -6,7 +6,6 @@ import { addToCart } from "api/cart";
 import { ROUTERS } from "utils/router";
 import "./style.scss";
 
-// 👇 1. Nhận thêm props từ cha (ProductDetailPage)
 const ProductDetail = ({ product, variants, selectedVariant, setSelectedVariant }) => {
   const navigate = useNavigate(); 
   const { fetchCartCount } = useCart(); 
@@ -15,12 +14,25 @@ const ProductDetail = ({ product, variants, selectedVariant, setSelectedVariant 
   const [activeTab, setActiveTab] = useState('description');
   const [isAdding, setIsAdding] = useState(false); 
 
-  // 👇 2. Xác định các thông số hiển thị (Ưu tiên biến thể nếu có)
-  const displayPrice = selectedVariant ? selectedVariant.price : product?.price;
+  // --- 1. LOGIC XỬ LÝ KHUYẾN MÃI ---
+  const promotion = product?.promotion;
+  const originalPrice = selectedVariant ? selectedVariant.price : product?.price;
+  let finalPrice = originalPrice;
+  let discountDisplay = null;
+
+  if (promotion && promotion.status === "ACTIVE") {
+    if (promotion.discountType === "PERCENTAGE") {
+      finalPrice = originalPrice * (1 - promotion.discountValue / 100);
+      discountDisplay = `-${promotion.discountValue}%`;
+    } else if (promotion.discountType === "FIXED_AMOUNT") {
+      finalPrice = originalPrice - promotion.discountValue;
+      discountDisplay = `-${new Intl.NumberFormat('vi-VN').format(promotion.discountValue)}đ`;
+    }
+  }
+
   const displayStock = selectedVariant ? selectedVariant.stockQuantity : product?.stockQuantity;
   const displaySku = selectedVariant ? selectedVariant.sku : (product?.slug || "N/A");
 
-  // Reset số lượng về 1 khi đổi biến thể
   useEffect(() => {
     setQuantity(1);
   }, [selectedVariant]);
@@ -29,7 +41,6 @@ const ProductDetail = ({ product, variants, selectedVariant, setSelectedVariant 
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 
   const handleQuantityChange = (delta) => {
-    // Kiểm tra tồn kho dựa trên biến thể đang chọn
     if (displayStock <= 0) return;
     const newQuantity = quantity + delta;
     if (newQuantity >= 1 && newQuantity <= displayStock) {
@@ -46,7 +57,6 @@ const ProductDetail = ({ product, variants, selectedVariant, setSelectedVariant 
         return null;
     }
 
-    // Kiểm tra nếu sản phẩm có biến thể mà chưa chọn (trường hợp hy hữu)
     if (variants && variants.length > 0 && !selectedVariant) {
         alert("Vui lòng chọn cấu hình sản phẩm!");
         return null;
@@ -54,11 +64,8 @@ const ProductDetail = ({ product, variants, selectedVariant, setSelectedVariant 
 
     setIsAdding(true);
     try {
-        // 👇 3. Gửi thêm variantId vào hàm API
-        // Lưu ý: Bạn cần chắc chắn hàm addToCart trong 'api/cart' đã hỗ trợ tham số thứ 3
         const variantId = selectedVariant ? selectedVariant.id : null;
         const response = await addToCart(product.id, quantity, variantId);
-        
         fetchCartCount(); 
         return response.data; 
     } catch (error) {
@@ -90,187 +97,188 @@ const ProductDetail = ({ product, variants, selectedVariant, setSelectedVariant 
     <div className="info-section">
       <h1 className="product-title">{product.name}</h1>
 
-      <div className="meta-info" style={{marginBottom: '10px', fontSize: '14px', color: '#666'}}>
-          <span>SKU: <strong>{displaySku}</strong></span>
-          <span style={{margin: '0 10px'}}>|</span>
-          <span style={{color: displayStock > 0 ? 'green' : 'red'}}>
-              {displayStock > 0 ? "Còn hàng" : "Hết hàng"}
+      <div className="meta-info" style={{marginBottom: '15px', fontSize: '13px', color: '#666', display: 'flex', gap: '15px'}}>
+          <span>Mã: <strong>{displaySku}</strong></span>
+          <span>Tình trạng: <strong style={{color: displayStock > 0 ? '#10b981' : '#ef4444'}}>{displayStock > 0 ? "Còn hàng" : "Hết hàng"}</strong></span>
+      </div>
+
+      {/* ✅ CHỈNH GIÁ & KHUYẾN MÃI TRÊN 1 DÒNG HÀNG, ĐẸP VÀ GỌN */}
+      <div className="price-container" style={{ 
+        background: '#f8fafc', 
+        padding: '16px 20px', 
+        borderRadius: '12px', 
+        marginBottom: '20px',
+        border: '1px solid #e2e8f0',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
+          {/* Giá thực tế (To nhất) */}
+          <span style={{ color: '#d70018', fontSize: '30px', fontWeight: '800' }}>
+            {formatPrice(finalPrice)}
           </span>
-      </div>
-
-      <div className="price-section">
-        <div className="current-price" style={{color: '#d70018', fontSize: '24px', fontWeight: 'bold'}}>
-            {formatPrice(displayPrice)}
+          
+          {discountDisplay && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {/* Giá gốc gạch ngang */}
+              <span style={{ textDecoration: 'line-through', color: '#94a3b8', fontSize: '16px' }}>
+                {formatPrice(originalPrice)}
+              </span>
+              {/* Tag giảm giá đỏ */}
+              <span style={{ 
+                background: '#d70018', 
+                color: '#fff', 
+                padding: '2px 8px', 
+                borderRadius: '6px', 
+                fontSize: '13px', 
+                fontWeight: '700' 
+              }}>
+                {discountDisplay}
+              </span>
+            </div>
+          )}
         </div>
+
+        {/* Box quà tặng khuyến mãi tối giản */}
+        {promotion && promotion.status === "ACTIVE" && (
+          <div style={{ 
+            marginTop: '5px',
+            padding: '8px 12px',
+            border: '1px dashed #d70018',
+            borderRadius: '8px',
+            backgroundColor: '#fff',
+            fontSize: '13px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <span style={{fontSize: '16px'}}>🎁</span>
+            <span style={{fontWeight: '700', color: '#c53030'}}>{promotion.name}</span>
+            {promotion.description && <span style={{color: '#64748b'}}>: {promotion.description}</span>}
+          </div>
+        )}
       </div>
 
-      {/* 👇 4. KHU VỰC CHỌN BIẾN THỂ (VARIANTS) */}
       {variants && variants.length > 0 && (
         <div className="variants-section" style={{ margin: '20px 0' }}>
-            <p style={{ fontWeight: 'bold', marginBottom: '10px' }}>Chọn cấu hình:</p>
+            <p style={{ fontWeight: '700', marginBottom: '12px', fontSize: '15px' }}>Chọn cấu hình:</p>
             <div className="variants-list" style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                 {variants.map((v) => (
                     <button
                         key={v.id}
                         onClick={() => setSelectedVariant(v)}
-                        className={`btn-variant ${selectedVariant?.id === v.id ? 'active' : ''}`}
                         style={{
-                            border: selectedVariant?.id === v.id ? '2px solid #d70018' : '1px solid #ddd',
-                            backgroundColor: selectedVariant?.id === v.id ? '#fff0f1' : '#fff',
-                            color: selectedVariant?.id === v.id ? '#d70018' : '#333',
-                            padding: '8px 15px',
-                            borderRadius: '5px',
+                            border: selectedVariant?.id === v.id ? '2px solid #d70018' : '1px solid #e2e8f0',
+                            backgroundColor: '#fff',
+                            color: selectedVariant?.id === v.id ? '#d70018' : '#1e293b',
+                            padding: '12px',
+                            borderRadius: '10px',
                             cursor: 'pointer',
                             textAlign: 'left',
-                            minWidth: '120px',
-                            position: 'relative' // Để hiển thị dấu check nếu cần
+                            minWidth: '150px',
+                            transition: 'all 0.2s',
+                            boxShadow: selectedVariant?.id === v.id ? '0 4px 12px rgba(215,0,24,0.1)' : 'none'
                         }}
                     >
-                        <div style={{fontWeight: 'bold', fontSize: '13px'}}>
-                            {v.ramCapacity} - {v.storageCapacity}
+                        <div style={{fontWeight: '700', fontSize: '14px'}}>
+                            {v.ramCapacity || v.ramSize} - {v.storageCapacity || v.storageDisplay}
                         </div>
-                        <div style={{fontSize: '12px'}}>{v.color}</div>
-                        <div style={{fontSize: '12px', marginTop: '2px'}}>{formatPrice(v.price)}</div>
+                        <div style={{fontSize: '12px', color: '#64748b', marginTop: '2px'}}>{v.color || v.colorName}</div>
+                        <div style={{fontSize: '14px', marginTop: '6px', fontWeight: '700'}}>{formatPrice(v.price)}</div>
                     </button>
                 ))}
             </div>
         </div>
       )}
 
-      <div className="quantity-section">
-        <span className="quantity-label">Số lượng:</span>
-        <div className="quantity-control">
-          <button 
-            className="quantity-btn" 
-            onClick={() => handleQuantityChange(-1)} 
-            disabled={quantity <= 1}
-          >−</button>
-          <div className="quantity-value">{quantity}</div>
-          <button 
-            className="quantity-btn" 
-            onClick={() => handleQuantityChange(1)} 
-            disabled={quantity >= displayStock}
-          >+</button>
+      <div className="quantity-section" style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '25px' }}>
+        <div className="quantity-control" style={{ display: 'flex', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
+          <button className="quantity-btn" onClick={() => handleQuantityChange(-1)} disabled={quantity <= 1} style={{ padding: '8px 15px', background: '#f8fafc', border: 'none', cursor: 'pointer' }}>−</button>
+          <div className="quantity-value" style={{ padding: '8px 20px', fontWeight: '700', minWidth: '40px', textAlign: 'center' }}>{quantity}</div>
+          <button className="quantity-btn" onClick={() => handleQuantityChange(1)} disabled={quantity >= displayStock} style={{ padding: '8px 15px', background: '#f8fafc', border: 'none', cursor: 'pointer' }}>+</button>
         </div>
-        <span className="stock-info">
-             {displayStock > 0 
-                ? `(Sẵn có ${displayStock} sp)` 
-                : <span style={{color: 'red'}}>(Tạm hết hàng)</span>}
+        <span style={{ fontSize: '13px', color: '#64748b' }}>
+             {displayStock > 0 ? `Còn ${displayStock} sản phẩm` : <span style={{color: '#ef4444'}}>Hết hàng</span>}
         </span>
       </div>
 
-      <div className="action-buttons">
+      <div className="action-buttons" style={{display: 'flex', gap: '12px'}}>
         <button 
             className="btn btn-primary"
             onClick={handleAddToCart}
             disabled={displayStock <= 0 || isAdding}
-            style={{ opacity: (displayStock <= 0 || isAdding) ? 0.7 : 1 }}
+            style={{ 
+                flex: 1, height: '54px', borderRadius: '12px', fontWeight: '700', fontSize: '15px',
+                background: '#fff', border: '2px solid #d70018', color: '#d70018', cursor: 'pointer'
+            }}
         >
-          <AiOutlineShoppingCart size={20} /> 
-          {isAdding ? "Đang xử lý..." : "Thêm vào giỏ"}
+          <AiOutlineShoppingCart size={22} style={{marginRight: '8px', verticalAlign: 'middle'}} /> 
+          THÊM VÀO GIỎ
         </button>
         
         <button 
-            className="btn btn-secondary"
+            className="btn btn-danger"
             onClick={handleBuyNow}
             disabled={displayStock <= 0 || isAdding}
-            style={{ opacity: (displayStock <= 0 || isAdding) ? 0.7 : 1 }}
+            style={{ 
+                flex: 1, height: '54px', background: 'linear-gradient(135deg, #ff4d4f 0%, #d70018 100%)', 
+                color: '#fff', border: 'none', borderRadius: '12px', fontWeight: '700', fontSize: '15px', cursor: 'pointer'
+            }}
         >
-            Mua ngay
+            MUA NGAY
         </button>
-        
-        <button className="btn btn-secondary icon-btn"><AiOutlineShareAlt size={20} /></button>
+        <button className="btn icon-btn" style={{ width: '54px', height: '54px', borderRadius: '12px', border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer' }}><AiOutlineShareAlt size={22} /></button>
       </div>
 
-      {/* --- PHẦN TABS --- */}
-      <div className="product-tabs-container">
-        <div className="tabs-header">
-          <div 
-            className={`tab-item ${activeTab === 'description' ? 'active' : ''}`}
-            onClick={() => setActiveTab('description')}
-          >
+      <div className="product-tabs-container" style={{marginTop: '40px', borderTop: '1px solid #f1f5f9'}}>
+        <div className="tabs-header" style={{display: 'flex', gap: '30px'}}>
+          <div className={`tab-item ${activeTab === 'description' ? 'active' : ''}`} onClick={() => setActiveTab('description')} style={{padding: '20px 0', cursor: 'pointer', fontWeight: '700', fontSize: '16px', color: activeTab === 'description' ? '#d70018' : '#64748b', borderBottom: activeTab === 'description' ? '3px solid #d70018' : '3px solid transparent', transition: '0.3s' }}>
             Mô tả sản phẩm
           </div>
-          <div 
-            className={`tab-item ${activeTab === 'specs' ? 'active' : ''}`}
-            onClick={() => setActiveTab('specs')}
-          >
+          <div className={`tab-item ${activeTab === 'specs' ? 'active' : ''}`} onClick={() => setActiveTab('specs')} style={{padding: '20px 0', cursor: 'pointer', fontWeight: '700', fontSize: '16px', color: activeTab === 'specs' ? '#d70018' : '#64748b', borderBottom: activeTab === 'specs' ? '3px solid #d70018' : '3px solid transparent', transition: '0.3s' }}>
             Thông số kỹ thuật
           </div>
         </div>
 
-        <div className="tabs-content-area">
+        <div className="tabs-content-area" style={{ paddingTop: '20px' }}>
           {activeTab === 'description' && (
-            <div className="description-box">
-              <div 
-                 style={{ whiteSpace: "pre-line" }}
-                 dangerouslySetInnerHTML={{ __html: product.description || "Đang cập nhật mô tả..." }} 
-              />
+            <div className="description-box" style={{ lineHeight: '1.8', color: '#334155' }}>
+              <div style={{ whiteSpace: "pre-line" }} dangerouslySetInnerHTML={{ __html: product.description || "Nội dung đang cập nhật..." }} />
             </div>
           )}
 
           {activeTab === 'specs' && (
-             <div className="specs-text-block">
+             <div className="specs-table-wrapper">
                {(() => {
                  const spec = product.specification;
                  const displaySpecs = [];
-
-                 if (spec) {
-                    // 👇 Cập nhật thông số từ Biến thể nếu có
-                    const ramVal = selectedVariant ? selectedVariant.ramCapacity : "Tùy chọn";
-                    const storageVal = selectedVariant ? selectedVariant.storageCapacity : spec.storageType;
-                    
-                    if (spec.cpu) displaySpecs.push({ label: "Vi xử lý (CPU)", value: spec.cpu });
-                    displaySpecs.push({ label: "RAM", value: ramVal }); // Ưu tiên RAM biến thể
-                    displaySpecs.push({ label: "Ổ cứng", value: storageVal }); // Ưu tiên Ổ cứng biến thể
-                    
-                    if (spec.vga) displaySpecs.push({ label: "Card đồ họa (VGA)", value: spec.vga });
-                    if (spec.screenDetail) displaySpecs.push({ label: "Màn hình", value: spec.screenDetail });
-                    if (spec.resolution) displaySpecs.push({ label: "Độ phân giải", value: spec.resolution });
-                    
-                    // Logic cũ của bạn để parse các thông số khác
-                    if (spec.otherSpecs) {
-                        const text = spec.otherSpecs;
-                        const targetKeywords = [ "Hệ điều hành", "Cổng giao tiếp", "Trọng lượng", "Kích thước", "Pin" ];
-                        let matches = [];
-                        targetKeywords.forEach(kw => {
-                            const index = text.indexOf(kw);
-                            if (index !== -1) matches.push({ label: kw, index: index });
-                        });
-                        matches.sort((a, b) => a.index - b.index);
-
-                        matches.forEach((match, i) => {
-                            const startValue = match.index + match.label.length;
-                            const endValue = (i + 1 < matches.length) ? matches[i + 1].index : text.length;
-                            let value = text.substring(startValue, endValue).trim();
-                            value = value.replace(/^[:\-\s]+/, "").replace(/[\-\s]+$/, "");
-                            if (value) displaySpecs.push({ label: match.label, value: value });
-                        });
-                    }
+                 if (spec || selectedVariant) {
+                    if (spec?.cpu) displaySpecs.push({ label: "Vi xử lý (CPU)", value: spec.cpu });
+                    const ramVal = selectedVariant ? (selectedVariant.ramCapacity || selectedVariant.ramSize) : "Tùy chọn cấu hình";
+                    const storageVal = selectedVariant ? (selectedVariant.storageCapacity || selectedVariant.storageDisplay) : (spec?.storageType || "Tùy chọn cấu hình");
+                    displaySpecs.push({ label: "Bộ nhớ RAM", value: ramVal }, { label: "Ổ cứng (SSD)", value: storageVal });
+                    if (spec?.resolution) displaySpecs.push({ label: "Độ phân giải", value: spec.resolution });
+                    if (spec?.refreshRate) displaySpecs.push({ label: "Tần số quét", value: spec.refreshRate });
+                    if (spec?.panelType) displaySpecs.push({ label: "Tấm nền", value: spec.panelType });
+                    if (spec?.battery || spec?.batteryCapacity) displaySpecs.push({ label: "Pin", value: spec.battery || spec.batteryCapacity });
+                    if (spec?.weight) displaySpecs.push({ label: "Trọng lượng", value: spec.weight });
+                    if (spec?.os) displaySpecs.push({ label: "Hệ điều hành", value: spec.os });
+                    if (spec?.wifi) displaySpecs.push({ label: "WiFi", value: spec.wifi });
+                    if (spec?.ports) displaySpecs.push({ label: "Cổng kết nối", value: spec.ports });
                  }
-
-                 if (displaySpecs.length === 0) {
-                    return <p style={{ padding: '20px', color: '#666' }}>Chưa có thông số chi tiết.</p>;
-                 }
-
-                 return (
-                   <div className="specs-table-wrapper" style={{ marginTop: '10px' }}>
-                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                 return displaySpecs.length > 0 ? (
+                    <table style={{ width: '100%', borderCollapse: 'collapse', borderRadius: '12px', overflow: 'hidden', border: '1px solid #f1f5f9' }}>
                        <tbody>
                          {displaySpecs.map((item, index) => (
-                           <tr key={index} style={{ backgroundColor: index % 2 === 0 ? '#f9f9f9' : '#fff' }}>
-                             <td style={{ padding: '12px', border: '1px solid #eee', color: '#666', width: '35%', fontWeight: '500' }}>
-                                {item.label}
-                             </td>
-                             <td style={{ padding: '12px', border: '1px solid #eee', color: '#333' }}>
-                                {item.value}
-                             </td>
+                           <tr key={index} style={{ backgroundColor: index % 2 === 0 ? '#f8fafc' : '#fff' }}>
+                             <td style={{ padding: '15px 20px', color: '#64748b', width: '30%', fontWeight: '600', fontSize: '14px' }}>{item.label}</td>
+                             <td style={{ padding: '15px 20px', color: '#1e293b', fontWeight: '500', fontSize: '14px' }}>{item.value}</td>
                            </tr>
                          ))}
                        </tbody>
-                     </table>
-                   </div>
-                 );
+                    </table>
+                 ) : <p>Chưa có thông số chi tiết.</p>;
                })()}
              </div>
           )}  

@@ -2,6 +2,8 @@ package com.ecommerce.backend.dto.product;
 
 import lombok.*;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -38,4 +40,5 @@ public class ProductVariantDTO {
     // Màu sắc
     private Long colorId;
     private String colorName;
+    private List<String> imageUrls;
 }

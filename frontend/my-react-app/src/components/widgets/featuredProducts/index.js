@@ -8,13 +8,11 @@ import { formatter } from "utils/formatter";
 import { ROUTERS } from "utils/router";
 import "./style.scss"; 
 
-// 👇 1. NHẬN THÊM PROP filterScreenSizeId
 const FeaturedProducts = ({ filterBrandId, filterUsageId, filterScreenSizeId }) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState("Có Thể Bạn Sẽ Thích");
   
-  // Hook
   const location = useLocation();
   const navigate = useNavigate();
   const { fetchCartCount } = useCart(); 
@@ -22,7 +20,19 @@ const FeaturedProducts = ({ filterBrandId, filterUsageId, filterScreenSizeId }) 
   const ITEMS_PER_BATCH = 8; 
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_BATCH);
 
-  // Hàm trộn mảng ngẫu nhiên (chỉ dùng khi không lọc)
+  // 👇 1. LOGIC TÍNH GIÁ KHUYẾN MÃI
+  const getDiscountedPrice = (product) => {
+    const promo = product.promotion;
+    if (!promo || promo.status !== "ACTIVE") return null;
+
+    if (promo.discountType === "PERCENTAGE") {
+      return product.price - (product.price * promo.discountValue) / 100;
+    } else if (promo.discountType === "FIXED_AMOUNT") {
+      return Math.max(0, product.price - promo.discountValue);
+    }
+    return null;
+  };
+
   const shuffleArray = (array) => {
     let currentIndex = array.length, randomIndex;
     while (currentIndex !== 0) {
@@ -41,38 +51,29 @@ const FeaturedProducts = ({ filterBrandId, filterUsageId, filterScreenSizeId }) 
         let res;
         let isFiltering = false;
 
-        // --- LOGIC GỌI API DỰA TRÊN BỘ LỌC ---
-
-        // 1. Lọc theo Screen Size (Ưu tiên dùng Advanced Filter)
         if (filterScreenSizeId) {
             const params = { screenSizeId: filterScreenSizeId };
-            // Có thể kết hợp lọc brand/purpose nếu muốn
             if (filterBrandId) params.brandIds = [filterBrandId]; 
             if (filterUsageId) params.purposeId = filterUsageId;
-
             res = await apiClient.get("/products/advanced-filter", { params });
             setTitle("Sản phẩm theo kích thước màn hình");
             isFiltering = true;
         }
-        // 2. Lọc kết hợp Brand & Usage (Logic cũ)
         else if (filterBrandId && filterUsageId) {
              res = await apiClient.get(`/products/filter?purpose=${filterUsageId}&brand=${filterBrandId}`);
              setTitle("Sản phẩm theo Thương hiệu & Nhu cầu");
              isFiltering = true;
         } 
-        // 3. Lọc chỉ Brand
         else if (filterBrandId) {
              res = await apiClient.get(`/products/brand/${filterBrandId}`);
              setTitle("Sản phẩm theo Thương hiệu");
              isFiltering = true;
         }
-        // 4. Lọc chỉ Usage
         else if (filterUsageId) {
              res = await apiClient.get(`/products/usage-purpose/${filterUsageId}`);
              setTitle("Sản phẩm theo Nhu cầu");
              isFiltering = true;
         }
-        // 5. Mặc định (Lấy tất cả)
         else {
              res = await apiClient.get("/products");
              setTitle("Có Thể Bạn Sẽ Thích");
@@ -98,9 +99,8 @@ const FeaturedProducts = ({ filterBrandId, filterUsageId, filterScreenSizeId }) 
     };
 
     fetchProducts();
-  }, [filterBrandId, filterUsageId, filterScreenSizeId]); // 👈 Thêm dependency
+  }, [filterBrandId, filterUsageId, filterScreenSizeId]);
 
-  // --- XỬ LÝ THÊM VÀO GIỎ ---
   const handleAddToCart = async (productId) => {
     const token = localStorage.getItem("token"); 
     if (!token) { 
@@ -126,7 +126,6 @@ const FeaturedProducts = ({ filterBrandId, filterUsageId, filterScreenSizeId }) 
     if (section) section.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // --- LOGIC LINK SẢN PHẨM ---
   const getProductLink = (id) => {
     const isCustomerPage = location.pathname.includes("/customer");
     return isCustomerPage 
@@ -134,7 +133,6 @@ const FeaturedProducts = ({ filterBrandId, filterUsageId, filterScreenSizeId }) 
         : ROUTERS.USER.PRODUCTDETAIL.replace(":id", id);
   };
 
-  // --- LOGIC LẤY ẢNH ---
   const getProductImage = (item) => {
     if (item.images && item.images.length > 0) {
         const firstImg = item.images[0];
@@ -160,42 +158,63 @@ const FeaturedProducts = ({ filterBrandId, filterUsageId, filterScreenSizeId }) 
   return (
     <section className="featured-products">
       <div className="container">
-        
-        {/* Tiêu đề động */}
         {title && <h2 className="section-title">{title}</h2>}
         
         <div className="product-grid">
-          {products.slice(0, visibleCount).map((item) => (
-            <div key={item.id} className="product-card">
-              <div className="product-card__image">
-                 <Link to={getProductLink(item.id)}>
-                    <img 
-                        src={getProductImage(item)} 
-                        alt={item.name} 
-                        loading="lazy"
-                    />
-                 </Link>
-              </div>
-              <div className="product-card__content">
-                <div className="product-brand" style={{fontSize: '12px', color: '#999', textTransform: 'uppercase', marginBottom: '5px', fontWeight: 'bold'}}>
-                    {item.brand?.name}
+          {products.slice(0, visibleCount).map((item) => {
+            // 👇 2. TÍNH TOÁN GIÁ GIẢM CHO TỪNG ITEM
+            const discountedPrice = getDiscountedPrice(item);
+            const hasPromo = discountedPrice !== null;
+
+            return (
+              <div key={item.id} className="product-card">
+                <div className="product-card__image">
+                   {/* 👇 3. HIỂN THỊ BADGE GIẢM GIÁ */}
+                   {hasPromo && (
+                     <div className="promo-badge">
+                       {item.promotion.discountType === "PERCENTAGE" 
+                        ? `-${item.promotion.discountValue}%` 
+                        : `GIẢM ${(item.promotion.discountValue / 1000).toLocaleString()}K`}
+                     </div>
+                   )}
+                   <Link to={getProductLink(item.id)}>
+                      <img src={getProductImage(item)} alt={item.name} loading="lazy" />
+                   </Link>
                 </div>
-                <h3 className="product-name">
-                  <Link to={getProductLink(item.id)}>{item.name}</Link>
-                </h3>
-                {/* Hiển thị thêm thông tin Size nếu đang lọc theo Size */}
-                {filterScreenSizeId && item.screenSize && (
-                    <div style={{fontSize: '13px', color: '#555', marginBottom: '5px'}}>
-                        Màn hình: {item.screenSize.value} inch
-                    </div>
-                )}
-                <div className="product-price">{formatter(item.price)}</div>
-                <button className="btn-add-cart" onClick={() => handleAddToCart(item.id)}>
-                    <AiOutlineShoppingCart style={{marginRight: '5px'}}/> Thêm vào giỏ hàng
-                </button>
+
+                <div className="product-card__content">
+                  <div className="product-brand" style={{fontSize: '12px', color: '#999', textTransform: 'uppercase', marginBottom: '5px', fontWeight: 'bold'}}>
+                      {item.brand?.name}
+                  </div>
+                  <h3 className="product-name">
+                    <Link to={getProductLink(item.id)}>{item.name}</Link>
+                  </h3>
+                  
+                  {filterScreenSizeId && item.screenSize && (
+                      <div style={{fontSize: '13px', color: '#555', marginBottom: '5px'}}>
+                          Màn hình: {item.screenSize.value} inch
+                      </div>
+                  )}
+
+                  {/* 👇 4. HIỂN THỊ GIÁ (CŨ & MỚI) */}
+                  <div className="product-price-container">
+                    {hasPromo ? (
+                      <>
+                        <span className="product-price discounted">{formatter(discountedPrice)}</span>
+                        <span className="product-price original">{formatter(item.price)}</span>
+                      </>
+                    ) : (
+                      <span className="product-price">{formatter(item.price)}</span>
+                    )}
+                  </div>
+
+                  <button className="btn-add-cart" onClick={() => handleAddToCart(item.id)}>
+                      <AiOutlineShoppingCart style={{marginRight: '5px'}}/> Thêm vào giỏ hàng
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="view-more-container">

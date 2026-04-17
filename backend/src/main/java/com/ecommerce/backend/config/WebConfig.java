@@ -1,24 +1,3 @@
-//package com.ecommerce.backend.config;
-//
-//import org.springframework.beans.factory.annotation.Value;
-//import org.springframework.context.annotation.Configuration;
-//import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-//import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-//
-//import java.nio.file.Paths;
-//
-//@Configuration
-//public class WebConfig implements WebMvcConfigurer {
-//
-//    @Value("${file.upload-dir}")
-//    private String uploadDir;
-//
-//    @Override
-//    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-//        registry.addResourceHandler("/uploads/**")
-//                .addResourceLocations("file:uploads/");
-//    }
-//}
 package com.ecommerce.backend.config;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -28,7 +7,6 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.io.File;
-import java.nio.file.Paths;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
@@ -38,35 +16,35 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // Chuyển thành đường dẫn tuyệt đối
+        // 1. Lấy đường dẫn tuyệt đối của thư mục uploads
         File uploadFolder = new File(uploadDir);
         String absolutePath = uploadFolder.getAbsolutePath() + File.separator;
 
-        // Debug logging
+        // --- Giữ nguyên Debug logging của Hiển ---
         System.out.println("===========================================");
         System.out.println("📁 Upload directory: " + absolutePath);
         System.out.println("📁 Directory exists: " + uploadFolder.exists());
-        System.out.println("📁 Directory is absolute: " + uploadFolder.isAbsolute());
 
         if (!uploadFolder.exists()) {
-            System.out.println("⚠️ WARNING: Upload directory does not exist!");
-            System.out.println("⚠️ Creating directory...");
+            System.out.println("⚠️ WARNING: Thư mục không tồn tại, đang tạo mới...");
             uploadFolder.mkdirs();
         }
 
-        // List files in directory
         File[] files = uploadFolder.listFiles();
         if (files != null && files.length > 0) {
-            System.out.println("📸 Files in upload directory:");
-            for (File file : files) {
-                System.out.println("  - " + file.getName());
-            }
+            System.out.println("📸 Đang có " + files.length + " ảnh trong thư mục.");
         } else {
-            System.out.println("⚠️ No files found in upload directory!");
+            System.out.println("⚠️ Thư mục đang rỗng!");
         }
         System.out.println("===========================================");
 
-        // Map resource handler
+        // 2. ✅ CHỈNH SỬA QUAN TRỌNG NHẤT TẠI ĐÂY:
+        // Đổi từ "/uploads/products/**" thành "/api/uploads/products/**" 
+        // để khớp với link "/api/uploads/products/..." trong Database của bạn.
+        registry.addResourceHandler("/api/uploads/products/**")
+                .addResourceLocations("file:" + absolutePath);
+
+        // Sơ cua thêm một handler nữa nếu bạn lỡ dùng link không có /api
         registry.addResourceHandler("/uploads/products/**")
                 .addResourceLocations("file:" + absolutePath);
     }

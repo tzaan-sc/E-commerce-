@@ -15,7 +15,7 @@ public class UpdateProductRequest {
 
     @NotNull(message = "Giá sản phẩm không được để trống")
     @PositiveOrZero(message = "Giá sản phẩm không được âm")
-    private Double price;
+    private Double price =0.0;
 
     @NotNull(message = "Số lượng tồn kho không được để trống")
     @PositiveOrZero(message = "Số lượng tồn kho không được âm")

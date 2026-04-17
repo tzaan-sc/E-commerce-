@@ -3,13 +3,16 @@ package com.ecommerce.backend.service.product.impl;
 import com.ecommerce.backend.dto.product.CreateProductRequest;
 import com.ecommerce.backend.dto.product.UpdateProductRequest;
 import com.ecommerce.backend.entity.product.*;
+import com.ecommerce.backend.entity.promotion.Promotion;
 import com.ecommerce.backend.repository.product.BrandRepository;
 import com.ecommerce.backend.repository.product.ProductRepository;
+import com.ecommerce.backend.repository.promotion.PromotionRepository;
 import com.ecommerce.backend.repository.product.ScreenSizeRepository;
 import com.ecommerce.backend.repository.product.UsagePurposeRepository;
 import com.ecommerce.backend.service.product.ProductService;
 import com.ecommerce.backend.util.SlugUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +28,8 @@ public class ProductServiceImpl implements ProductService {
     private final BrandRepository brandRepository;
     private final UsagePurposeRepository usagePurposeRepository;
     private final ScreenSizeRepository screenSizeRepository;
+    @Autowired
+    private PromotionRepository promotionRepository;
 
     @Override
     @Transactional
@@ -91,25 +96,36 @@ public class ProductServiceImpl implements ProductService {
         product.setImageUrl(request.getImageUrl());
         product.setSlug(request.getSlug() != null ? request.getSlug() : SlugUtil.toSlug(request.getName()));
 
-        // ✅ LOGIC MỚI: Cập nhật thẳng thông số kỹ thuật (Specification) bằng Object mới
+        // ✅ FIX LỖI KHUYẾN MÃI: Set đúng object Promotion từ DB
+        if (request.getPromotionId() != null) {
+            // Tìm promotion trong DB bằng ID gửi từ React lên
+            Promotion promo = promotionRepository.findById(request.getPromotionId()).orElse(null);
+            product.setPromotion(promo);
+        } else {
+            product.setPromotion(null);
+        }
+
+        // ✅ LOGIC THÔNG SỐ: Cập nhật thẳng thông số kỹ thuật (Specification)
         if (request.getSpecification() != null) {
             product.setSpecification(request.getSpecification());
         }
 
-        // LOGIC UPDATE ẢNH
+        // LOGIC UPDATE ẢNH (Fix để hình 3 hiện trong DB)
         if (request.getImageUrls() != null) {
             product.getImages().clear(); // Xoá ảnh cũ
             for (String url : request.getImageUrls()) {
                 if (url != null && !url.trim().isEmpty()) {
+                    // Sử dụng Builder hoặc Constructor để tạo ảnh mới
                     product.getImages().add(ImageProduct.builder()
                             .urlImage(url.trim())
                             .name("Ảnh cập nhật")
-                            .product(product)
+                            .product(product) // 👈 Quan trọng: Gán lại liên kết cha
                             .build());
                 }
             }
         }
 
+        // Cập nhật Thương hiệu, Mục đích, Màn hình
         setProductCategories(product, request.getBrandId(), request.getPurposeId(), request.getScreenSizeId());
 
         return productRepository.save(product);

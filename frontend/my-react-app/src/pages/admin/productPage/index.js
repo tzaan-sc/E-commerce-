@@ -1,4 +1,3 @@
-// src/pages/admin/productPage/index.js
 import React, { useState, useEffect } from "react";
 import apiClient from "../../../api/axiosConfig";
 import { Toast } from "./helpers";
@@ -7,12 +6,22 @@ import ProductForm from "./ProductForm";
 import VariantManagement from "./VariantManagement";
 
 const ProductsPage = () => {
-  const [view, setView] = useState("list"); // 'list' | 'form' | 'variants'
+  const [view, setView] = useState("list"); 
   const [products, setProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [toast, setToast] = useState(null);
 
-  // Danh mục
+  // ✅ QUẢN LÝ PHÂN TRANG VÀ BỘ LỌC
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [filters, setFilters] = useState({
+    search: "",
+    brandId: "",
+    purposeId: "",
+    status: ""
+  });
+
+  // Danh mục dữ liệu thật từ DB
   const [brands, setBrands] = useState([]);
   const [purposes, setPurposes] = useState([]);
   const [screenSizes, setScreenSizes] = useState([]);
@@ -27,39 +36,72 @@ const ProductsPage = () => {
 
   const showToast = (message, type = "success") => setToast({ message, type });
 
-  // 👇 GỌI API LẤY DỮ LIỆU TỪ BACKEND
-  const fetchAllData = async () => {
+  // ✅ HÀM LẤY SẢN PHẨM: Đã chỉnh sửa để nhận cả List và Page
+  // ✅ HÀM LẤY SẢN PHẨM: Đọc cấu trúc Page { content: [], totalPages: X }
+  const fetchProducts = async () => {
     try {
-      // 1. Lấy danh sách sản phẩm
-      const prodRes = await apiClient.get("/products");
-      setProducts(prodRes.data || []);
+      // Chỉ gửi params nếu có giá trị thực sự (tránh gửi chuỗi rỗng "" khiến Backend lọc sai)
+      const cleanParams = {
+        page: page,
+        size: 10
+      };
+      if (filters.search) cleanParams.search = filters.search;
+      if (filters.brandId) cleanParams.brandId = filters.brandId;
+      if (filters.purposeId) cleanParams.purposeId = filters.purposeId;
+      if (filters.status) cleanParams.status = filters.status;
 
-      // 2. Lấy TẤT CẢ danh mục & phần cứng từ API gộp đã tạo
-      const hwRes = await apiClient.get("/hardware-options/all");
-      const hwData = hwRes.data;
+      const prodRes = await apiClient.get("/products", { params: cleanParams });
+      
+      const data = prodRes.data;
+      console.log("Check data Server trả về:", data);
 
-      setBrands(hwData.brands || []);
-      setPurposes(hwData.purposes || []);
-      setScreenSizes(hwData.screenSizes || []);
-      setRamList(hwData.rams || []);
-      setGpuList(hwData.gpus || []);
-      setChipList(hwData.chips || []);
-      setStorageList(hwData.storages || []);
-      setColorList(hwData.colors || []);
-
-      // 3. Lấy danh sách khuyến mãi
-      const promoRes = await apiClient.get("/promotions");
-      setPromotions(promoRes.data || []);
-
+      if (data && data.content) {
+        // Nếu Backend dùng Pageable (Log Hibernate của bạn đang dùng cái này)
+        setProducts(data.content); 
+        setTotalPages(data.totalPages);
+      } else if (Array.isArray(data)) {
+        // Nếu Backend trả về mảng trực tiếp
+        setProducts(data);
+        setTotalPages(1);
+      } else {
+        setProducts([]);
+      }
     } catch (error) {
-      console.error("Lỗi khi fetch data:", error);
-      showToast("Không thể kết nối đến máy chủ!", "error");
+      console.error("Lỗi fetch products:", error);
+      showToast("Lỗi kết nối API sản phẩm", "error");
     }
   };
 
+  // ✅ HÀM LẤY OPTIONS: Lấy thương hiệu, mục đích, cấu hình...
+  const fetchHardwareOptions = async () => {
+    try {
+      const hwRes = await apiClient.get("/hardware-options/all");
+      const hwData = hwRes.data;
+      
+      setBrands(hwData.brands || hwData.brandList || []);
+      setPurposes(hwData.purposes || hwData.usagePurposes || []);
+      setScreenSizes(hwData.screenSizes || []);
+      setRamList(hwData.rams || hwData.ramList || []);
+      setGpuList(hwData.gpus || hwData.gpuList || []);
+      setChipList(hwData.chips || hwData.chipList || []);
+      setStorageList(hwData.storages || hwData.storageList || []);
+      setColorList(hwData.colors || hwData.colorList || []);
+
+      const promoRes = await apiClient.get("/promotions");
+      setPromotions(promoRes.data || []);
+    } catch (error) {
+      console.error("Lỗi fetch options:", error);
+    }
+  };
+
+  // ✅ THEO DÕI THAY ĐỔI: Chạy khi vào trang và khi đổi Page/Filter
   useEffect(() => {
-    fetchAllData();
+    fetchHardwareOptions();
   }, []);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [page, filters]); 
 
   // Xử lý Xóa sản phẩm
   const handleDelete = async (id) => {
@@ -67,13 +109,13 @@ const ProductsPage = () => {
     try {
       await apiClient.delete(`/products/${id}`);
       showToast("Đã xóa sản phẩm!");
-      fetchAllData(); // Refresh list
+      fetchProducts(); 
     } catch (error) {
       showToast("Xóa thất bại!", "error");
     }
   };
 
-  // Xử lý Lưu sản phẩm (Thêm mới / Cập nhật)
+  // Xử lý Lưu sản phẩm (Thêm/Sửa)
   const handleSaveProduct = async (formData) => {
     try {
       if (formData.id) {
@@ -84,11 +126,17 @@ const ProductsPage = () => {
         showToast("Thêm sản phẩm thành công!");
       }
       setView("list");
-      fetchAllData();
+      fetchProducts();
     } catch (error) {
       const msg = error.response?.data?.message || "Lỗi khi lưu sản phẩm";
       showToast(msg, "error");
     }
+  };
+
+  // ✅ HÀM XỬ LÝ FILTER: Cập nhật filter và đưa về trang 0
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
+    setPage(0); 
   };
 
   return (
@@ -110,6 +158,12 @@ const ProductsPage = () => {
           onVariants={(p) => { setSelectedProduct(p); setView("variants"); }}
           onDelete={handleDelete}
           onImport={() => showToast("Chức năng Import đang phát triển", "info")}
+          
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          filters={filters}
+          onFilterChange={handleFilterChange}
         />
       )}
 
@@ -136,7 +190,7 @@ const ProductsPage = () => {
           colorList={colorList}
           onBack={() => setView("list")}
           showToast={showToast}
-          onUpdateProduct={() => fetchAllData()} 
+          onUpdateProduct={fetchProducts} 
         />
       )}
     </>

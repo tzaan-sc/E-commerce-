@@ -1,6 +1,7 @@
 package com.ecommerce.backend.repository.product;
 
 import com.ecommerce.backend.entity.product.ProductVariant;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -10,15 +11,18 @@ import java.util.Optional;
 @Repository
 public interface ProductVariantRepository extends JpaRepository<ProductVariant, Long> {
 
-    // Lấy danh sách biến thể theo ID Sản phẩm
+    // ✅ Ép Hibernate lấy kèm RAM, Chip, GPU, Ảnh... khi tìm theo ProductId
+    @EntityGraph(attributePaths = {"ram", "gpu", "chip", "storage", "color", "images"})
     List<ProductVariant> findByProductId(Long productId);
 
-    // Kiểm tra trùng SKU khi Thêm mới
+    // ✅ Ép lấy kèm chi tiết khi tìm tất cả (Dùng cho trang danh sách admin)
+    @Override
+    @EntityGraph(attributePaths = {"ram", "gpu", "chip", "storage", "color", "images"})
+    List<ProductVariant> findAll();
+
     boolean existsBySku(String sku);
 
-    // Kiểm tra trùng SKU khi Cập nhật (trừ chính biến thể đang sửa)
     boolean existsBySkuAndIdNot(String sku, Long id);
 
-    // Tìm theo SKU (Dùng cho import Excel hoặc tìm kiếm)
     Optional<ProductVariant> findBySku(String sku);
 }

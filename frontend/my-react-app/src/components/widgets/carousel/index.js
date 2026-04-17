@@ -1,123 +1,105 @@
-import { memo, useState, useEffect } from "react";
+import { memo, useState, useEffect, useMemo } from "react";
 import "./style.scss";
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-const Carousel = ({ images }) => {
+const Carousel = ({ images, mainImage, selectedVariant }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
-  
-  // State mới: Quản lý vị trí bắt đầu của thanh thumbnail
-  const [thumbIndex, setThumbIndex] = useState(0);
-  const THUMB_SIZE = 5; // Số lượng ảnh nhỏ hiển thị cùng lúc
+  const BASE_URL = "http://localhost:8080";
 
-  const slides = (images && images.length > 0) 
-    ? images 
-    : ["https://via.placeholder.com/800x600?text=No+Image"];
-
-  // --- LOGIC ẢNH LỚN ---
-  const nextSlide = () => {
-    const newIndex = (currentSlide + 1) % slides.length;
-    setCurrentSlide(newIndex);
+  const getFullUrl = (url) => {
+    if (!url) return "https://placehold.co/600x600?text=No+Image";
+    return url.startsWith("http") ? url : `${BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
   };
 
-  const prevSlide = () => {
-    const newIndex = (currentSlide - 1 + slides.length) % slides.length;
-    setCurrentSlide(newIndex);
-  };
+  // ✅ LOGIC ĐẦY ĐỦ: Ưu tiên ảnh biến thể -> Ảnh chính -> Ảnh phụ (Không trùng lặp)
+  const slides = useMemo(() => {
+    const list = new Set(); // Dùng Set để tự động loại bỏ các URL trùng nhau
 
-  const goToSlide = (slideIndex) => {
-    setCurrentSlide(slideIndex);
-  };
+    // 1. Lấy ảnh của biến thể đang chọn (Trường hợp có mảng images)
+    if (selectedVariant?.images?.length > 0) {
+      selectedVariant.images.forEach(img => {
+        const path = typeof img === 'string' ? img : (img.imageUrl || img.urlImage);
+        if (path) list.add(getFullUrl(path));
+      });
+    } 
+    
+    // 2. Lấy ảnh đơn của biến thể (Trường hợp chỉ có 1 trường imageUrl lẻ - Hay gặp trong DB của Hiển)
+    const variantSinglePic = selectedVariant?.imageUrl || selectedVariant?.image || selectedVariant?.urlImage;
+    if (variantSinglePic) {
+      list.add(getFullUrl(variantSinglePic));
+    }
 
-  // Tự động cuộn thumbnail khi ảnh lớn thay đổi (để ảnh đang chọn luôn nằm trong vùng nhìn thấy)
+    // 3. Thêm ảnh chính của sản phẩm gốc (Nếu chưa có)
+    if (mainImage) {
+      list.add(getFullUrl(mainImage));
+    }
+    
+    // 4. Thêm các ảnh phụ khác từ thư viện ảnh sản phẩm
+    if (images?.length > 0) {
+      images.forEach(img => {
+        const path = typeof img === 'string' ? img : (img.imageUrl || img.urlImage || img.imagePath);
+        if (path) list.add(getFullUrl(path));
+      });
+    }
+
+    const finalArray = Array.from(list);
+    return finalArray.length > 0 ? finalArray : ["https://placehold.co/600x600?text=No+Image"];
+  }, [mainImage, images, selectedVariant]); // 🚀 Chạy lại khi đổi biến thể
+
+  // ✅ Khi đổi ID biến thể (chọn RAM/Màu mới), ép slide về tấm đầu tiên (Ảnh của biến thể đó)
   useEffect(() => {
-    if (currentSlide < thumbIndex) {
-        setThumbIndex(currentSlide);
-    } else if (currentSlide >= thumbIndex + THUMB_SIZE) {
-        setThumbIndex(currentSlide - THUMB_SIZE + 1);
-    }
-  }, [currentSlide]);
+    setCurrentSlide(0);
+  }, [selectedVariant?.id]);
 
-  // --- LOGIC NÚT BẤM THUMBNAIL ---
-  const nextThumb = () => {
-    if (thumbIndex + THUMB_SIZE < slides.length) {
-        setThumbIndex(thumbIndex + 1);
-    }
-  };
-
-  const prevThumb = () => {
-    if (thumbIndex > 0) {
-        setThumbIndex(thumbIndex - 1);
-    }
-  };
-
-  // Auto-play
-  useEffect(() => {
-    if (slides.length <= 1) return;
-    const slideInterval = setInterval(nextSlide, 5000);
-    return () => clearInterval(slideInterval);
-  }, [slides.length]); 
-
-  // Cắt danh sách thumbnail để hiển thị (chỉ lấy 5 cái bắt đầu từ thumbIndex)
-  const visibleThumbnails = slides.slice(thumbIndex, thumbIndex + THUMB_SIZE);
+  if (!slides.length) return null;
 
   return (
     <div className="product-carousel-wrapper">
-      
-      {/* --- PHẦN 1: ẢNH LỚN --- */}
+      {/* 🖼️ KHUNG ẢNH CHÍNH (STAGE) */}
       <div className="main-stage">
-        <div className="carousel-track">
-            <div className="carousel-slide">
-              <img src={slides[currentSlide]} alt={`Product View ${currentSlide + 1}`} />
-            </div>
+        <div className="carousel-slide">
+          <img 
+            // Cực kỳ quan trọng: key giúp React nhận biết ảnh đã thay đổi để thực hiện hiệu ứng transition
+            key={slides[currentSlide]} 
+            src={slides[currentSlide]} 
+            alt="Product visual" 
+          />
         </div>
-
+        
         {slides.length > 1 && (
           <>
-            <button className="carousel-nav prev" onClick={prevSlide}><ChevronLeft size={24} /></button>
-            <button className="carousel-nav next" onClick={nextSlide}><ChevronRight size={24} /></button>
+            <button 
+              className="carousel-nav prev" 
+              onClick={() => setCurrentSlide(prev => (prev - 1 + slides.length) % slides.length)}
+            >
+              <ChevronLeft size={24} />
+            </button>
+            <button 
+              className="carousel-nav next" 
+              onClick={() => setCurrentSlide(prev => (prev + 1) % slides.length)}
+            >
+              <ChevronRight size={24} />
+            </button>
           </>
         )}
       </div>
 
-      {/* --- PHẦN 2: THUMBNAILS CAROUSEL --- */}
+      {/* 🎞️ DANH SÁCH ẢNH PHỤ (THUMBNAILS) */}
       {slides.length > 1 && (
         <div className="thumbnail-container">
-            {/* Nút Prev Thumbnail (Chỉ hiện khi có thể lùi) */}
-            <button 
-                className="thumb-nav-btn left" 
-                onClick={prevThumb}
-                disabled={thumbIndex === 0} 
-            >
-                <ChevronLeft size={18} />
-            </button>
-
-            <div className="thumbnail-list">
-                {visibleThumbnails.map((slide, index) => {
-                    // Tính index thực tế trong mảng gốc để so sánh active
-                    const realIndex = thumbIndex + index;
-                    return (
-                        <div
-                            key={realIndex}
-                            className={`thumbnail-item ${realIndex === currentSlide ? 'active' : ''}`}
-                            onClick={() => goToSlide(realIndex)}
-                        >
-                            <img src={slide} alt={`Thumb ${realIndex}`} />
-                        </div>
-                    );
-                })}
-            </div>
-
-            {/* Nút Next Thumbnail (Chỉ hiện khi còn ảnh phía sau) */}
-            <button 
-                className="thumb-nav-btn right" 
-                onClick={nextThumb}
-                disabled={thumbIndex + THUMB_SIZE >= slides.length} 
-            >
-                <ChevronRight size={18} />
-            </button>
+          <div className="thumbnail-list">
+            {slides.map((url, index) => (
+              <div 
+                key={`${selectedVariant?.id}-${index}`}
+                className={`thumbnail-item ${index === currentSlide ? 'active' : ''}`}
+                onClick={() => setCurrentSlide(index)}
+              >
+                <img src={url} alt={`thumb-${index}`} loading="lazy" />
+              </div>
+            ))}
+          </div>
         </div>
       )}
-
     </div>
   );
 };

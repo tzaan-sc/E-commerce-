@@ -225,4 +225,52 @@ $white: #ffffff;
     }
     }
   }
+  .product-card {
+  position: relative;
+
+  .product-card__image {
+    position: relative;
+    
+    // Nhãn giảm giá ở góc ảnh
+    .promo-badge {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: linear-gradient(135deg, #ff4d4d, #d70018);
+      color: #fff;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: bold;
+      z-index: 2;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+  }
+
+  .product-price-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+
+    .product-price {
+      font-weight: bold;
+      color: #333;
+
+      // Giá mới (màu đỏ nổi bật)
+      &.discounted {
+        color: #d70018;
+        font-size: 18px;
+      }
+
+      // Giá cũ (gạch ngang, mờ đi)
+      &.original {
+        text-decoration: line-through;
+        color: #999;
+        font-size: 14px;
+        font-weight: normal;
+      }
+    }
+  }
+}
 }

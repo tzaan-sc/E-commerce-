@@ -2,6 +2,7 @@ package com.ecommerce.backend.service.product.impl;
 
 import com.ecommerce.backend.dto.product.ProductVariantDTO;
 import com.ecommerce.backend.entity.product.*;
+import com.ecommerce.backend.entity.product.variant.VariantImage;
 import com.ecommerce.backend.repository.product.*;
 import com.ecommerce.backend.service.product.ProductVariantService;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +43,9 @@ public class ProductVariantServiceImpl implements ProductVariantService {
         } else {
             variant = variantRepository.findById(dto.getId()).orElseThrow(() -> new RuntimeException("Lỗi ID"));
             if (variantRepository.existsBySkuAndIdNot(dto.getSku(), dto.getId())) throw new RuntimeException("Mã SKU bị trùng!");
+
+            // Nếu là cập nhật, xóa danh sách ảnh cũ để ghi đè ảnh mới
+            variant.getImages().clear();
         }
 
         variant.setSku(dto.getSku());
@@ -49,6 +53,7 @@ public class ProductVariantServiceImpl implements ProductVariantService {
         variant.setStockQuantity(dto.getStockQuantity());
         variant.setIsActive(dto.getIsActive() != null ? dto.getIsActive() : true);
 
+        // Set các linh kiện
         if (dto.getProductId() != null) variant.setProduct(productRepository.findById(dto.getProductId()).orElse(null));
         if (dto.getRamId() != null) variant.setRam(ramRepository.findById(dto.getRamId()).orElse(null));
         if (dto.getGpuId() != null) variant.setGpu(gpuRepository.findById(dto.getGpuId()).orElse(null));
@@ -56,7 +61,20 @@ public class ProductVariantServiceImpl implements ProductVariantService {
         if (dto.getStorageId() != null) variant.setStorage(storageRepository.findById(dto.getStorageId()).orElse(null));
         if (dto.getColorId() != null) variant.setColor(colorRepository.findById(dto.getColorId()).orElse(null));
 
-        return mapToDTO(variantRepository.save(variant));
+        // ✅ ĐOẠN CODE CẦN BỔ SUNG ĐỂ LƯU ẢNH:
+        if (dto.getImageUrls() != null && !dto.getImageUrls().isEmpty()) {
+            for (String url : dto.getImageUrls()) {
+                if (url != null && !url.trim().isEmpty()) {
+                    VariantImage vImg = new VariantImage();
+                    vImg.setImageUrl(url.trim());
+                    vImg.setProductVariant(variant); // Gán cha cho con
+                    variant.getImages().add(vImg);   // Thêm vào list của variant
+                }
+            }
+        }
+
+        ProductVariant saved = variantRepository.save(variant);
+        return mapToDTO(saved);
     }
 
     @Override
@@ -67,15 +85,47 @@ public class ProductVariantServiceImpl implements ProductVariantService {
 
     private ProductVariantDTO mapToDTO(ProductVariant entity) {
         ProductVariantDTO dto = new ProductVariantDTO();
-        dto.setId(entity.getId()); dto.setSku(entity.getSku()); dto.setPrice(entity.getPrice());
-        dto.setStockQuantity(entity.getStockQuantity()); dto.setIsActive(entity.getIsActive());
+        // 1. Thông tin cơ bản
+        dto.setId(entity.getId());
+        dto.setSku(entity.getSku());
+        dto.setPrice(entity.getPrice());
+        dto.setStockQuantity(entity.getStockQuantity());
+        dto.setIsActive(entity.getIsActive());
 
-        if (entity.getProduct() != null) { dto.setProductId(entity.getProduct().getId()); dto.setProductName(entity.getProduct().getName()); }
-        if (entity.getRam() != null) { dto.setRamId(entity.getRam().getId()); dto.setRamSize(entity.getRam().getRamSize()); }
-        if (entity.getGpu() != null) { dto.setGpuId(entity.getGpu().getId()); dto.setGpuName(entity.getGpu().getGpuName()); }
-        if (entity.getChip() != null) { dto.setChipId(entity.getChip().getId()); dto.setChipName(entity.getChip().getCpuName()); }
-        if (entity.getStorage() != null) { dto.setStorageId(entity.getStorage().getId()); dto.setStorageDisplay(entity.getStorage().getStorageDisplay()); }
-        if (entity.getColor() != null) { dto.setColorId(entity.getColor().getId()); dto.setColorName(entity.getColor().getColorName()); }
+        // 2. ✅ LẤY ẢNH (Từ bảng VariantImage)
+        if (entity.getImages() != null && !entity.getImages().isEmpty()) {
+            dto.setImageUrls(entity.getImages().stream()
+                    .map(VariantImage::getImageUrl)
+                    .collect(Collectors.toList()));
+        }
+
+        // 3. ✅ GÁN TÊN LINH KIỆN (Để React hiển thị được chữ)
+        if (entity.getRam() != null) {
+            dto.setRamId(entity.getRam().getId());
+            dto.setRamSize(entity.getRam().getRamSize()); // Gán chữ "8" hoặc "16"
+        }
+
+        if (entity.getChip() != null) {
+            dto.setChipId(entity.getChip().getId());
+            dto.setChipName(entity.getChip().getCpuName()); // Gán chữ "Core i5..."
+        }
+
+        if (entity.getGpu() != null) {
+            dto.setGpuId(entity.getGpu().getId());
+            dto.setGpuName(entity.getGpu().getGpuName()); // Gán chữ "RTX 4050"
+        }
+
+        if (entity.getStorage() != null) {
+            dto.setStorageId(entity.getStorage().getId());
+            // Kết hợp dung lượng và loại ổ cứng
+            dto.setStorageDisplay(entity.getStorage().getCapacity() + " " + entity.getStorage().getStorageType());
+        }
+
+        if (entity.getColor() != null) {
+            dto.setColorId(entity.getColor().getId());
+            dto.setColorName(entity.getColor().getColorName());
+        }
+
         return dto;
     }
 }

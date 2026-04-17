@@ -1,46 +1,112 @@
-// src/pages/admin/productPage/ProductForm.js
-import React, { useState } from "react";
-import { ArrowLeft, Save, Laptop, Cpu, Image as ImageIcon, Upload, Star } from "lucide-react";
+import React, { useState, useRef } from "react";
+import { ArrowLeft, Save, Laptop, Cpu, Image as ImageIcon, Upload, Star, X, Loader2, Link as LinkIcon } from "lucide-react";
 import { FormField } from "./helpers";
+import axios from "axios";
 
 const ProductForm = ({ product, onSave, onBack, brands, purposes, screenSizes, promotions }) => {
   const isEdit = !!product;
+  const fileInputRef = useRef(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const BASE_URL = "http://localhost:8080";
+
   const [form, setForm] = useState({
     id: product?.id || null,
-    name: product?.name || "", slug: product?.slug || "",
-    description: product?.description || "", status: product?.status || "ACTIVE",
-    brandId: product?.brandId || "", brandName: product?.brandName || "",
-    screenSizeId: product?.screenSizeId || "", screenSizeValue: product?.screenSizeValue || "",
-    purposeId: product?.purposeId || "", purposeName: product?.purposeName || "",
-    promotionId: product?.promotionId || "", promotionName: product?.promotionName || "",
-    imageUrl: product?.imageUrl || "",
+    name: product?.name || "", 
+    slug: product?.slug || "",
+    description: product?.description || "", 
+    status: product?.status || "ACTIVE",
+    stockQuantity: product?.stockQuantity || 0,
+    brandId: product?.brandId || "", 
+    brandName: product?.brandName || "",
+    screenSizeId: product?.screenSizeId || "", 
+    screenSizeValue: product?.screenSizeValue || "",
+    purposeId: product?.purposeId || "", 
+    purposeName: product?.purposeName || "",
+    promotionId: product?.promotionId || "", 
+    promotionName: product?.promotionName || "",
+    imageUrl: product?.imageUrl || "", 
     specification: product?.specification || { resolution: "", refreshRate: "", panelType: "", battery: "", weight: "", os: "", wifi: "", bluetooth: "", ports: "" },
     variants: product?.variants || [],
   });
+
   const [activeTab, setActiveTab] = useState("general");
   const [errors, setErrors] = useState({});
 
   const setF = (key, val) => setForm(f => ({ ...f, [key]: val }));
   const setSpec = (key, val) => setForm(f => ({ ...f, specification: { ...f.specification, [key]: val } }));
 
+  const handleFileUpload = async (file) => {
+    if (!file) return;
+    const formData = new FormData();
+    formData.append("file", file); 
+
+    setIsUploading(true);
+    try {
+      const response = await axios.post(`${BASE_URL}/api/uploads/image`, formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      const serverUrl = response.data.url; 
+      setF("imageUrl", serverUrl);
+    } catch (error) {
+      console.error("Lỗi upload:", error);
+      alert("Không thể tải ảnh lên thư mục Backend!");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const getPreviewUrl = (url) => {
+    if (!url) return "";
+    if (url.startsWith("http")) return url;
+    return `${BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+  };
+
+  const onFileSelect = (e) => { handleFileUpload(e.target.files[0]); };
+  const onDrop = (e) => { e.preventDefault(); handleFileUpload(e.dataTransfer.files[0]); };
+
   const autoSlug = (name) => name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/[^a-z0-9\s-]/g, "").trim().replace(/\s+/g, "-");
 
   const validate = () => {
     const e = {};
-    if (!form.name.trim()) e.name = "Tên sản phẩm không được để trống";
+    if (!form.name || !form.name.trim()) e.name = "Tên sản phẩm không được để trống";
     if (!form.brandId) e.brandId = "Chọn thương hiệu";
     if (!form.purposeId) e.purposeId = "Chọn mục đích sử dụng";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
+  // ✅ CHỈNH SỬA ĐẦY ĐỦ LOGIC ĐỂ BẤM TẠO ĐƯỢC
   const handleSubmit = () => {
-    if (!validate()) return;
-    const brand = brands.find(b => b.id === Number(form.brandId));
-    const purpose = purposes.find(p => p.id === Number(form.purposeId));
-    const screen = screenSizes.find(s => s.id === Number(form.screenSizeId));
-    const promo = promotions.find(p => p.id === Number(form.promotionId));
-    onSave({ ...form, brandName: brand?.name, purposeName: purpose?.name, screenSizeValue: screen?.value, promotionName: promo?.name || null });
+    if (!validate()) {
+      setActiveTab("general"); // Tự chuyển về tab lỗi để người dùng thấy
+      return;
+    }
+
+    // Tìm kiếm thông tin từ các list props gửi vào
+    const brand = brands?.find(b => String(b.id) === String(form.brandId));
+    const purpose = purposes?.find(p => String(p.id) === String(form.purposeId));
+    const screen = screenSizes?.find(s => String(s.id) === String(form.screenSizeId));
+    const promo = promotions?.find(p => String(p.id) === String(form.promotionId));
+
+    // ✅ ĐÓNG GÓI PAYLOAD CHUẨN ĐỂ GỬI QUA API
+    const finalData = { 
+      ...form, 
+      // Đảm bảo các ID là kiểu số khi gửi lên Backend
+      brandId: form.brandId ? Number(form.brandId) : null,
+      purposeId: form.purposeId ? Number(form.purposeId) : null,
+      screenSizeId: form.screenSizeId ? Number(form.screenSizeId) : null,
+      promotionId: form.promotionId ? Number(form.promotionId) : null,
+      stockQuantity: Number(form.stockQuantity || 0),
+      
+      // Bổ sung tên để hiển thị (nếu Backend cần dùng ProductDTO cũ)
+      brandName: brand?.name || "", 
+      purposeName: purpose?.name || "", 
+      screenSizeValue: screen?.value || "", 
+      promotionName: promo?.name || null 
+    };
+
+    onSave(finalData);
   };
 
   const tabs = [
@@ -92,6 +158,9 @@ const ProductForm = ({ product, onSave, onBack, brands, purposes, screenSizes, p
             <FormField label="Tên sản phẩm *" error={errors.name} style={{ gridColumn: "1/-1" }}>
               <input value={form.name} onChange={e => { setF("name", e.target.value); setF("slug", autoSlug(e.target.value)); }}
                 placeholder="VD: ASUS ROG Strix G15" style={inputStyle(errors.name)} />
+            </FormField>
+            <FormField label="Số lượng tồn kho tổng (Tự động)" style={{ gridColumn: "1/-1" }}>
+              <input type="number" value={form.stockQuantity} readOnly style={{ ...inputStyle(), background: "#f3f4f6", cursor: "not-allowed" }} />
             </FormField>
             <FormField label="Slug" style={{ gridColumn: "1/-1" }}>
               <input value={form.slug} onChange={e => setF("slug", e.target.value)} placeholder="asus-rog-strix-g15" style={inputStyle()} />
@@ -162,28 +231,78 @@ const ProductForm = ({ product, onSave, onBack, brands, purposes, screenSizes, p
         )}
 
         {activeTab === "image" && (
-          <div>
-            <div style={{ border: "2px dashed #cbd5e1", borderRadius: 12, padding: 32, textAlign: "center", background: "#f8fafc", cursor: "pointer" }}>
-              <Upload size={36} style={{ color: "#94a3b8", marginBottom: 10 }} />
-              <p style={{ margin: 0, fontWeight: 600, color: "#475569" }}>Kéo thả hoặc click để tải ảnh</p>
-              <p style={{ margin: "6px 0 0", fontSize: 12, color: "#94a3b8" }}>PNG, JPG, WebP · Tối đa 5MB · Nhiều ảnh</p>
-            </div>
-            <div style={{ marginTop: 16 }}>
-              <FormField label="URL ảnh đại diện (tạm thời)">
-                <input value={form.imageUrl} onChange={e => setF("imageUrl", e.target.value)}
-                  placeholder="https://..." style={inputStyle()} />
-              </FormField>
-              {form.imageUrl && (
-                <div style={{ marginTop: 10, display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  <div style={{ position: "relative", width: 100, height: 75, borderRadius: 8, overflow: "hidden", border: "2px solid #2563eb" }}>
-                    <img src={form.imageUrl} alt="preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    <div style={{ position: "absolute", top: 3, right: 3, background: "#2563eb", borderRadius: "50%", padding: 2 }}>
-                      <Star size={10} color="#fff" />
-                    </div>
-                  </div>
+          <div onDragOver={(e) => e.preventDefault()} onDrop={onDrop}>
+            <input type="file" ref={fileInputRef} onChange={onFileSelect} style={{ display: "none" }} accept="image/*" />
+            
+            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              <div style={{ background: "#f8fafc", padding: 16, borderRadius: 12, border: "1px solid #e2e8f0" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, color: "#475569" }}>
+                  <LinkIcon size={16} /> <span style={{ fontWeight: 600, fontSize: 13 }}>Nhập link ảnh trực tiếp</span>
                 </div>
-              )}
+                <input 
+                  value={form.imageUrl && form.imageUrl.startsWith('http') ? form.imageUrl : ""} 
+                  onChange={e => setF("imageUrl", e.target.value)} 
+                  placeholder="https://example.com/laptop-image.jpg" 
+                  style={inputStyle()} 
+                />
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ flex: 1, height: 1, background: "#e2e8f0" }}></div>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8" }}>HOẶC</span>
+                <div style={{ flex: 1, height: 1, background: "#e2e8f0" }}></div>
+              </div>
+
+              <div 
+                onClick={() => fileInputRef.current.click()}
+                style={{ 
+                  border: "2px dashed #cbd5e1", borderRadius: 12, padding: 32, 
+                  textAlign: "center", background: "#f8fafc", cursor: "pointer",
+                  transition: "border-color 0.2s"
+                }}
+              >
+                {isUploading ? (
+                  <>
+                    <Loader2 size={36} className="animate-spin" style={{ color: "#2563eb", marginBottom: 10, margin: "0 auto" }} />
+                    <p style={{ margin: 0, fontWeight: 600, color: "#2563eb" }}>Đang tải ảnh lên...</p>
+                  </>
+                ) : (
+                  <>
+                    <Upload size={36} style={{ color: "#94a3b8", marginBottom: 10 }} />
+                    <p style={{ margin: 0, fontWeight: 600, color: "#475569" }}>Kéo thả hoặc click để tải ảnh từ máy tính</p>
+                    <p style={{ margin: "4px 0 0", fontSize: 11, color: "#94a3b8" }}>File sẽ được lưu vào thư mục server</p>
+                  </>
+                )}
+              </div>
             </div>
+
+            {form.imageUrl && (
+              <div style={{ marginTop: 24, padding: 16, border: "1px solid #e5e7eb", borderRadius: 12 }}>
+                <p style={{ fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 12 }}>Ảnh sản phẩm hiện tại:</p>
+                <div style={{ position: "relative", width: 140, height: 100, borderRadius: 10, overflow: "hidden", border: "2px solid #2563eb", boxShadow: "0 4px 10px rgba(0,0,0,0.1)" }}>
+                  <img 
+                    src={getPreviewUrl(form.imageUrl)} 
+                    alt="preview" 
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+                  />
+                  <div style={{ position: "absolute", top: 4, right: 4, background: "#2563eb", borderRadius: "50%", padding: 2 }}>
+                    <Star size={10} color="#fff" />
+                  </div>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setF("imageUrl", ""); }}
+                    style={{ position: "absolute", top: 4, left: 4, background: "rgba(255,255,255,0.9)", border: "none", borderRadius: "50%", padding: 2, cursor: "pointer" }}
+                  >
+                    <X size={10} color="#ef4444" />
+                  </button>
+                </div>
+                <div style={{ marginTop: 8 }}>
+                  <p style={{ fontSize: 11, color: "#64748b", wordBreak: "break-all" }}>
+                    <strong>Nguồn:</strong> {form.imageUrl.startsWith('http') ? "Link bên ngoài" : "Tệp máy chủ"}
+                  </p>
+                  <p style={{ fontSize: 11, color: "#94a3b8" }}>{form.imageUrl}</p>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -192,10 +311,11 @@ const ProductForm = ({ product, onSave, onBack, brands, purposes, screenSizes, p
         <button onClick={onBack} style={{ padding: "10px 20px", border: "1px solid #d1d5db", borderRadius: 9, background: "#fff", cursor: "pointer", fontWeight: 500, fontSize: 14, color: "#374151" }}>
           Huỷ
         </button>
-        <button onClick={handleSubmit} style={{
+        <button onClick={handleSubmit} disabled={isUploading} style={{
           display: "flex", alignItems: "center", gap: 8, padding: "10px 22px", border: "none", borderRadius: 9,
-          background: "linear-gradient(135deg, #2563eb, #1d4ed8)", color: "#fff", cursor: "pointer", fontWeight: 600, fontSize: 14,
-          boxShadow: "0 4px 12px rgba(37,99,235,0.3)",
+          background: isUploading ? "#94a3b8" : "linear-gradient(135deg, #2563eb, #1d4ed8)", 
+          color: "#fff", cursor: isUploading ? "not-allowed" : "pointer", fontWeight: 600, fontSize: 14,
+          boxShadow: isUploading ? "none" : "0 4px 12px rgba(37,99,235,0.3)",
         }}>
           <Save size={15} /> {isEdit ? "Lưu thay đổi" : "Tạo sản phẩm"}
         </button>

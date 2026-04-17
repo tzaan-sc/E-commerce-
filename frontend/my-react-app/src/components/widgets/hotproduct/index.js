@@ -12,18 +12,26 @@ const HotProduct = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // Hook điều hướng
   const location = useLocation(); 
   const navigate = useNavigate(); 
-  
-  // Hook giỏ hàng
   const { fetchCartCount } = useCart(); 
 
-  // --- CẤU HÌNH SỐ LƯỢNG ---
   const ITEMS_PER_BATCH = 8; 
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_BATCH);
 
-  // Hàm trộn mảng (Shuffle)
+  // 👇 1. LOGIC TÍNH GIÁ KHUYẾN MÃI
+  const getDiscountedPrice = (product) => {
+    const promo = product.promotion;
+    if (!promo || promo.status !== "ACTIVE") return null;
+
+    if (promo.discountType === "PERCENTAGE") {
+      return product.price - (product.price * promo.discountValue) / 100;
+    } else if (promo.discountType === "FIXED_AMOUNT") {
+      return Math.max(0, product.price - promo.discountValue);
+    }
+    return null;
+  };
+
   const shuffleArray = (array) => {
     let currentIndex = array.length, randomIndex;
     while (currentIndex !== 0) {
@@ -43,7 +51,6 @@ const HotProduct = () => {
         const data = res.data; 
         const allProducts = Array.isArray(data) ? data : data.data || [];
         
-        // Trộn sản phẩm
         const shuffledList = shuffleArray([...allProducts]);
         setProducts(shuffledList);
 
@@ -57,11 +64,8 @@ const HotProduct = () => {
     fetchProducts();
   }, []);
 
-  // --- XỬ LÝ THÊM VÀO GIỎ ---
   const handleAddToCart = async (productId) => {
     const token = localStorage.getItem("token"); 
-    
-    // 1. Kiểm tra đăng nhập
     if (!token) { 
       const confirmLogin = window.confirm("Vui lòng đăng nhập để thêm vào giỏ hàng. Bạn có muốn đăng nhập ngay không?");
       if (confirmLogin) {
@@ -70,7 +74,6 @@ const HotProduct = () => {
       return; 
     }
 
-    // 2. Logic thêm vào giỏ
     try {
       await addToCart(productId, 1); 
       fetchCartCount(); 
@@ -91,7 +94,6 @@ const HotProduct = () => {
     if (section) section.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // --- LOGIC LINK SẢN PHẨM ---
   const getProductLink = (id) => {
     const isCustomerPage = location.pathname.includes("/customer");
     if (isCustomerPage) {
@@ -100,22 +102,15 @@ const HotProduct = () => {
     return ROUTERS.USER.PRODUCTDETAIL.replace(":id", id);
   };
 
-  // --- 👇 HÀM MỚI: LẤY ẢNH ĐẠI DIỆN TỪ DANH SÁCH ẢNH ---
   const getProductImage = (item) => {
-    // 1. Nếu có danh sách ảnh và có ít nhất 1 ảnh -> Lấy ảnh đầu tiên
     if (item.images && item.images.length > 0) {
         const firstImg = item.images[0];
-        // firstImg có thể là object { urlImage: "..." } 
         const url = firstImg.urlImage || firstImg; 
         return `http://localhost:8080${url}`;
     }
-    
-    // 2. Fallback về trường cũ (nếu backend vẫn trả về)
     if (item.imageUrl) {
         return `http://localhost:8080${item.imageUrl}`;
     }
-
-    // 3. Ảnh mặc định nếu không có gì
     return "https://via.placeholder.com/300x300?text=No+Image";
   };
 
@@ -130,43 +125,68 @@ const HotProduct = () => {
         </div>
         
         <div className="product-grid">
-          {products.slice(0, visibleCount).map((item) => (
-            <div key={item.id} className="product-card">
-              <div className="product-card__image">
-                 {/* Link ảnh */}
-                 <Link to={getProductLink(item.id)}>
-                    {/* 👇 SỬA Ở ĐÂY: Dùng hàm getProductImage */}
-                    <img 
-                      src={getProductImage(item)} 
-                      alt={item.name} 
-                    />
-                 </Link>
-              </div>
+          {products.slice(0, visibleCount).map((item) => {
+            // 👇 2. TÍNH TOÁN DỮ LIỆU KHUYẾN MÃI CHO TỪNG ITEM
+            const discountedPrice = getDiscountedPrice(item);
+            const hasPromo = discountedPrice !== null;
 
-              <div className="product-card__content">
-                <h3 className="product-name">
-                  <Link to={getProductLink(item.id)}>
-                    {item.name}
-                  </Link>
-                </h3>
-                
-                <div className="product-price">
-                    {formatter(item.price)}
+            return (
+              <div key={item.id} className="product-card">
+                <div className="product-card__image">
+                   {/* 👇 3. HIỂN THỊ BADGE KHUYẾN MÃI */}
+                   {hasPromo && (
+                     <div className="promo-badge">
+                        {item.promotion.discountType === "PERCENTAGE" 
+                          ? `-${item.promotion.discountValue}%` 
+                          : `-${(item.promotion.discountValue / 1000).toLocaleString()}K`}
+                     </div>
+                   )}
+                   <Link to={getProductLink(item.id)}>
+                      <img 
+                        src={getProductImage(item)} 
+                        alt={item.name} 
+                      />
+                   </Link>
                 </div>
-                
-                <button 
-                    className="btn-add-cart"
-                    onClick={() => handleAddToCart(item.id)}
-                >
-                    <AiOutlineShoppingCart style={{marginRight: '5px'}}/>
-                    Thêm vào giỏ
-                </button>
+
+                <div className="product-card__content">
+                  <h3 className="product-name">
+                    <Link to={getProductLink(item.id)}>
+                      {item.name}
+                    </Link>
+                  </h3>
+                  
+                  {/* 👇 4. HIỂN THỊ GIÁ CŨ VÀ MỚI */}
+                  <div className="product-price-container" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                      {hasPromo ? (
+                        <>
+                          <span className="product-price discounted" style={{ color: '#d70018', fontWeight: 'bold', fontSize: '18px' }}>
+                            {formatter(discountedPrice)}
+                          </span>
+                          <span className="product-price original" style={{ textDecoration: 'line-through', color: '#999', fontSize: '14px' }}>
+                            {formatter(item.price)}
+                          </span>
+                        </>
+                      ) : (
+                        <div className="product-price" style={{ fontWeight: 'bold', color: '#333' }}>
+                          {formatter(item.price)}
+                        </div>
+                      )}
+                  </div>
+                  
+                  <button 
+                      className="btn-add-cart"
+                      onClick={() => handleAddToCart(item.id)}
+                  >
+                      <AiOutlineShoppingCart style={{marginRight: '5px'}}/>
+                      Thêm vào giỏ
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
-        {/* --- NÚT ĐIỀU HƯỚNG --- */}
         <div className="view-more-container">
             {visibleCount < products.length ? (
                 <button className="btn-view-more" onClick={handleLoadMore}>
@@ -180,7 +200,6 @@ const HotProduct = () => {
                 )
             )}
         </div>
-        
       </div>
     </section>
   );
