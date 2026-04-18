@@ -1,8 +1,10 @@
 // src/pages/admin/ordersPage/index.js
 import React, { useState, useEffect } from "react";
-import apiClient from "../../../api/axiosConfig"; // Sửa lại đường dẫn nếu cần
+import apiClient from "../../../api/axiosConfig";
 import OrderList from "./OrderList";
 import OrderDetailModal from "./OrderDetailModal";
+// console.log("OrderList:", OrderList);
+// console.log("OrderDetailModal:", OrderDetailModal);
 
 const OrdersPage = () => {
   const [orders, setOrders] = useState([]);
@@ -25,18 +27,15 @@ const OrdersPage = () => {
     try {
       setLoading(true);
       setError(null);
-      const url = `/orders/admin?status=${statusFilter}`;
-      const res = await apiClient.get(url);
-
+      const res = await apiClient.get(`/orders/admin?status=${statusFilter}`);
       if (Array.isArray(res.data)) {
-        const sortedOrders = res.data.sort((a, b) => b.id - a.id);
-        setOrders(sortedOrders);
+        setOrders(res.data.sort((a, b) => b.id - a.id));
       } else {
         setOrders([]);
         setError("Dữ liệu không hợp lệ");
       }
-    } catch (error) {
-      console.error("Lỗi tải đơn hàng:", error);
+    } catch (err) {
+      console.error("Lỗi tải đơn hàng:", err);
       setError("Không thể tải đơn hàng");
       setOrders([]);
     } finally {
@@ -64,13 +63,26 @@ const OrdersPage = () => {
       await apiClient.put(`/orders/${orderId}/status`, null, {
         params: { status: newStatus },
       });
-
-      alert("Cập nhật trạng thái thành công!");
+      alert("Cập nhật trạng thái đơn hàng thành công!");
       fetchOrders();
       handleCloseDetailModal();
     } catch (err) {
       console.error(err);
-      alert("Cập nhật thất bại!");
+      alert("Cập nhật trạng thái đơn hàng thất bại!");
+    }
+  };
+
+  const handleUpdatePaymentStatus = async (orderId, newPaymentStatus) => {
+    try {
+      await apiClient.put(`/orders/${orderId}/payment-status`, null, {
+        params: { paymentStatus: newPaymentStatus },
+      });
+      alert("Cập nhật trạng thái thanh toán thành công!");
+      fetchOrders();
+      handleCloseDetailModal();
+    } catch (err) {
+      console.error(err);
+      alert("Cập nhật trạng thái thanh toán thất bại!");
     }
   };
 
@@ -121,6 +133,7 @@ const OrdersPage = () => {
           order={selectedOrder}
           onClose={handleCloseDetailModal}
           onSaveStatus={handleUpdateStatus}
+          onSavePaymentStatus={handleUpdatePaymentStatus}
         />
       )}
     </div>

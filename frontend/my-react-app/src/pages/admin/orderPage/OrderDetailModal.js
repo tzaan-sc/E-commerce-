@@ -1,20 +1,28 @@
 // src/pages/admin/ordersPage/OrderDetailModal.js
 import React, { useState, useEffect } from "react";
 import { X, Save } from "lucide-react";
-import { formatOrderId, STATUS_STEPS, isOptionDisabled } from "./utils/constants";
+import {
+  formatOrderId,
+  STATUS_STEPS,
+  isOptionDisabled,
+  PAYMENT_STATUS_STEPS,
+  translatePaymentStatus,
+  getPaymentStatusClass,
+  translatePaymentMethod,
+  isPaymentOptionDisabled,
+} from "./utils/constants";
 
-const OrderDetailModal = ({ order, onClose, onSaveStatus }) => {
+const OrderDetailModal = ({ order, onClose, onSaveStatus, onSavePaymentStatus }) => {
   const [editingStatus, setEditingStatus] = useState(order.status);
+  const [editingPaymentStatus, setEditingPaymentStatus] = useState(order.paymentStatus);
 
   useEffect(() => {
     setEditingStatus(order.status);
+    setEditingPaymentStatus(order.paymentStatus);
   }, [order]);
 
-  const handleSave = () => {
-    onSaveStatus(order.id, editingStatus);
-  };
-
-  const isLocked = order.status === "COMPLETED" || order.status === "CANCELLED" || order.status === "DELIVERED";
+  const isLocked = ["COMPLETED", "CANCELLED", "DELIVERED"].includes(order.status);
+  const isPaymentLocked = order.paymentStatus === "REFUNDED";
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -23,6 +31,7 @@ const OrderDetailModal = ({ order, onClose, onSaveStatus }) => {
         onClick={(e) => e.stopPropagation()}
         style={{ maxWidth: "800px", width: "90%" }}
       >
+        {/* Header */}
         <div
           className="modal-header"
           style={{ borderBottom: "1px solid #eee", paddingBottom: "15px", marginBottom: "20px" }}
@@ -37,8 +46,11 @@ const OrderDetailModal = ({ order, onClose, onSaveStatus }) => {
           </button>
         </div>
 
+        {/* Body */}
         <div className="modal-body" style={{ maxHeight: "70vh", overflowY: "auto" }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", marginBottom: "20px" }}>
+
+            {/* Thông tin giao hàng */}
             <div style={{ flex: 1, minWidth: "300px" }}>
               <h4 style={{ marginBottom: "10px", color: "#555" }}>Thông tin giao hàng</h4>
               <p style={{ marginBottom: "5px" }}><strong>Người nhận:</strong> {order.customerName}</p>
@@ -49,8 +61,10 @@ const OrderDetailModal = ({ order, onClose, onSaveStatus }) => {
               )}
             </div>
 
+            {/* Cập nhật trạng thái */}
             <div className="status-update-box">
-              <h4>Cập nhật trạng thái</h4>
+              {/* Trạng thái đơn hàng */}
+              <h4>Cập nhật trạng thái đơn</h4>
               <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
                 <select
                   className="modal-select"
@@ -59,21 +73,20 @@ const OrderDetailModal = ({ order, onClose, onSaveStatus }) => {
                   style={{ flex: 1 }}
                   disabled={isLocked}
                 >
-                  {STATUS_STEPS.map((statusItem) => (
+                  {STATUS_STEPS.map((s) => (
                     <option
-                      key={statusItem.value}
-                      value={statusItem.value}
-                      disabled={isOptionDisabled(statusItem.value, order.status)}
-                      style={{ color: isOptionDisabled(statusItem.value, order.status) ? "#ccc" : "#000" }}
+                      key={s.value}
+                      value={s.value}
+                      disabled={isOptionDisabled(s.value, order.status)}
+                      style={{ color: isOptionDisabled(s.value, order.status) ? "#ccc" : "#000" }}
                     >
-                      {statusItem.label}
+                      {s.label}
                     </option>
                   ))}
                 </select>
-
                 <button
                   className="btn btn--primary"
-                  onClick={handleSave}
+                  onClick={() => onSaveStatus(order.id, editingStatus)}
                   style={{ whiteSpace: "nowrap" }}
                   disabled={isLocked}
                 >
@@ -81,12 +94,54 @@ const OrderDetailModal = ({ order, onClose, onSaveStatus }) => {
                 </button>
               </div>
 
-              <p style={{ marginTop: "15px", fontSize: "0.9em", color: "#666" }}>
+              {/* Trạng thái thanh toán */}
+              <h4 style={{ marginTop: "15px" }}>Cập nhật thanh toán</h4>
+              <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                <select
+                  className="modal-select"
+                  value={editingPaymentStatus}
+                  onChange={(e) => setEditingPaymentStatus(e.target.value)}
+                  style={{ flex: 1 }}
+                  disabled={isPaymentLocked}
+                >
+                  {PAYMENT_STATUS_STEPS.map((s) => (
+                    <option
+                      key={s.value}
+                      value={s.value}
+                      disabled={isPaymentOptionDisabled(s.value, order.paymentStatus)}
+                      style={{
+                        color: isPaymentOptionDisabled(s.value, order.paymentStatus) ? "#ccc" : "#000",
+                      }}
+                    >
+                      {s.label}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  className="btn btn--primary"
+                  onClick={() => onSavePaymentStatus(order.id, editingPaymentStatus)}
+                  style={{ whiteSpace: "nowrap" }}
+                  disabled={isPaymentLocked}
+                >
+                  <Save size={16} /> Lưu
+                </button>
+              </div>
+
+              {/* Badge thanh toán hiện tại */}
+              <p style={{ marginTop: "10px", fontSize: "0.9em" }}>
+                Thanh toán hiện tại:{" "}
+                <span className={`badge ${getPaymentStatusClass(order.paymentStatus)}`}>
+                  {translatePaymentStatus(order.paymentStatus)}
+                </span>
+              </p>
+
+              <p style={{ marginTop: "10px", fontSize: "0.9em", color: "#666" }}>
                 <strong>Ngày đặt:</strong> {new Date(order.createdAt).toLocaleString("vi-VN")}
               </p>
             </div>
           </div>
 
+          {/* Danh sách sản phẩm */}
           <h4 style={{ marginBottom: "10px", color: "#555" }}>Sản phẩm</h4>
           <table className="data-table" style={{ width: "100%", border: "1px solid #eee", tableLayout: "fixed" }}>
             <thead style={{ background: "#f3f4f6" }}>
@@ -111,10 +166,16 @@ const OrderDetailModal = ({ order, onClose, onSaveStatus }) => {
                             : "https://via.placeholder.com/50"
                         }
                         alt=""
-                        style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "4px", border: "1px solid #ddd" }}
+                        style={{
+                          width: "100%", height: "100%", objectFit: "cover",
+                          borderRadius: "4px", border: "1px solid #ddd",
+                        }}
                       />
                     </div>
-                    <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={item.productName}>
+                    <span
+                      style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+                      title={item.productName}
+                    >
                       {item.productName}
                     </span>
                   </td>
@@ -129,10 +190,14 @@ const OrderDetailModal = ({ order, onClose, onSaveStatus }) => {
           </table>
 
           <div style={{ marginTop: "20px", textAlign: "right", fontSize: "1.2rem" }}>
-            Tổng cộng: <span style={{ color: "#d32f2f", fontWeight: "bold" }}>{order.totalAmount?.toLocaleString("vi-VN")}đ</span>
+            Tổng cộng:{" "}
+            <span style={{ color: "#d32f2f", fontWeight: "bold" }}>
+              {order.totalAmount?.toLocaleString("vi-VN")}đ
+            </span>
           </div>
         </div>
 
+        {/* Footer */}
         <div className="modal-actions" style={{ marginTop: "20px", display: "flex", justifyContent: "flex-end" }}>
           <button className="btn-cancel" onClick={onClose}>Đóng</button>
         </div>
