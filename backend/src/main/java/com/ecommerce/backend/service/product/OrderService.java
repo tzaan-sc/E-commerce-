@@ -12,4 +12,5 @@ public interface OrderService {
     OrderDTO updateOrderStatus(Long orderId, String status);
     OrderDTO confirmReceived(String email, Long orderId); // User xác nhận đã nhận hàng
     OrderDTO confirmPayment(String email, Long orderId); // User xác nhận thanh toán VIETQR
+    OrderDTO updatePaymentStatus(Long orderId, String paymentStatus);//cap nhat trang thai thanh toan
 }

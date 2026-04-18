@@ -108,7 +108,7 @@ export const translatePaymentMethod = (method) => {
   if (!method) return "Không rõ";
   const map = {
     COD:          "COD",
-    VIETQR:      "VIETQR",
+    ONLINE:      "ONLINE",
   };
   return map[method.toUpperCase()] || method;
 };

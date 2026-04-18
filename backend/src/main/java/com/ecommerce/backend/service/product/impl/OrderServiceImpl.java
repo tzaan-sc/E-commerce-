@@ -14,6 +14,7 @@ import com.ecommerce.backend.service.product.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.ecommerce.backend.entity.product.PaymentStatus; // 👈 thêm dòng này
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -79,7 +80,9 @@ public class OrderServiceImpl implements OrderService {
 
         // Chỉ cho phép xác nhận khi đơn đang ở trạng thái DELIVERED
         if (!"DELIVERED".equalsIgnoreCase(order.getStatus())) {
-            throw new IllegalStateException("Chỉ có thể xác nhận nhận hàng khi đơn ở trạng thái 'Đã giao'. Trạng thái hiện tại: " + order.getStatus());
+            throw new IllegalStateException(
+                    "Chỉ có thể xác nhận nhận hàng khi đơn ở trạng thái 'Đã giao'. Trạng thái hiện tại: "
+                            + order.getStatus());
         }
 
         order.setStatus("COMPLETED");
@@ -146,6 +149,32 @@ public class OrderServiceImpl implements OrderService {
         return mapOrderToDTO(orderRepository.save(order));
     }
 
+    // cap nhat trang thai thanh toan
+    // NEWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+    @Override
+@Transactional
+public OrderDTO updatePaymentStatus(Long orderId, String paymentStatus) {
+    Order order = orderRepository.findById(orderId)
+            .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
+
+    String newStatus = paymentStatus.toUpperCase();
+
+    // Fix: dùng .name() thay vì .toUpperCase() vì getPaymentStatus() trả về enum
+    String currentStatus = order.getPaymentStatus() != null
+            ? order.getPaymentStatus().name() // ✅ thay .toUpperCase() bằng .name()
+            : "UNPAID";
+
+    if ("REFUNDED".equals(currentStatus)) {
+        throw new IllegalStateException("Đơn hàng đã hoàn tiền, không thể thay đổi trạng thái thanh toán.");
+    }
+    if ("PAID".equals(currentStatus) && "UNPAID".equals(newStatus)) {
+        throw new IllegalStateException("Không thể chuyển từ PAID về UNPAID.");
+    }
+
+    order.setPaymentStatus(PaymentStatus.valueOf(newStatus)); // dùng newStatus đã uppercase
+    return mapOrderToDTO(orderRepository.save(order));
+}
+
     @Override
     public List<OrderDTO> getAllOrdersForAdmin(String status) {
         List<Order> orders;
@@ -185,14 +214,18 @@ public class OrderServiceImpl implements OrderService {
                             .quantity(item.getQuantity())
                             .price(item.getPrice())
                             .imageUrl(productImageUrl)
-                            .productId(item.getProduct().getId()) // ⭐ THÊM DÒNG NÀY
+                            .productId(item.getProduct().getId())
                             .build();
                 })
                 .collect(Collectors.toList());
 
+        // 👇 Sửa đoạn này — thêm paymentStatus và note
         return OrderDTO.builder()
                 .id(order.getId())
                 .status(order.getStatus())
+                .paymentStatus(order.getPaymentStatus() != null 
+    ? order.getPaymentStatus().name() 
+    : "UNPAID")
                 .totalAmount(order.getTotalAmount())
                 .createdAt(order.getCreatedAt())
                 .items(itemDTOs)
@@ -201,6 +234,10 @@ public class OrderServiceImpl implements OrderService {
                 .phone(order.getPhone())
                 .shippingAddress(order.getShippingAddress())
                 .paymentMethod(order.getPaymentMethod())
+                .note(order.getNote()) // 👈
                 .build();
     }
 }
+
+
+

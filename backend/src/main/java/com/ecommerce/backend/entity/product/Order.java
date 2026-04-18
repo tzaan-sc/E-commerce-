@@ -18,29 +18,30 @@ import java.util.List;
 @Builder
 public class Order {
 
-//    @Id
-//    @GeneratedValue(strategy = GenerationType.IDENTITY)
-//    private Long id;
-//
-//    @Column(name = "customer_name")
-//    private String customerName;
-//
-//    @Column(name = "status")
-//    private String status;
-//
-//    @Column(name = "total_amount")
-//    private Double totalAmount;
-//
-//    // <-- SỬA: THÊM TRƯỜNG NÀY -->
-//    @CreationTimestamp
-//    private LocalDateTime createdAt;
-//
-//    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-//    @JsonManagedReference
-//    @ToString.Exclude
-//    private List<OrderItem> orderItems = new ArrayList<>();
-@Id
-@GeneratedValue(strategy = GenerationType.IDENTITY)
+    // @Id
+    // @GeneratedValue(strategy = GenerationType.IDENTITY)
+    // private Long id;
+    //
+    // @Column(name = "customer_name")
+    // private String customerName;
+    //
+    // @Column(name = "status")
+    // private String status;
+    //
+    // @Column(name = "total_amount")
+    // private Double totalAmount;
+    //
+    // // <-- SỬA: THÊM TRƯỜNG NÀY -->
+    // @CreationTimestamp
+    // private LocalDateTime createdAt;
+    //
+    // @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch =
+    // FetchType.EAGER)
+    // @JsonManagedReference
+    // @ToString.Exclude
+    // private List<OrderItem> orderItems = new ArrayList<>();
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column(name = "user_order_number")
     private Integer userOrderNumber;
@@ -60,6 +61,10 @@ public class Order {
 
     @Column(name = "total_amount")
     private Double totalAmount;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_status", length = 20)
+    private PaymentStatus paymentStatus = PaymentStatus.UNPAID; // 👈 default UNPAID luôn
 
     // Phương thức thanh toán: COD hoặc ONLINE
     @Column(name = "payment_method", length = 20)
@@ -83,6 +88,7 @@ public class Order {
     @JsonManagedReference
     @ToString.Exclude
     private List<OrderItem> orderItems = new ArrayList<>();
+
     public void addItem(OrderItem item) {
         if (item != null) {
             if (orderItems == null) {

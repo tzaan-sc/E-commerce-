@@ -12,25 +12,32 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/orders")
-@CrossOrigin(
-        origins = "*",
-        methods = {
-                RequestMethod.GET,
-                RequestMethod.POST,
-                RequestMethod.PATCH, // <-- Cho phép PATCH
-                RequestMethod.DELETE, // (Thêm luôn cho các hàm xóa sau này)
-                RequestMethod.PUT    // (Thêm luôn cho các hàm cập nhật sau này)
-        }
-)
+@CrossOrigin(origins = "*", methods = {
+        RequestMethod.GET,
+        RequestMethod.POST,
+        RequestMethod.PATCH, // <-- Cho phép PATCH
+        RequestMethod.DELETE, // (Thêm luôn cho các hàm xóa sau này)
+        RequestMethod.PUT // (Thêm luôn cho các hàm cập nhật sau này)
+})
 @RequiredArgsConstructor
 public class OrderController {
 
     private final OrderService orderService;
 
+
+    //cap nhat trang thai thanh toan **NEW
+    @PutMapping("/{orderId}/payment-status")
+    public ResponseEntity<OrderDTO> updatePaymentStatus(
+            @PathVariable Long orderId,
+            @RequestParam String paymentStatus) {
+        OrderDTO updatedOrder = orderService.updatePaymentStatus(orderId, paymentStatus);
+        return ResponseEntity.ok(updatedOrder);
+    }
+
+    //lấy danh sách đơn hàng của tôi
     @GetMapping
     public ResponseEntity<List<OrderDTO>> getMyOrders(
-            @AuthenticationPrincipal UserDetails userDetails
-    ) {
+            @AuthenticationPrincipal UserDetails userDetails) {
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
@@ -38,11 +45,12 @@ public class OrderController {
         List<OrderDTO> orders = orderService.getOrdersByUsername(username);
         return ResponseEntity.ok(orders);
     }
+
+    //lấy chi tiết đơn hàng
     @GetMapping("/{orderId}")
     public ResponseEntity<OrderDTO> getOrderDetail(
             @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable Long orderId
-    ) {
+            @PathVariable Long orderId) {
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
@@ -53,12 +61,12 @@ public class OrderController {
 
         return ResponseEntity.ok(orderDetail);
     }
-    //huy don
+
+    // huy don
     @PatchMapping("/{orderId}/cancel") // Dùng PATCH để cập nhật 1 phần
     public ResponseEntity<OrderDTO> cancelOrder(
             @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable Long orderId
-    ) {
+            @PathVariable Long orderId) {
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
@@ -67,12 +75,12 @@ public class OrderController {
         OrderDTO updatedOrder = orderService.cancelOrder(username, orderId);
         return ResponseEntity.ok(updatedOrder);
     }
+
     // Xác nhận đã nhận hàng (DELIVERED → COMPLETED)
     @PutMapping("/{orderId}/confirm-received")
     public ResponseEntity<OrderDTO> confirmReceived(
             @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable Long orderId
-    ) {
+            @PathVariable Long orderId) {
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
@@ -80,43 +88,48 @@ public class OrderController {
         OrderDTO updatedOrder = orderService.confirmReceived(username, orderId);
         return ResponseEntity.ok(updatedOrder);
     }
+
     // Xác nhận thanh toán VIETQR (Bỏ qua - Thay thế bằng Webhook của SePay)
     /*
-    @PutMapping("/{orderId}/confirm-payment")
-    public ResponseEntity<OrderDTO> confirmPayment(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable Long orderId
-    ) {
-        if (userDetails == null) {
-            return ResponseEntity.status(401).build();
-        }
-        String username = userDetails.getUsername();
-        OrderDTO updatedOrder = orderService.confirmPayment(username, orderId);
-        return ResponseEntity.ok(updatedOrder);
-    }
-    */
+     * @PutMapping("/{orderId}/confirm-payment")
+     * public ResponseEntity<OrderDTO> confirmPayment(
+     * 
+     * @AuthenticationPrincipal UserDetails userDetails,
+     * 
+     * @PathVariable Long orderId
+     * ) {
+     * if (userDetails == null) {
+     * return ResponseEntity.status(401).build();
+     * }
+     * String username = userDetails.getUsername();
+     * OrderDTO updatedOrder = orderService.confirmPayment(username, orderId);
+     * return ResponseEntity.ok(updatedOrder);
+     * }
+     */
+    //lấy danh sách tất cả đơn hàng cho admin
     @GetMapping("/admin")
     public ResponseEntity<List<OrderDTO>> getAllOrdersForAdmin(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestParam(defaultValue = "all") String status
-    ) {
+            @RequestParam(defaultValue = "all") String status) {
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
 
         // (Tuỳ chọn) Kiểm tra quyền ADMIN chặt chẽ hơn tại đây nếu muốn
-        // if (!userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
-        //    return ResponseEntity.status(403).build();
+        // if (!userDetails.getAuthorities().stream().anyMatch(a ->
+        // a.getAuthority().equals("ROLE_ADMIN"))) {
+        // return ResponseEntity.status(403).build();
         // }
 
         List<OrderDTO> orders = orderService.getAllOrdersForAdmin(status);
         return ResponseEntity.ok(orders);
     }
+
+    //cập nhật trạng thái đơn hàng
     @PutMapping("/{orderId}/status")
     public ResponseEntity<OrderDTO> updateOrderStatus(
             @PathVariable Long orderId,
-            @RequestParam String status
-    ) {
+            @RequestParam String status) {
         // Gọi service
         OrderDTO updatedOrder = orderService.updateOrderStatus(orderId, status);
         return ResponseEntity.ok(updatedOrder);

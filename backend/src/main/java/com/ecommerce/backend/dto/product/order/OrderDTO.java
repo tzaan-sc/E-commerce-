@@ -16,11 +16,13 @@ public class OrderDTO {
     private Long id;
     private Integer userOrderNumber;
     private String status;
+    private String paymentStatus;   // 👈 thêm
+    private String paymentMethod;
     private Double totalAmount;
-    private LocalDateTime createdAt; // <-- SỬA: THÊM TRƯỜNG NÀY
+    private LocalDateTime createdAt;
     private List<OrderItemDTO> items;
-    private String customerName;    // Tên (Lấy từ order.getCustomerName())
-    private String phone;           // SĐT (Lấy từ order.getPhone())
+    private String customerName;
+    private String phone;
     private String shippingAddress;
-    private String paymentMethod;   // Phương thức thanh toán: COD hoặc ONLINE
+    private String note;            // 👈 thêm
 }
