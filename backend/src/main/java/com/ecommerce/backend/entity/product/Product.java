@@ -44,7 +44,7 @@ public class Product {
     private Promotion promotion;
 
     // Thông số kỹ thuật (Lưu dưới dạng Embeddable hoặc JSON)
-    @Embedded
+    @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private ProductSpecification specification;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)

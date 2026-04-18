@@ -36,31 +36,58 @@ const ProductsPage = () => {
 
   const showToast = (message, type = "success") => setToast({ message, type });
 
-  // ✅ HÀM LẤY SẢN PHẨM: Đã chỉnh sửa để nhận cả List và Page
-  // ✅ HÀM LẤY SẢN PHẨM: Đọc cấu trúc Page { content: [], totalPages: X }
+  // ✅ CHỨC NĂNG MỚI: NHẬP FILE EXCEL
+  const handleImportExcel = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Kiểm tra nhanh định dạng ở client
+    const fileName = file.name.toLowerCase();
+    if (!fileName.endsWith('.xlsx') && !fileName.endsWith('.xls')) {
+      showToast("Vui lòng chọn file Excel (.xlsx hoặc .xls)", "error");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    showToast("Đang tải file và xử lý dữ liệu...", "info");
+
+    try {
+      const response = await apiClient.post("/products/import", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+
+      if (response.data.status === "success" || response.status === 200) {
+        showToast(response.data.message || "✅ Nhập sản phẩm thành công!");
+        fetchProducts(); // Tải lại danh sách sau khi nhập
+      }
+    } catch (error) {
+      console.error("Lỗi Import:", error);
+      const errorMsg = error.response?.data?.message || "❌ Lỗi khi nhập file Excel!";
+      showToast(errorMsg, "error");
+    } finally {
+      // Reset input file để có thể chọn lại chính file đó nếu cần
+      event.target.value = "";
+    }
+  };
+
+  // ✅ HÀM LẤY SẢN PHẨM
   const fetchProducts = async () => {
     try {
-      // Chỉ gửi params nếu có giá trị thực sự (tránh gửi chuỗi rỗng "" khiến Backend lọc sai)
-      const cleanParams = {
-        page: page,
-        size: 10
-      };
+      const cleanParams = { page: page, size: 10 };
       if (filters.search) cleanParams.search = filters.search;
       if (filters.brandId) cleanParams.brandId = filters.brandId;
       if (filters.purposeId) cleanParams.purposeId = filters.purposeId;
       if (filters.status) cleanParams.status = filters.status;
 
       const prodRes = await apiClient.get("/products", { params: cleanParams });
-      
       const data = prodRes.data;
-      console.log("Check data Server trả về:", data);
 
       if (data && data.content) {
-        // Nếu Backend dùng Pageable (Log Hibernate của bạn đang dùng cái này)
         setProducts(data.content); 
         setTotalPages(data.totalPages);
       } else if (Array.isArray(data)) {
-        // Nếu Backend trả về mảng trực tiếp
         setProducts(data);
         setTotalPages(1);
       } else {
@@ -72,7 +99,7 @@ const ProductsPage = () => {
     }
   };
 
-  // ✅ HÀM LẤY OPTIONS: Lấy thương hiệu, mục đích, cấu hình...
+  // ✅ HÀM LẤY OPTIONS
   const fetchHardwareOptions = async () => {
     try {
       const hwRes = await apiClient.get("/hardware-options/all");
@@ -94,16 +121,9 @@ const ProductsPage = () => {
     }
   };
 
-  // ✅ THEO DÕI THAY ĐỔI: Chạy khi vào trang và khi đổi Page/Filter
-  useEffect(() => {
-    fetchHardwareOptions();
-  }, []);
+  useEffect(() => { fetchHardwareOptions(); }, []);
+  useEffect(() => { fetchProducts(); }, [page, filters]); 
 
-  useEffect(() => {
-    fetchProducts();
-  }, [page, filters]); 
-
-  // Xử lý Xóa sản phẩm
   const handleDelete = async (id) => {
     if (!window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này?")) return;
     try {
@@ -115,7 +135,6 @@ const ProductsPage = () => {
     }
   };
 
-  // Xử lý Lưu sản phẩm (Thêm/Sửa)
   const handleSaveProduct = async (formData) => {
     try {
       if (formData.id) {
@@ -133,7 +152,6 @@ const ProductsPage = () => {
     }
   };
 
-  // ✅ HÀM XỬ LÝ FILTER: Cập nhật filter và đưa về trang 0
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
     setPage(0); 
@@ -157,7 +175,9 @@ const ProductsPage = () => {
           onEdit={(p) => { setSelectedProduct(p); setView("form"); }}
           onVariants={(p) => { setSelectedProduct(p); setView("variants"); }}
           onDelete={handleDelete}
-          onImport={() => showToast("Chức năng Import đang phát triển", "info")}
+          
+          // ✅ ĐÃ CẬP NHẬT HÀM IMPORT Ở ĐÂY
+          onImport={handleImportExcel}
           
           currentPage={page}
           totalPages={totalPages}
