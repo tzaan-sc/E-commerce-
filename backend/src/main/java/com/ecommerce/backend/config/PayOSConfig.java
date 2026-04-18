@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import vn.payos.PayOS;
 
-@Configuration
+//@Configuration
 public class PayOSConfig {
 
     // Lấy thông tin từ file cấu hình (application.properties/yml)

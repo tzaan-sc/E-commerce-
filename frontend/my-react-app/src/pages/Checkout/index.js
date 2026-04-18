@@ -104,9 +104,9 @@ const CheckoutPage = () => {
       const createdOrder = res.data;
       if (paymentMethod === 'VIETQR') {
          navigate(`/payment/qr?orderId=${createdOrder.id}&amount=${createdOrder.totalAmount}`);
-      } else if (paymentMethod === 'PAYOS') {
-         const payosRes = await createPayosLink(createdOrder.id);
-         window.location.href = payosRes.data.checkoutUrl;
+      // } else if (paymentMethod === 'PAYOS') {
+      //    const payosRes = await createPayosLink(createdOrder.id);
+      //    window.location.href = payosRes.data.checkoutUrl;
       } else {
          setStep('success');
       }
@@ -190,13 +190,13 @@ const CheckoutPage = () => {
                         <div style={{fontSize:'13px', color:'#6b7280'}}>Quét mã QR qua ứng dụng ngân hàng để thanh toán</div>
                     </div>
                 </label>
-                <label style={{display:'flex', alignItems:'center', gap:'10px', cursor:'pointer', padding:'10px', borderRadius:'6px', border: paymentMethod === 'PAYOS' ? '2px solid #2563eb' : '1px solid #d1d5db', background: paymentMethod === 'PAYOS' ? '#eff6ff' : '#fff', marginTop: '10px'}}>
+                {/* <label style={{display:'flex', alignItems:'center', gap:'10px', cursor:'pointer', padding:'10px', borderRadius:'6px', border: paymentMethod === 'PAYOS' ? '2px solid #2563eb' : '1px solid #d1d5db', background: paymentMethod === 'PAYOS' ? '#eff6ff' : '#fff', marginTop: '10px'}}>
                     <input type="radio" name="paymentMethod" value="PAYOS" checked={paymentMethod === 'PAYOS'} onChange={(e) => setPaymentMethod(e.target.value)} />
                     <div>
                         <div style={{fontWeight:'600', color:'#111827'}}>💳 Thanh toán tự động cực nhanh (PayOS)</div>
                         <div style={{fontSize:'13px', color:'#6b7280'}}>Xác nhận ngay lập tức, hỗ trợ mọi ngân hàng</div>
                     </div>
-                </label>
+                </label> */}
             </div>
 
             <h3>Sản phẩm ({displayItems?.length})</h3>

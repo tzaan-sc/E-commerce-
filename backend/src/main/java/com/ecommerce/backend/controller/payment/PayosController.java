@@ -11,8 +11,8 @@ import vn.payos.model.webhooks.Webhook;
 import java.util.HashMap;
 import java.util.Map;
 
-@RestController
-@RequestMapping("/api/payments")
+//@RestController
+//@RequestMapping("/api/payments")
 @CrossOrigin("*")
 @RequiredArgsConstructor
 public class PayosController {

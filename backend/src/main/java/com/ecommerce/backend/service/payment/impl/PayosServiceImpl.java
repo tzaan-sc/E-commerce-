@@ -16,7 +16,7 @@ import vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse;
 import vn.payos.model.webhooks.Webhook;
 import vn.payos.model.webhooks.WebhookData;
 
-@Service
+//@Service
 @RequiredArgsConstructor
 @Slf4j
 public class PayosServiceImpl implements PayosService {
