@@ -4,6 +4,8 @@ import {memo} from "react"
 import { Outlet } from 'react-router-dom'; // 👈 IMPORT NÀY
 import Header from "../Header";
 import Footer from "../Footer";
+import ChatWidget from "components/user/ChatWiget";
+
 
 
 // Bỏ prop {children, ...props}
@@ -15,7 +17,7 @@ const CustomerLayout = () =>{
             <main className="customer-home">
                  <Outlet /> 
             </main>
-            
+             <ChatWidget />
             <Footer />
         </div>
     );
