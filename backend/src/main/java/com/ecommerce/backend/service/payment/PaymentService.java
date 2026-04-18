@@ -94,14 +94,25 @@ public class PaymentService {
 
         // Guard: đơn đã ở trạng thái cuối → bỏ qua, không làm gì
         if (TERMINAL_STATUSES.contains(currentStatus)) {
-            log.warn("Bỏ qua Webhook: Đơn {} đã ở trạng thái cuối '{}', không thể chuyển sang '{}'",
+            log.warn("Bỏ qua Webhook: Đơn {} đã ở trạng thái cuối '{}', không thể xử lý webhook '{}'",
                     orderId, currentStatus, reportedStatus);
             return;
         }
 
         String normalizedStatus = reportedStatus.toUpperCase();
-        order.setStatus(normalizedStatus);
+        
+        // Cập nhật trạng thái thanh toán và trạng thái đơn hàng thay vì gán trực tiếp PAID vào Order Status
+        if ("PAID".equals(normalizedStatus)) {
+            order.setPaymentStatus(com.ecommerce.backend.entity.product.PaymentStatus.PAID);
+            order.setStatus("CONFIRMED");
+            log.info("Đơn hàng {} đã được thanh toán, cập nhật trạng thái đơn thành CONFIRMED.", orderId);
+        } else if ("FAILED".equals(normalizedStatus)) {
+            order.setStatus("CANCELLED");
+            log.info("Đơn hàng {} thanh toán thất bại, cập nhật trạng thái đơn thành CANCELLED.", orderId);
+        } else {
+            order.setStatus(normalizedStatus);
+            log.info("Đơn hàng {} đã được cập nhật sang trạng thái: {}", orderId, normalizedStatus);
+        }   
         orderRepository.save(order);
-        log.info("Đơn hàng {} đã được cập nhật sang trạng thái: {}", orderId, normalizedStatus);
-    }
+}
 }

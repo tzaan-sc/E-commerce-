@@ -24,7 +24,7 @@ import ForgotPasswordPage from "./pages/Auth/ForgotPassword";
 import ResetPasswordPage from "./pages/Auth/ForgotPassword"; 
 import ProtectedRoute from "./components/ProtectedRoute"; // 1. Import cái này vào
 import QRPaymentPage from "./components/page/qrPaymentPage";
-import PayOSStatusPage from "./components/page/payosStatusPage";
+
 // ROUTER CHÍNH
 // ========================
 const RouterCustom = () => {
@@ -42,8 +42,7 @@ const RouterCustom = () => {
         <Route path={ROUTERS.USER.FORGOTPASSWORD} element={<ForgotPasswordPage />}/>
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/payment/qr" element={<ProtectedRoute roles={["CUSTOMER"]}><QRPaymentPage /></ProtectedRoute>} />
-        {/* <Route path="/payment/payos/success" element={<ProtectedRoute roles={["CUSTOMER"]}><PayOSStatusPage /></ProtectedRoute>} />
-        <Route path="/payment/payos/cancel" element={<ProtectedRoute roles={["CUSTOMER"]}><PayOSStatusPage /></ProtectedRoute>} /> */}
+
         {/* <Route path={ROUTERS.USER.BRAND} element={<BrandProductsPage />} />
         <Route path={ROUTERS.USER.USAGE_PURPOSE} element={<UsagePurposeProductsPage />} /> */}
       </Route>
