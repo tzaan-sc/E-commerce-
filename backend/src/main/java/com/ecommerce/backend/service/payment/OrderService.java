@@ -2,6 +2,8 @@ package com.ecommerce.backend.service.payment;
 
 import com.ecommerce.backend.dto.order.CreateOrderRequest;
 import com.ecommerce.backend.dto.order.OrderResponse;
+import com.ecommerce.backend.dto.product.order.OrderDTO;
+
 import java.util.List;
 
 /**
@@ -49,4 +51,6 @@ public interface OrderService {
      * @param orderId ID đơn hàng
      */
     OrderResponse cancelOrder(String email, Long orderId);
+    OrderDTO switchToCod(Long orderId);
+
 }

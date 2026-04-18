@@ -24,8 +24,14 @@ public class OrderController {
 
     private final OrderService orderService;
 
+    // đổi sang COD
+    @PutMapping("/{orderId}/switch-to-cod")
+    public ResponseEntity<OrderDTO> switchToCod(@PathVariable Long orderId) {
+        OrderDTO updatedOrder = orderService.switchToCod(orderId);
+        return ResponseEntity.ok(updatedOrder);
+    }
 
-    //cap nhat trang thai thanh toan **NEW
+    // cap nhat trang thai thanh toan **NEW
     @PutMapping("/{orderId}/payment-status")
     public ResponseEntity<OrderDTO> updatePaymentStatus(
             @PathVariable Long orderId,
@@ -34,7 +40,7 @@ public class OrderController {
         return ResponseEntity.ok(updatedOrder);
     }
 
-    //lấy danh sách đơn hàng của tôi
+    // lấy danh sách đơn hàng của tôi
     @GetMapping
     public ResponseEntity<List<OrderDTO>> getMyOrders(
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -46,7 +52,7 @@ public class OrderController {
         return ResponseEntity.ok(orders);
     }
 
-    //lấy chi tiết đơn hàng
+    // lấy chi tiết đơn hàng
     @GetMapping("/{orderId}")
     public ResponseEntity<OrderDTO> getOrderDetail(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -88,7 +94,8 @@ public class OrderController {
         OrderDTO updatedOrder = orderService.confirmReceived(username, orderId);
         return ResponseEntity.ok(updatedOrder);
     }
-    //lấy danh sách tất cả đơn hàng cho admin
+
+    // lấy danh sách tất cả đơn hàng cho admin
     @GetMapping("/admin")
     public ResponseEntity<List<OrderDTO>> getAllOrdersForAdmin(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -107,7 +114,7 @@ public class OrderController {
         return ResponseEntity.ok(orders);
     }
 
-    //cập nhật trạng thái đơn hàng
+    // cập nhật trạng thái đơn hàng
     @PutMapping("/{orderId}/status")
     public ResponseEntity<OrderDTO> updateOrderStatus(
             @PathVariable Long orderId,

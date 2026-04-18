@@ -2,6 +2,8 @@ package com.ecommerce.backend.repository.product;
 
 import com.ecommerce.backend.entity.auth.User;
 import com.ecommerce.backend.entity.product.Order;
+import com.ecommerce.backend.entity.product.PaymentStatus;
+
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -9,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -43,4 +46,19 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
         """)
     boolean hasPurchased(@Param("userId") Long userId,
                          @Param("productId") Long productId);
+
+@Lock(LockModeType.PESSIMISTIC_WRITE)
+@Query("""
+    SELECT o FROM Order o
+    WHERE o.status = :status
+      AND o.paymentStatus = :paymentStatus
+      AND o.paymentMethod = :paymentMethod
+      AND o.createdAt < :cutoff
+""")
+List<Order> findAbandonedVietQROrders(
+        @Param("status") String status,
+        @Param("paymentStatus") PaymentStatus paymentStatus,
+        @Param("paymentMethod") String paymentMethod,
+        @Param("cutoff") LocalDateTime cutoff
+);
 }

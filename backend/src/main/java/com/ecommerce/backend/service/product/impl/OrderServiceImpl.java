@@ -36,6 +36,25 @@ public class OrderServiceImpl implements OrderService {
         return orders.stream().map(this::mapOrderToDTO).collect(Collectors.toList());
     }
 
+    @Override
+@Transactional
+public OrderDTO switchToCod(Long orderId) {
+    Order order = orderRepository.findById(orderId)
+            .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
+
+    // Chỉ cho đổi khi đơn còn PENDING + UNPAID
+    if (!"PENDING".equalsIgnoreCase(order.getStatus())) {
+        throw new IllegalStateException("Không thể đổi phương thức thanh toán ở trạng thái: " + order.getStatus());
+    }
+    if (order.getPaymentStatus() != null && 
+        order.getPaymentStatus() != PaymentStatus.UNPAID) {
+        throw new IllegalStateException("Đơn hàng đã được thanh toán, không thể đổi sang COD.");
+    }
+
+    order.setPaymentMethod("COD");
+    order.setStatus("CONFIRMED"); // Xác nhận luôn vì khách đã chọn COD
+    return mapOrderToDTO(orderRepository.save(order));
+}
     // --- KHÁCH HÀNG HỦY ĐƠN ---
     @Override
     @Transactional

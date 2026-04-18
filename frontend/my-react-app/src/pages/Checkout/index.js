@@ -184,7 +184,7 @@ const CheckoutPage = () => {
                 <label style={{display:'flex', alignItems:'center', gap:'10px', cursor:'pointer', padding:'10px', borderRadius:'6px', border: paymentMethod === 'VIETQR' ? '2px solid #2563eb' : '1px solid #d1d5db', background: paymentMethod === 'VIETQR' ? '#eff6ff' : '#fff', marginTop: '10px'}}>
                     <input type="radio" name="paymentMethod" value="VIETQR" checked={paymentMethod === 'VIETQR'} onChange={(e) => setPaymentMethod(e.target.value)} />
                     <div>
-                        <div style={{fontWeight:'600', color:'#111827'}}>📱 Thanh toán qua quét mã QR (VIETQR Cũ)</div>
+                        <div style={{fontWeight:'600', color:'#111827'}}>📱 Thanh toán qua quét mã QR (VIETQR)</div>
                         <div style={{fontSize:'13px', color:'#6b7280'}}>Quét mã QR qua ứng dụng ngân hàng để thanh toán</div>
                     </div>
                 </label>
