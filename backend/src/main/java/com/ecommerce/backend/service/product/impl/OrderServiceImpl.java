@@ -37,24 +37,25 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-@Transactional
-public OrderDTO switchToCod(Long orderId) {
-    Order order = orderRepository.findById(orderId)
-            .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
+    @Transactional
+    public OrderDTO switchToCod(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
 
-    // Chỉ cho đổi khi đơn còn PENDING + UNPAID
-    if (!"PENDING".equalsIgnoreCase(order.getStatus())) {
-        throw new IllegalStateException("Không thể đổi phương thức thanh toán ở trạng thái: " + order.getStatus());
-    }
-    if (order.getPaymentStatus() != null && 
-        order.getPaymentStatus() != PaymentStatus.UNPAID) {
-        throw new IllegalStateException("Đơn hàng đã được thanh toán, không thể đổi sang COD.");
+        // Chỉ cho đổi khi đơn còn PENDING + UNPAID
+        if (!"PENDING".equalsIgnoreCase(order.getStatus())) {
+            throw new IllegalStateException("Không thể đổi phương thức thanh toán ở trạng thái: " + order.getStatus());
+        }
+        if (order.getPaymentStatus() != null &&
+                order.getPaymentStatus() != PaymentStatus.UNPAID) {
+            throw new IllegalStateException("Đơn hàng đã được thanh toán, không thể đổi sang COD.");
+        }
+
+        order.setPaymentMethod("COD");
+        order.setStatus("CONFIRMED"); // Xác nhận luôn vì khách đã chọn COD
+        return mapOrderToDTO(orderRepository.save(order));
     }
 
-    order.setPaymentMethod("COD");
-    order.setStatus("CONFIRMED"); // Xác nhận luôn vì khách đã chọn COD
-    return mapOrderToDTO(orderRepository.save(order));
-}
     // --- KHÁCH HÀNG HỦY ĐƠN ---
     @Override
     @Transactional
@@ -92,12 +93,10 @@ public OrderDTO switchToCod(Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
 
-        // Check quyền sở hữu
         if (order.getUser() == null || !order.getUser().getId().equals(user.getId())) {
             throw new SecurityException("Bạn không có quyền thao tác đơn hàng này");
         }
 
-        // Chỉ cho phép xác nhận khi đơn đang ở trạng thái DELIVERED
         if (!"DELIVERED".equalsIgnoreCase(order.getStatus())) {
             throw new IllegalStateException(
                     "Chỉ có thể xác nhận nhận hàng khi đơn ở trạng thái 'Đã giao'. Trạng thái hiện tại: "
@@ -105,6 +104,13 @@ public OrderDTO switchToCod(Long orderId) {
         }
 
         order.setStatus("COMPLETED");
+
+        // 👇 Nếu là COD thì set PAID luôn vì khách vừa trả tiền mặt khi nhận hàng
+        if ("COD".equalsIgnoreCase(order.getPaymentMethod())
+                && order.getPaymentStatus() == PaymentStatus.UNPAID) {
+            order.setPaymentStatus(PaymentStatus.PAID);
+        }
+
         return mapOrderToDTO(orderRepository.save(order));
     }
 
@@ -171,28 +177,28 @@ public OrderDTO switchToCod(Long orderId) {
     // cap nhat trang thai thanh toan
     // NEWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
     @Override
-@Transactional
-public OrderDTO updatePaymentStatus(Long orderId, String paymentStatus) {
-    Order order = orderRepository.findById(orderId)
-            .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
+    @Transactional
+    public OrderDTO updatePaymentStatus(Long orderId, String paymentStatus) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
 
-    String newStatus = paymentStatus.toUpperCase();
+        String newStatus = paymentStatus.toUpperCase();
 
-    // Fix: dùng .name() thay vì .toUpperCase() vì getPaymentStatus() trả về enum
-    String currentStatus = order.getPaymentStatus() != null
-            ? order.getPaymentStatus().name() // ✅ thay .toUpperCase() bằng .name()
-            : "UNPAID";
+        // Fix: dùng .name() thay vì .toUpperCase() vì getPaymentStatus() trả về enum
+        String currentStatus = order.getPaymentStatus() != null
+                ? order.getPaymentStatus().name() // ✅ thay .toUpperCase() bằng .name()
+                : "UNPAID";
 
-    if ("REFUNDED".equals(currentStatus)) {
-        throw new IllegalStateException("Đơn hàng đã hoàn tiền, không thể thay đổi trạng thái thanh toán.");
+        if ("REFUNDED".equals(currentStatus)) {
+            throw new IllegalStateException("Đơn hàng đã hoàn tiền, không thể thay đổi trạng thái thanh toán.");
+        }
+        if ("PAID".equals(currentStatus) && "UNPAID".equals(newStatus)) {
+            throw new IllegalStateException("Không thể chuyển từ PAID về UNPAID.");
+        }
+
+        order.setPaymentStatus(PaymentStatus.valueOf(newStatus)); // dùng newStatus đã uppercase
+        return mapOrderToDTO(orderRepository.save(order));
     }
-    if ("PAID".equals(currentStatus) && "UNPAID".equals(newStatus)) {
-        throw new IllegalStateException("Không thể chuyển từ PAID về UNPAID.");
-    }
-
-    order.setPaymentStatus(PaymentStatus.valueOf(newStatus)); // dùng newStatus đã uppercase
-    return mapOrderToDTO(orderRepository.save(order));
-}
 
     @Override
     public List<OrderDTO> getAllOrdersForAdmin(String status) {
@@ -242,9 +248,9 @@ public OrderDTO updatePaymentStatus(Long orderId, String paymentStatus) {
         return OrderDTO.builder()
                 .id(order.getId())
                 .status(order.getStatus())
-                .paymentStatus(order.getPaymentStatus() != null 
-    ? order.getPaymentStatus().name() 
-    : "UNPAID")
+                .paymentStatus(order.getPaymentStatus() != null
+                        ? order.getPaymentStatus().name()
+                        : "UNPAID")
                 .totalAmount(order.getTotalAmount())
                 .createdAt(order.getCreatedAt())
                 .items(itemDTOs)
@@ -257,6 +263,3 @@ public OrderDTO updatePaymentStatus(Long orderId, String paymentStatus) {
                 .build();
     }
 }
-
-
-

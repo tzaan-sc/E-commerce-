@@ -1,19 +1,19 @@
 // src/pages/admin/ordersPage/utils/constants.js
 
 export const STATUS_STEPS = [
-  { value: "PENDING",     label: "Chờ xác nhận", step: 0 },
-  { value: "PROCESSING",  label: "Đang xử lý",   step: 1 },
-  { value: "SHIPPING",    label: "Đang giao",     step: 2 },
-  { value: "DELIVERED",   label: "Đã giao",       step: 3 },
-  { value: "COMPLETED",   label: "Hoàn thành",    step: 4 },
-  { value: "CANCELLED",   label: "Đã hủy",        step: 5 },
+  { value: "PENDING",    label: "Chờ xác nhận", step: 0 },
+  { value: "CONFIRMED",  label: "Đã xác nhận", step: 1 },
+  { value: "PROCESSING", label: "Đang xử lý",   step: 2 },
+  { value: "SHIPPING",   label: "Đang giao",    step: 3 },
+  { value: "DELIVERED",  label: "Đã giao",      step: 4 },
+  { value: "COMPLETED",  label: "Hoàn thành",   step: 5 },
+  { value: "CANCELLED",  label: "Đã hủy",       step: 6 },
 ];
 
 // ─── Locked statuses: trạng thái cuối, admin không được chỉnh nữa ──────────
 const LOCKED_STATUSES = ["COMPLETED", "CANCELLED", "DELIVERED"];
 
 export const isOptionDisabled = (optionValue, currentStatus) => {
-  // Bug 1 fix: đồng bộ với isLocked trong modal — DELIVERED cũng là trạng thái khóa
   if (LOCKED_STATUSES.includes(currentStatus)) {
     return true;
   }
@@ -22,14 +22,16 @@ export const isOptionDisabled = (optionValue, currentStatus) => {
   if (optionValue === "COMPLETED") {
     return true;
   }
+   if (optionValue === "DELIVERED") {
+    return true;
+  }
 
   const currentStepObj = STATUS_STEPS.find((s) => s.value === currentStatus);
   const optionStepObj  = STATUS_STEPS.find((s) => s.value === optionValue);
 
   if (!currentStepObj || !optionStepObj) return false;
 
-  // Bug 2 fix: CANCELLED chỉ cho phép khi đơn chưa vào LOCKED_STATUSES (đã xử lý ở trên)
-  // Không cần early-return vô điều kiện nữa — vẫn cho phép CANCELLED khi hợp lệ
+  // Cho phép CANCELLED khi đơn chưa vào LOCKED_STATUSES 
   if (optionValue === "CANCELLED") return false;
 
   // Không cho phép lùi trạng thái
@@ -46,12 +48,12 @@ export const translateStatus = (status) => {
   if (!status) return "Không rõ";
   const map = {
     PENDING:    "Chờ xác nhận",
+    CONFIRMED:  "Đã xác nhận",
     PROCESSING: "Đang xử lý",
     SHIPPING:   "Đang giao",
     DELIVERED:  "Đã giao",
     COMPLETED:  "Hoàn thành",
     CANCELLED:  "Đã hủy",
-    CONFIRMED:  "Đã xác nhận",
   };
   return map[status.toUpperCase()] || status;
 };
@@ -60,6 +62,7 @@ export const getStatusClass = (status) => {
   if (!status) return "secondary";
   const statusMap = {
     COMPLETED:  "success",
+    CONFIRMED:  "primary",
     DELIVERED:  "info",
     SHIPPING:   "info",
     PROCESSING: "primary",
@@ -69,12 +72,10 @@ export const getStatusClass = (status) => {
   return `badge--${statusMap[status.toUpperCase()] || "secondary"}`;
 };
 
-// Thêm vào constants.js
-
 export const PAYMENT_STATUS_STEPS = [
-  { value: "UNPAID",    label: "Chưa thanh toán" },
-  { value: "PAID",      label: "Đã thanh toán"   },
-  { value: "REFUNDED",  label: "Đã hoàn tiền"    },
+  { value: "UNPAID",   label: "Chưa thanh toán" },
+  { value: "PAID",     label: "Đã thanh toán"   },
+  { value: "REFUNDED", label: "Đã hoàn tiền"    },
 ];
 
 export const translatePaymentStatus = (status) => {
@@ -97,18 +98,16 @@ export const getPaymentStatusClass = (status) => {
   return map[status.toUpperCase()] || "badge--secondary";
 };
 
-// isPaymentOptionDisabled — PAID không được lùi về UNPAID
-export const isPaymentOptionDisabled = (optionValue, currentPaymentStatus) => {
-  if (currentPaymentStatus === "REFUNDED") return true; // khóa khi đã hoàn tiền
-  if (currentPaymentStatus === "PAID" && optionValue === "UNPAID") return true;
-  return false;
+// Khóa hoàn toàn: Admin không được thao tác cập nhật thanh toán
+export const isPaymentOptionDisabled = () => {
+  return true; 
 };
 
 export const translatePaymentMethod = (method) => {
   if (!method) return "Không rõ";
   const map = {
-    COD:          "COD",
-    ONLINE:      "ONLINE",
+    COD:      "COD",
+    ONLINE:   "ONLINE",
   };
   return map[method.toUpperCase()] || method;
 };

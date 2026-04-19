@@ -5,24 +5,19 @@ import {
   formatOrderId,
   STATUS_STEPS,
   isOptionDisabled,
-  PAYMENT_STATUS_STEPS,
   translatePaymentStatus,
   getPaymentStatusClass,
   translatePaymentMethod,
-  isPaymentOptionDisabled,
 } from "./utils/constants";
 
-const OrderDetailModal = ({ order, onClose, onSaveStatus, onSavePaymentStatus }) => {
+const OrderDetailModal = ({ order, onClose, onSaveStatus }) => {
   const [editingStatus, setEditingStatus] = useState(order.status);
-  const [editingPaymentStatus, setEditingPaymentStatus] = useState(order.paymentStatus);
 
   useEffect(() => {
     setEditingStatus(order.status);
-    setEditingPaymentStatus(order.paymentStatus);
   }, [order]);
 
   const isLocked = ["COMPLETED", "CANCELLED", "DELIVERED"].includes(order.status);
-  const isPaymentLocked = order.paymentStatus === "REFUNDED";
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -59,10 +54,13 @@ const OrderDetailModal = ({ order, onClose, onSaveStatus, onSavePaymentStatus })
               {order.note && (
                 <p style={{ marginBottom: "5px" }}><strong>Ghi chú:</strong> {order.note}</p>
               )}
+              <p style={{ marginTop: "10px", fontSize: "0.9em", color: "#666" }}>
+                <strong>Ngày đặt:</strong> {new Date(order.createdAt).toLocaleString("vi-VN")}
+              </p>
             </div>
 
             {/* Cập nhật trạng thái */}
-            <div className="status-update-box">
+            <div className="status-update-box" style={{ flex: 1, minWidth: "300px" }}>
               {/* Trạng thái đơn hàng */}
               <h4>Cập nhật trạng thái đơn</h4>
               <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
@@ -94,50 +92,33 @@ const OrderDetailModal = ({ order, onClose, onSaveStatus, onSavePaymentStatus })
                 </button>
               </div>
 
-              {/* Trạng thái thanh toán */}
-              <h4 style={{ marginTop: "15px" }}>Cập nhật thanh toán</h4>
-              <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                <select
-                  className="modal-select"
-                  value={editingPaymentStatus}
-                  onChange={(e) => setEditingPaymentStatus(e.target.value)}
-                  style={{ flex: 1 }}
-                  disabled={isPaymentLocked}
-                >
-                  {PAYMENT_STATUS_STEPS.map((s) => (
-                    <option
-                      key={s.value}
-                      value={s.value}
-                      disabled={isPaymentOptionDisabled(s.value, order.paymentStatus)}
-                      style={{
-                        color: isPaymentOptionDisabled(s.value, order.paymentStatus) ? "#ccc" : "#000",
-                      }}
-                    >
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  className="btn btn--primary"
-                  onClick={() => onSavePaymentStatus(order.id, editingPaymentStatus)}
-                  style={{ whiteSpace: "nowrap" }}
-                  disabled={isPaymentLocked}
-                >
-                  <Save size={16} /> Lưu
-                </button>
+              {/* Thông tin thanh toán - KHÓA (CHỈ XEM) */}
+              <h4 style={{ marginTop: "20px", color: "#666" }}>Thông tin thanh toán</h4>
+              <div 
+                style={{ 
+                  padding: "15px", 
+                  backgroundColor: "#f8f9fa", 
+                  borderRadius: "8px", 
+                  border: "1px solid #eee",
+                  marginTop: "10px"
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
+                  <span style={{ color: "#777" }}>Phương thức:</span>
+                  <strong style={{ color: "#333" }}>{translatePaymentMethod(order.paymentMethod)}</strong>
+                </div>
+                
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ color: "#777" }}>Trạng thái hiện tại:</span>
+                  <span className={`badge ${getPaymentStatusClass(order.paymentStatus)}`} style={{ fontSize: "0.9em", padding: "5px 12px" }}>
+                    {translatePaymentStatus(order.paymentStatus)}
+                  </span>
+                </div>
+
+                <p style={{ marginTop: "12px", marginBottom: 0, fontSize: "0.85em", color: "#999", fontStyle: "italic", textAlign: "center", borderTop: "1px solid #ddd", paddingTop: "8px" }}>
+                  * Được quản lý tự động bởi hệ thống
+                </p>
               </div>
-
-              {/* Badge thanh toán hiện tại */}
-              <p style={{ marginTop: "10px", fontSize: "0.9em" }}>
-                Thanh toán hiện tại:{" "}
-                <span className={`badge ${getPaymentStatusClass(order.paymentStatus)}`}>
-                  {translatePaymentStatus(order.paymentStatus)}
-                </span>
-              </p>
-
-              <p style={{ marginTop: "10px", fontSize: "0.9em", color: "#666" }}>
-                <strong>Ngày đặt:</strong> {new Date(order.createdAt).toLocaleString("vi-VN")}
-              </p>
             </div>
           </div>
 

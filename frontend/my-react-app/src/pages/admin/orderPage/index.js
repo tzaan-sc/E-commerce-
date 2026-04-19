@@ -3,8 +3,6 @@ import React, { useState, useEffect } from "react";
 import apiClient from "../../../api/axiosConfig";
 import OrderList from "./OrderList";
 import OrderDetailModal from "./OrderDetailModal";
-// console.log("OrderList:", OrderList);
-// console.log("OrderDetailModal:", OrderDetailModal);
 
 const OrdersPage = () => {
   const [orders, setOrders] = useState([]);
@@ -72,18 +70,10 @@ const OrdersPage = () => {
     }
   };
 
-  const handleUpdatePaymentStatus = async (orderId, newPaymentStatus) => {
-    try {
-      await apiClient.put(`/orders/${orderId}/payment-status`, null, {
-        params: { paymentStatus: newPaymentStatus },
-      });
-      alert("Cập nhật trạng thái thanh toán thành công!");
-      fetchOrders();
-      handleCloseDetailModal();
-    } catch (err) {
-      console.error(err);
-      alert("Cập nhật trạng thái thanh toán thất bại!");
-    }
+  // Hàm này bị vô hiệu hóa vì admin không có quyền sửa trực tiếp
+  const handleUpdatePaymentStatus = async () => {
+    alert("Thông báo: Trạng thái thanh toán được cập nhật tự động bởi hệ thống, Admin không có quyền chỉnh sửa trực tiếp.");
+    return;
   };
 
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -110,6 +100,7 @@ const OrdersPage = () => {
         >
           <option value="all">Tất cả trạng thái</option>
           <option value="pending">Chờ xác nhận</option>
+          <option value="confirmed">Đã xác nhận</option>
           <option value="processing">Đang xử lý</option>
           <option value="shipping">Đang giao</option>
           <option value="delivered">Đã giao</option>

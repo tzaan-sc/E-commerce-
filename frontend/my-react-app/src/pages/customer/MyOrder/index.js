@@ -1,71 +1,72 @@
 import React, { memo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { getMyOrders, cancelOrder } from "api/order";
-// Thêm 3 dòng này vào đầu file
-import { addToCart } from "api/cart"; 
-import { useCart } from "context/index"; 
+import { addToCart } from "api/cart";
+import { useCart } from "context/index";
 import { useNavigate } from "react-router-dom";
+import { getMyOrders, cancelOrder, confirmReceived } from "api/order";
 
 const MyOrdersPage = () => {
-  
-  const { fetchCartCount } = useCart(); 
+
+  const { fetchCartCount } = useCart();
   const navigate = useNavigate();
 
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
 
-  // Helper: Hàm dịch trạng thái sang tiếng Việt
-  // --- TRONG FILE MyOrdersPage (Khách hàng) ---
-
-// 1. Sửa hàm dịch: Thêm case PROCESSING
-const translateStatus = (status) => {
-  if (!status) return 'Không rõ';
-  const map = {
-    'PENDING': 'Chờ xác nhận',
-    'PROCESSING': 'Đang xử lý', // 👈 THÊM DÒNG NÀY (Quan trọng nhất)
-    'CONFIRMED': 'Đã xác nhận', // (Giữ lại để tương thích ngược nếu cần)
-    'SHIPPING': 'Đang giao',
-    'COMPLETED': 'Đã giao',
-    'CANCELLED': 'Đã hủy',
+  // ── Dịch trạng thái đơn hàng ───────────────────────────────────────────────
+  const translateStatus = (status) => {
+    if (!status) return 'Không rõ';
+    const map = {
+      'PENDING':    'Chờ xác nhận',
+      'PROCESSING': 'Đang xử lý',
+      'CONFIRMED':  'Đã xác nhận',
+      'SHIPPING':   'Đang giao',
+      'DELIVERED':  'Đã giao',
+      'COMPLETED':  'Hoàn thành',
+      'CANCELLED':  'Đã hủy',
+    };
+    return map[status.toUpperCase()] || status;
   };
-  return map[status.toUpperCase()] || status;
-};
 
-// 2. Sửa hàm lấy màu badge: Thêm case PROCESSING
-const getStatusBadge = (status) => {
-  const statusUpper = status?.toUpperCase();
-  const statusConfig = {
-    PENDING: { class: "warning", text: translateStatus('PENDING') },
-    
-    // 👇 THÊM DÒNG NÀY: Để trạng thái 'Đang xử lý' có màu xanh dương (info) hoặc tím (primary)
-    PROCESSING: { class: "primary", text: translateStatus('PROCESSING') }, 
-    
-    SHIPPING: { class: "info", text: translateStatus('SHIPPING') },
-    COMPLETED: { class: "success", text: translateStatus('COMPLETED') },
-    CANCELLED: { class: "danger", text: translateStatus('CANCELLED') },
-    CONFIRMED: { class: "secondary", text: translateStatus('CONFIRMED') },
+  // ── Badge trạng thái đơn hàng ──────────────────────────────────────────────
+  const getStatusBadge = (status) => {
+    const statusUpper = status?.toUpperCase();
+    const statusConfig = {
+      PENDING:    { class: "warning",   text: translateStatus('PENDING')    },
+      PROCESSING: { class: "primary",   text: translateStatus('PROCESSING') },
+      CONFIRMED:  { class: "secondary", text: translateStatus('CONFIRMED')  },
+      SHIPPING:   { class: "info",      text: translateStatus('SHIPPING')   },
+      DELIVERED:  { class: "info",      text: translateStatus('DELIVERED')  },
+      COMPLETED:  { class: "success",   text: translateStatus('COMPLETED')  },
+      CANCELLED:  { class: "danger",    text: translateStatus('CANCELLED')  },
+    };
+    const config = statusConfig[statusUpper] || { class: "secondary", text: status };
+    return <span className={`badge bg-${config.class}`}>{config.text}</span>;
   };
-  
-  const config = statusConfig[statusUpper] || { class: "secondary", text: status };
-  return <span className={`badge bg-${config.class}`}>{config.text}</span>;
-};
 
+  // ── Badge trạng thái thanh toán ────────────────────────────────────────────
+  const getPaymentBadge = (paymentStatus) => {
+    const map = {
+      UNPAID:   { class: 'warning', text: 'Chưa thanh toán' },
+      PAID:     { class: 'success', text: 'Đã thanh toán'   },
+      REFUNDED: { class: 'info',    text: 'Đã hoàn tiền'    },
+    };
+    const config = map[paymentStatus?.toUpperCase()] || { class: 'secondary', text: 'Không rõ' };
+    return <span className={`badge bg-${config.class}`}>{config.text}</span>;
+  };
 
+  // ── Fetch orders ───────────────────────────────────────────────────────────
   useEffect(() => {
     fetchOrders();
-  }, [filter]); // Lọc theo filter
+  }, [filter]);
 
-  // 3. SỬA HÀM FETCHORDERS: Thêm sắp xếp
   const fetchOrders = async () => {
     setLoading(true);
     try {
       const res = await getMyOrders();
       let fetchedOrders = Array.isArray(res.data) ? res.data : [];
-
-      // Sắp xếp: Đơn hàng cũ nhất (ID nhỏ nhất) lên trước (1, 2, 3...)
       fetchedOrders.sort((a, b) => b.id - a.id);
-      
       setOrders(fetchedOrders);
     } catch (error) {
       console.error("Error fetching orders:", error);
@@ -74,12 +75,13 @@ const getStatusBadge = (status) => {
     }
   };
 
-  const handleCancelOrder = async (orderId) => { // Thêm async
+  // ── Hủy đơn ───────────────────────────────────────────────────────────────
+  const handleCancelOrder = async (orderId) => {
     if (window.confirm("Bạn có chắc muốn hủy đơn hàng này?")) {
       try {
-        await cancelOrder(orderId); // Gọi API
+        await cancelOrder(orderId);
         alert("Đã hủy đơn hàng thành công.");
-        fetchOrders(); // Tải lại danh sách đơn hàng
+        fetchOrders();
       } catch (err) {
         console.error("Lỗi hủy đơn hàng:", err);
         alert(err.response?.data?.message || "Không thể hủy đơn hàng này.");
@@ -87,52 +89,58 @@ const getStatusBadge = (status) => {
     }
   };
 
-const handleReorder = async (order) => {
+  // ── Xác nhận đã nhận hàng ─────────────────────────────────────────────────
+const handleConfirmReceived = async (orderId) => {
+  if (window.confirm("Bạn xác nhận đã nhận được hàng?")) {
     try {
-      console.log("Check Order:", order); // Giữ lại để debug
+      await confirmReceived(orderId);
+      alert("Xác nhận nhận hàng thành công!");
+      fetchOrders();
+    } catch (err) {
+      console.error("Lỗi xác nhận nhận hàng:", err);
+      alert(err.response?.data?.message || "Không thể xác nhận. Vui lòng thử lại.");
+    }
+  }
+};
 
-      // 1. 👇 SỬA LẠI TÊN BIẾN Ở ĐÂY (Backend trả về là 'items')
-      const items = order.items || []; 
-
+  // ── Mua lại ───────────────────────────────────────────────────────────────
+  const handleReorder = async (order) => {
+    try {
+      const items = order.items || [];
       if (!items || items.length === 0) {
         alert("Không tìm thấy sản phẩm trong đơn hàng này!");
         return;
       }
 
-      // 2. Duyệt qua từng món
       const addPromises = items.map(async (item) => {
-        // 👇 QUAN TRỌNG: Cố gắng tìm ID sản phẩm ở mọi ngóc ngách
-        // Backend có thể trả về: productId, id, hoặc product.id
         const productId = item.productId || item.id || (item.product ? item.product.id : null);
-        
-        const quantity = item.quantity || 1;
-
+        const quantity  = item.quantity || 1;
         if (productId) {
-           return await addToCart(productId, quantity);
+          return await addToCart(productId, quantity);
         } else {
-           console.error("❌ LỖI: Không tìm thấy ID sản phẩm trong món này:", item);
+          console.error("❌ Không tìm thấy ID sản phẩm:", item);
         }
       });
 
-      // 3. Đợi và thông báo
       await Promise.all(addPromises);
       fetchCartCount();
 
       if (window.confirm("Đã thêm sản phẩm vào giỏ! Đến giỏ hàng ngay?")) {
         navigate("/customer/home/gio-hang");
       }
-
     } catch (error) {
       console.error("Lỗi mua lại:", error);
       alert("Lỗi xử lý! Vui lòng kiểm tra Console (F12) để xem chi tiết.");
     }
   };
 
+  // ── Filter ─────────────────────────────────────────────────────────────────
   const filteredOrders = orders.filter((order) => {
     if (filter === "all") return true;
     return order.status?.toLowerCase() === filter.toLowerCase();
   });
 
+  // ── Loading ────────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="container py-5 text-center">
@@ -143,11 +151,12 @@ const handleReorder = async (order) => {
     );
   }
 
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="container py-5">
       <h2 className="mb-4">Đơn Hàng Của Tôi</h2>
 
-      {/* Filter Tabs (Giữ nguyên) */}
+      {/* Filter Tabs */}
       <div className="mb-4">
         <ul className="nav nav-pills">
           <li className="nav-item">
@@ -196,14 +205,10 @@ const handleReorder = async (order) => {
       {/* Orders List */}
       {filteredOrders.length === 0 ? (
         <div className="text-center py-5">
-          <div className="mb-4" style={{ fontSize: "80px", opacity: 0.3 }}>
-            📦
-          </div>
+          <div className="mb-4" style={{ fontSize: "80px", opacity: 0.3 }}>📦</div>
           <h5 className="text-muted">Chưa có đơn hàng</h5>
           <p className="text-muted">
-            {filter === "all"
-              ? "Bạn chưa có đơn hàng nào"
-              : "Không có đơn hàng nào ở trạng thái này"}
+            {filter === "all" ? "Bạn chưa có đơn hàng nào" : "Không có đơn hàng nào ở trạng thái này"}
           </p>
           <Link to="/customer/home" className="btn btn-primary mt-3">
             Tiếp tục mua sắm
@@ -213,20 +218,27 @@ const handleReorder = async (order) => {
         <div className="orders-list">
           {filteredOrders.map((order) => (
             <div key={order.id} className="card mb-3 shadow-sm">
+
+              {/* Card Header */}
               <div className="card-header bg-light d-flex justify-content-between align-items-center">
                 <div>
-                  {/* Sử dụng userOrderNumber để hiển thị số thứ tự riêng */}
                   <strong>Đơn hàng #{order.userOrderNumber || order.id}</strong>
-                  {order.createdAt && ( // Hiển thị ngày nếu có
+                  {order.createdAt && (
                     <small className="text-muted ms-3">
                       {new Date(order.createdAt).toLocaleDateString("vi-VN")}
                     </small>
                   )}
                 </div>
-                {getStatusBadge(order.status)}
+
+                {/* 👇 2 badge kế nhau */}
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                  {getStatusBadge(order.status)}
+                  {getPaymentBadge(order.paymentStatus)}
+                </div>
               </div>
+
+              {/* Card Body */}
               <div className="card-body">
-                {/* Order Items */}
                 {order.items.map((item, index) => (
                   <div
                     key={index}
@@ -242,43 +254,29 @@ const handleReorder = async (order) => {
                       }
                       alt={item.productName}
                       className="rounded"
-                      style={{
-                        width: "80px",
-                        height: "80px",
-                        objectFit: "cover",
-                        border: "1px solid #dee2e6",
-                      }}
+                      style={{ width: "80px", height: "80px", objectFit: "cover", border: "1px solid #dee2e6" }}
                     />
                     <div className="ms-3 flex-grow-1">
                       <h6 className="mb-1">{item.productName}</h6>
-                      <p className="text-muted mb-1 small">
-                        Số lượng: x{item.quantity}
-                      </p>
+                      <p className="text-muted mb-1 small">Số lượng: x{item.quantity}</p>
                       <p className="text-primary fw-bold mb-0">
-                        {(
-                          (item.price || 0) * (item.quantity || 0)
-                        ).toLocaleString("vi-VN")}
-                        ₫
+                        {((item.price || 0) * (item.quantity || 0)).toLocaleString("vi-VN")}₫
                       </p>
                     </div>
                   </div>
                 ))}
 
-                {/* Order Summary */}
+                {/* Order Summary + Nút */}
                 <div className="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
                   <div>
                     <p className="mb-0">
                       <strong>Tổng cộng:</strong>{" "}
                       <span className="text-danger fs-5 fw-bold">
-                        {(
-                          order.totalAmount || order.total || 0
-                        ).toLocaleString("vi-VN")}
-                        ₫
+                        {(order.totalAmount || order.total || 0).toLocaleString("vi-VN")}₫
                       </span>
                     </p>
                   </div>
 
-                  {/* PHẦN NÚT BẤM */}
                   <div>
                     <Link
                       to={`/customer/home/don-mua/${order.id}`}
@@ -295,6 +293,14 @@ const handleReorder = async (order) => {
                         Mua lại
                       </button>
                     )}
+                    {order.status === 'DELIVERED' && (
+                        <button
+                          className="btn btn-success btn-sm"
+                          onClick={() => handleConfirmReceived(order.id)}
+                        >
+                          ✅ Xác nhận đã nhận hàng
+                        </button>
+                      )}
 
                     {order.status === "PENDING" && (
                       <button
@@ -307,6 +313,7 @@ const handleReorder = async (order) => {
                   </div>
                 </div>
               </div>
+
             </div>
           ))}
         </div>
@@ -315,4 +322,4 @@ const handleReorder = async (order) => {
   );
 };
 
-export default memo(MyOrdersPage);      
+export default memo(MyOrdersPage);
