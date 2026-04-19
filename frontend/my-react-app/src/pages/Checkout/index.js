@@ -1,3 +1,4 @@
+import { toast } from 'react-toastify';
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { User, MapPin, Phone, Mail, CheckCircle, AlertCircle } from 'lucide-react';
@@ -109,7 +110,7 @@ const CheckoutPage = () => {
          setStep('success');
       }
     } catch (error) {
-      alert('Có lỗi xảy ra: ' + (error.response?.data?.message || error.message));
+      toast.info('Có lỗi xảy ra: ' + (error.response?.data?.message || error.message));
     } finally {
       setIsLoading(false);
     }

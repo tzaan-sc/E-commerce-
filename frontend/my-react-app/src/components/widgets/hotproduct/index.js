@@ -1,3 +1,4 @@
+import { toast } from 'react-toastify';
 import { memo, useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom"; 
 import { AiOutlineShoppingCart, AiOutlineDown, AiOutlineUp } from "react-icons/ai";
@@ -77,10 +78,10 @@ const HotProduct = () => {
     try {
       await addToCart(productId, 1); 
       fetchCartCount(); 
-      alert("Đã thêm vào giỏ hàng thành công!");
+      toast.success("Đã thêm vào giỏ hàng thành công!");
     } catch (err) {
       console.error(err);
-      alert("Thêm vào giỏ hàng thất bại!");
+      toast.error("Thêm vào giỏ hàng thất bại!");
     }
   };
 

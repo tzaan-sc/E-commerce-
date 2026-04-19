@@ -1,3 +1,4 @@
+import { toast } from 'react-toastify';
 import { useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import ProductCard from "components/widgets/productCard";
@@ -95,17 +96,17 @@ const SearchPage = () => {
   const handleAddToCart = async (productId) => {
     const token = localStorage.getItem("token");
     if (!token) {
-      alert("Vui lòng đăng nhập để thêm vào giỏ hàng");
+      toast.info("Vui lòng đăng nhập để thêm vào giỏ hàng");
       return;
     }
 
     try {
       await addToCart(productId, 1);
       fetchCartCount();
-      alert("Đã thêm vào giỏ hàng!");
+      toast.success("Đã thêm vào giỏ hàng!");
     } catch (err) {
       console.error(err);
-      alert("Thêm giỏ hàng thất bại!");
+      toast.error("Thêm giỏ hàng thất bại!");
     }
   };
 

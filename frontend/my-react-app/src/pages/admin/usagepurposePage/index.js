@@ -1,3 +1,4 @@
+import { toast } from 'react-toastify';
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import apiClient from "../../../api/axiosConfig";
 import { Save, Upload } from "lucide-react";
@@ -46,7 +47,7 @@ const UsagePurposePage = () => {
 
   const handleSubmit = async () => {
     if (!formData.name.trim()) {
-      alert("Vui lòng nhập tên nhu cầu sử dụng!");
+      toast.info("Vui lòng nhập tên nhu cầu sử dụng!");
       return;
     }
     const payload = editingId ? { id: editingId, ...formData } : formData;
@@ -54,11 +55,11 @@ const UsagePurposePage = () => {
     const result = await fn;
 
     if (result.success) {
-      alert(editingId ? "Cập nhật thành công!" : "Thêm mới thành công!");
+      toast.info(editingId ? "Cập nhật thành công!" : "Thêm mới thành công!");
       resetForm();
     } else {
       // 👇 Hiển thị lỗi chuẩn từ Backend
-      alert(result.error);
+      toast.error(result.error);
     }
   };
 
@@ -73,18 +74,18 @@ const UsagePurposePage = () => {
     if (!window.confirm("Bạn có chắc muốn xóa nhu cầu này?")) return;
     const result = await deletePurpose(id);
     if (result.success) {
-      alert("Xóa thành công!");
+      toast.success("Xóa thành công!");
       setSelectedIds((prev) => prev.filter((x) => x !== id));
     } else {
       // 👇 Hiển thị lỗi chuẩn
-      alert(result.error);
+      toast.error(result.error);
     }
   };
 
   // ✅ SỬA LOGIC XÓA NHIỀU
   const handleDeleteSelected = async () => {
     if (selectedIds.length === 0) {
-      alert("Vui lòng chọn ít nhất một mục để xóa!");
+      toast.info("Vui lòng chọn ít nhất một mục để xóa!");
       return;
     }
     if (
@@ -96,14 +97,14 @@ const UsagePurposePage = () => {
     for (const id of selectedIds) {
       const result = await deletePurpose(id);
       if (!result.success) {
-        alert(`Không thể xóa (ID: ${id}):\n${result.error}`);
+        toast.error(`Không thể xóa (ID: ${id}):\n${result.error}`);
         hasError = true;
         break;
       }
     }
 
     if (!hasError) {
-      alert("Xóa tất cả thành công!");
+      toast.success("Xóa tất cả thành công!");
       setSelectedIds([]);
     } else {
       // Clear những ID đã xóa thành công khỏi danh sách chọn

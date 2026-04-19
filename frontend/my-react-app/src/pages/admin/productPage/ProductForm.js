@@ -1,3 +1,4 @@
+import { toast } from 'react-toastify';
 import React, { useState, useRef } from "react";
 import { ArrowLeft, Save, Laptop, Cpu, Image as ImageIcon, Upload, Star, X, Loader2, Link as LinkIcon } from "lucide-react";
 import { FormField } from "./helpers";
@@ -50,7 +51,7 @@ const ProductForm = ({ product, onSave, onBack, brands, purposes, screenSizes, p
       setF("imageUrl", serverUrl);
     } catch (error) {
       console.error("Lỗi upload:", error);
-      alert("Không thể tải ảnh lên thư mục Backend!");
+      toast.error("Không thể tải ảnh lên thư mục Backend!");
     } finally {
       setIsUploading(false);
     }

@@ -1,3 +1,4 @@
+import { toast } from 'react-toastify';
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; 
 import { useCart } from "../../../context/index";
@@ -68,7 +69,7 @@ const ShoppingCart = () => {
   // --- SỬA LOGIC NÚT MUA HÀNG: CHUYỂN TRANG ---
   const handleCheckoutClick = () => {
     if (selectedItems.length === 0) {
-      alert("Vui lòng chọn ít nhất một sản phẩm để mua hàng.");
+      toast.info("Vui lòng chọn ít nhất một sản phẩm để mua hàng.");
       return;
     }
 

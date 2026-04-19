@@ -1,3 +1,4 @@
+import { toast } from 'react-toastify';
 import React, { memo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { addToCart } from "api/cart";
@@ -80,11 +81,11 @@ const MyOrdersPage = () => {
     if (window.confirm("Bạn có chắc muốn hủy đơn hàng này?")) {
       try {
         await cancelOrder(orderId);
-        alert("Đã hủy đơn hàng thành công.");
+        toast.success("Đã hủy đơn hàng thành công.");
         fetchOrders();
       } catch (err) {
         console.error("Lỗi hủy đơn hàng:", err);
-        alert(err.response?.data?.message || "Không thể hủy đơn hàng này.");
+        toast.error(err.response?.data?.message || "Không thể hủy đơn hàng này.");
       }
     }
   };
@@ -94,11 +95,11 @@ const MyOrdersPage = () => {
     if (window.confirm("Bạn xác nhận đã nhận được hàng?")) {
       try {
         await confirmReceived(orderId);
-        alert("Xác nhận nhận hàng thành công!");
+        toast.success("Xác nhận nhận hàng thành công!");
         fetchOrders();
       } catch (err) {
         console.error("Lỗi xác nhận nhận hàng:", err);
-        alert(err.response?.data?.message || "Không thể xác nhận. Vui lòng thử lại.");
+        toast.error(err.response?.data?.message || "Không thể xác nhận. Vui lòng thử lại.");
       }
     }
   };
@@ -108,7 +109,7 @@ const MyOrdersPage = () => {
     try {
       const items = order.items || [];
       if (!items || items.length === 0) {
-        alert("Không tìm thấy sản phẩm trong đơn hàng này!");
+        toast.info("Không tìm thấy sản phẩm trong đơn hàng này!");
         return;
       }
 
@@ -130,7 +131,7 @@ const MyOrdersPage = () => {
       }
     } catch (error) {
       console.error("Lỗi mua lại:", error);
-      alert("Lỗi xử lý! Vui lòng kiểm tra Console (F12) để xem chi tiết.");
+      toast.error("Lỗi xử lý! Vui lòng kiểm tra Console (F12) để xem chi tiết.");
     }
   };
 

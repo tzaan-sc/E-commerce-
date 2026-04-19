@@ -1,3 +1,4 @@
+import { toast } from 'react-toastify';
 import { memo, useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 // 1. IMPORT THÊM ICON MŨI TÊN
@@ -42,13 +43,13 @@ const BrandProductsPage = () => {
   const handleAddToCart = async (productId) => {
     const token = localStorage.getItem("token"); 
     if (!token) { 
-      alert("Vui lòng đăng nhập!");
+      toast.info("Vui lòng đăng nhập!");
       return;
     }
     try {
       await addToCart(productId, 1); 
       fetchCartCount(); 
-      alert("Đã thêm vào giỏ hàng!");
+      toast.success("Đã thêm vào giỏ hàng!");
     } catch (err) {
       console.error(err);
     }

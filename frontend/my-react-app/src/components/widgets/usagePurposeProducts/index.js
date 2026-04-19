@@ -1,3 +1,4 @@
+import { toast } from 'react-toastify';
 import { memo, useState, useEffect } from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom"; // 1. Thêm useSearchParams
 import { AiOutlineShoppingCart, AiOutlineDown, AiOutlineUp } from "react-icons/ai";
@@ -77,8 +78,8 @@ const UsagePurposeProductsPage = () => {
 
   const handleAddToCart = async (productId) => {
     const token = localStorage.getItem("token"); 
-    if (!token) { alert("Vui lòng đăng nhập!"); return; }
-    try { await addToCart(productId, 1); fetchCartCount(); alert("Đã thêm vào giỏ hàng!"); } 
+    if (!token) { toast.info("Vui lòng đăng nhập!"); return; }
+    try { await addToCart(productId, 1); fetchCartCount(); toast.success("Đã thêm vào giỏ hàng!"); } 
     catch (err) { console.error(err); }
   };
 

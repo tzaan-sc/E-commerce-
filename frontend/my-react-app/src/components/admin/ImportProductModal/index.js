@@ -1,3 +1,4 @@
+import { toast } from 'react-toastify';
 import React, { useState } from 'react';
 import axios from 'axios';
 
@@ -16,7 +17,7 @@ const ImportProductModal = ({ show, handleClose, onSuccess }) => {
     // 3. Xử lý Upload
     const handleUpload = async () => {
         if (!file) {
-            alert("Vui lòng chọn file Excel!");
+            toast.info("Vui lòng chọn file Excel!");
             return;
         }
 
@@ -34,14 +35,14 @@ const ImportProductModal = ({ show, handleClose, onSuccess }) => {
                 }
             });
 
-            alert("✅ Nhập dữ liệu thành công!");
+            toast.success("Nhập dữ liệu thành công!");
             setFile(null);
             handleClose(); // Đóng modal
             onSuccess();   // Gọi hàm reload lại danh sách sản phẩm bên ngoài
         } catch (error) {
             console.error(error);
             const msg = error.response?.data || "Lỗi khi nhập file!";
-            alert("❌ " + msg);
+            toast.info("❌ " + msg);
         } finally {
             setLoading(false);
         }
