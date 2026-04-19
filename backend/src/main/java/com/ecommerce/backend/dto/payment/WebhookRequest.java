@@ -15,8 +15,8 @@ public class WebhookRequest {
     @NotNull(message = "orderId không được để trống")
     private Long orderId;
 
-    @NotBlank(message = "status không được để trống")
+    @NotBlank(message = "paymentStatus không được để trống")
     @Pattern(regexp = "PAID|FAILED", flags = Pattern.Flag.CASE_INSENSITIVE,
-             message = "status chỉ được là PAID hoặc FAILED")
-    private String status;
+             message = "paymentStatus chỉ được là PAID hoặc FAILED")
+    private String paymentStatus; // 👈 đổi từ status → paymentStatus
 }

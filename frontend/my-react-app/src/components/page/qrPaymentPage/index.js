@@ -12,7 +12,7 @@ const BANK_CONFIG = {
 };
 
 const POLL_INTERVAL_MS = 3000;
-const TERMINAL_STATUSES = ['PAID', 'FAILED', 'CONFIRMED', 'COMPLETED', 'CANCELLED'];
+const TERMINAL_ORDER_STATUSES = ['CONFIRMED', 'COMPLETED', 'FAILED', 'CANCELLED'];
 
 const QRPaymentPage = () => {
   const [searchParams] = useSearchParams();
@@ -27,8 +27,9 @@ const QRPaymentPage = () => {
   const [isLoading, setIsLoading]         = useState(false);
   const [error, setError]                 = useState(null);
   const [copiedField, setCopiedField]     = useState(null);
-  const [showCodModal, setShowCodModal]   = useState(false); // 👈 modal đổi COD
-  const [isSwitching, setIsSwitching]     = useState(false); // 👈 loading nút COD
+  const [showCodModal, setShowCodModal]   = useState(false);
+  const [isSwitching, setIsSwitching]     = useState(false);
+  const [showToast, setShowToast]         = useState(false); // 👈 toast
 
   const intervalRef  = useRef(null);
   const isMountedRef = useRef(true);
@@ -49,9 +50,14 @@ const QRPaymentPage = () => {
     stopPolling();
     if (fetchCartCount) fetchCartCount();
     setPaymentStatus('PAID');
+    setShowToast(true); // 👈 hiện toast
+
     setTimeout(() => {
-      if (isMountedRef.current) navigate('/customer/home/don-mua');
-    }, 1500);
+      if (isMountedRef.current) {
+        setShowToast(false);
+        navigate('/customer/home/don-mua');
+      }
+    }, 2000);
   }, [stopPolling, fetchCartCount, navigate]);
 
   // ── Polling tự động ────────────────────────────────────────────────────────
@@ -61,18 +67,28 @@ const QRPaymentPage = () => {
 
     intervalRef.current = setInterval(async () => {
       try {
-        const res    = await apiClient.get(`/payment/status/${orderId}`);
-        const status = res.data?.status?.toUpperCase();
+        const res           = await apiClient.get(`/payment/status/${orderId}`);
+        const orderStatus   = res.data?.status?.toUpperCase();
+        const paymentStatus = res.data?.paymentStatus?.toUpperCase();
 
         if (!isMountedRef.current) return;
 
-        if (status && TERMINAL_STATUSES.includes(status)) {
-          setPaymentStatus(status);
+        // ✅ Ưu tiên kiểm tra paymentStatus PAID — tín hiệu chính xác tiền đã về
+        if (paymentStatus === 'PAID') {
+          setPaymentStatus('PAID');
+          stopPolling();
+          handlePaymentSuccess();
+          return;
+        }
+
+        // Fallback: kiểm tra orderStatus
+        if (orderStatus && TERMINAL_ORDER_STATUSES.includes(orderStatus)) {
+          setPaymentStatus(orderStatus);
           stopPolling();
 
-          if (['PAID', 'CONFIRMED', 'COMPLETED'].includes(status)) {
+          if (['CONFIRMED', 'COMPLETED'].includes(orderStatus)) {
             handlePaymentSuccess();
-          } else if (status === 'FAILED' || status === 'CANCELLED') {
+          } else if (orderStatus === 'FAILED' || orderStatus === 'CANCELLED') {
             setError('Giao dịch thất bại hoặc đơn đã bị hủy. Vui lòng thử lại hoặc liên hệ hỗ trợ.');
           }
         }
@@ -92,10 +108,11 @@ const QRPaymentPage = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const res    = await apiClient.get(`/payment/status/${orderId}`);
-      const status = res.data?.status?.toUpperCase();
+      const res           = await apiClient.get(`/payment/status/${orderId}`);
+      const orderStatus   = res.data?.status?.toUpperCase();
+      const paymentStatus = res.data?.paymentStatus?.toUpperCase();
 
-      if (status && ['PAID', 'CONFIRMED', 'COMPLETED'].includes(status)) {
+      if (paymentStatus === 'PAID' || ['CONFIRMED', 'COMPLETED'].includes(orderStatus)) {
         handlePaymentSuccess();
       } else {
         setError('Hệ thống chưa nhận được thanh toán. Vui lòng chờ thêm 1–2 phút để ngân hàng xử lý.');
@@ -160,6 +177,31 @@ const QRPaymentPage = () => {
   return (
     <div style={{ padding: '30px 20px', maxWidth: '600px', margin: '30px auto', backgroundColor: '#fff', borderRadius: '8px', boxShadow: '0 2px 10px rgba(0,0,0,0.1)', textAlign: 'center' }}>
 
+      {/* Toast thông báo thanh toán thành công */}
+      {showToast && (
+        <div style={{
+          position: 'fixed',
+          top: '30px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          backgroundColor: '#16a34a',
+          color: '#fff',
+          padding: '14px 28px',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          fontSize: '15px',
+          fontWeight: '600',
+          zIndex: 9999,
+          animation: 'slideDown 0.3s ease',
+        }}>
+          <CheckCircle size={20} />
+          Thanh toán thành công! Đang chuyển hướng...
+        </div>
+      )}
+
       {/* Quay lại */}
       <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '15px' }}>
         <button onClick={() => navigate(-1)}
@@ -177,6 +219,14 @@ const QRPaymentPage = () => {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#16a34a', fontSize: '13px', fontWeight: '500', backgroundColor: '#dcfce7', padding: '6px 16px', borderRadius: '20px', width: 'fit-content', margin: '0 auto 20px auto' }}>
           <RefreshCw size={14} style={{ animation: 'spin 2s linear infinite' }} />
           Hệ thống đang tự động kiểm tra giao dịch...
+        </div>
+      )}
+
+      {/* Badge đã thanh toán */}
+      {paymentStatus === 'PAID' && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#16a34a', fontSize: '13px', fontWeight: '500', backgroundColor: '#dcfce7', padding: '6px 16px', borderRadius: '20px', width: 'fit-content', margin: '0 auto 20px auto' }}>
+          <CheckCircle size={14} />
+          Thanh toán thành công! Đang chuyển hướng...
         </div>
       )}
 
@@ -233,28 +283,30 @@ const QRPaymentPage = () => {
         </div>
       )}
 
-      {/* Nút hành động */}
-      <div style={{ marginTop: '30px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      {/* Nút hành động — ẩn khi đã PAID */}
+      {paymentStatus !== 'PAID' && (
+        <div style={{ marginTop: '30px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
 
-        {/* Nút 1: Đã chuyển khoản */}
-        <button onClick={handleConfirmDone} disabled={isLoading}
-          style={{ backgroundColor: '#16a34a', color: '#fff', border: 'none', padding: '12px 24px', fontSize: '1rem', fontWeight: 'bold', borderRadius: '6px', cursor: isLoading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', opacity: isLoading ? 0.7 : 1 }}>
-          {isLoading
-            ? <><RefreshCw size={20} style={{ animation: 'spin 1s linear infinite' }} /> Đang kiểm tra...</>
-            : <><CheckCircle size={20} /> Tôi đã chuyển khoản xong</>
-          }
-        </button>
-        <p style={{ fontSize: '0.85rem', color: '#6b7280', margin: 0 }}>
-          Lưu ý: Hoàn tất chuyển khoản trước khi bấm nút xác nhận.
-        </p>
+          {/* Nút 1: Đã chuyển khoản */}
+          <button onClick={handleConfirmDone} disabled={isLoading}
+            style={{ backgroundColor: '#16a34a', color: '#fff', border: 'none', padding: '12px 24px', fontSize: '1rem', fontWeight: 'bold', borderRadius: '6px', cursor: isLoading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', opacity: isLoading ? 0.7 : 1 }}>
+            {isLoading
+              ? <><RefreshCw size={20} style={{ animation: 'spin 1s linear infinite' }} /> Đang kiểm tra...</>
+              : <><CheckCircle size={20} /> Tôi đã chuyển khoản xong</>
+            }
+          </button>
+          <p style={{ fontSize: '0.85rem', color: '#6b7280', margin: 0 }}>
+            Lưu ý: Hoàn tất chuyển khoản trước khi bấm nút xác nhận.
+          </p>
 
-        {/* Nút 2: Đổi sang COD */}
-        <button onClick={() => setShowCodModal(true)}
-          style={{ backgroundColor: '#fff', color: '#374151', border: '1px solid #d1d5db', padding: '12px 24px', fontSize: '14px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-          💵 Đổi sang thanh toán khi nhận hàng (COD)
-        </button>
+          {/* Nút 2: Đổi sang COD */}
+          <button onClick={() => setShowCodModal(true)}
+            style={{ backgroundColor: '#fff', color: '#374151', border: '1px solid #d1d5db', padding: '12px 24px', fontSize: '14px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            💵 Đổi sang thanh toán khi nhận hàng (COD)
+          </button>
 
-      </div>
+        </div>
+      )}
 
       {/* Modal xác nhận đổi COD */}
       {showCodModal && (
@@ -282,6 +334,10 @@ const QRPaymentPage = () => {
         @keyframes spin {
           0%   { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
+        }
+        @keyframes slideDown {
+          from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+          to   { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
       `}</style>
     </div>
