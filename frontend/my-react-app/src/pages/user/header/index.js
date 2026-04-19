@@ -395,7 +395,16 @@ useEffect(() => {
   setSearchQuery("");
 }}
         >
-          <img src={item.image || "/no-image.png"} alt={item.name} />
+          <img 
+  src={item.image ? `http://localhost:8080${item.image}` : "/no-image.png"} 
+  alt={item.name}
+  style={{
+    width: "50px",
+    height: "50px",
+    objectFit: "cover",
+    borderRadius: "6px"
+  }}
+/>
 
           <div className="info">
             <div className="name">{item.name}</div>
