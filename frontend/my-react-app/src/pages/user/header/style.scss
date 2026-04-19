@@ -233,6 +233,30 @@ $hover-bg: #f0f0f0;
       }
     }
   }
+//   &__search {
+//   position: relative; // 🔥 thêm dòng này
+
+//   display: flex;
+//   align-items: center;
+//   border: 1px solid $border-color;
+//   border-radius: 25px;
+//   overflow: visible; // 🔥 QUAN TRỌNG (đang là hidden → che dropdown)
+//   background: $bg-light;
+
+//   width: 350px; // 🔥 FIX CỨNG
+//   flex-shrink: 0; // 🔥 chống bị co
+
+//   form {
+//     display: flex;
+//     width: 100%;
+//   }
+
+//   input {
+//     flex: 1;
+//     padding: 10px;
+//   }
+// }
+
 
   // Cart
   &__cart {
@@ -362,3 +386,16 @@ $hover-bg: #f0f0f0;
     }
   }
 }
+// .suggest-box {
+//   position: absolute;
+//   top: calc(100% + 6px);
+//   left: 0;
+//   width: 100%;
+//   min-width: 350px;
+
+//   background: #fff;
+//   border-radius: 10px;
+//   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+
+//   z-index: 9999;
+// }

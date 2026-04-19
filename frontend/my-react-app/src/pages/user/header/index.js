@@ -365,46 +365,49 @@ useEffect(() => {
             <div className="header__utilities">
               
               {/* SEARCH */}
-              <form className="header__search" onSubmit={handleSearch}>
-                <input 
-  type="text" 
-  placeholder="Tìm kiếm sản phẩm..." 
-  value={searchQuery}
-  onChange={(e) => setSearchQuery(e.target.value)}
-  onKeyPress={handleKeyPress}
-  onFocus={() => searchQuery && setShowSuggest(true)}
-  onBlur={() => setTimeout(() => setShowSuggest(false), 200)}
-/>
-                <button type="submit"><GrSearch /></button>
-              </form>
-              {showSuggest && (
-  <div className="suggest-box">
-    {suggestions.length === 0 && (
-      <div className="no-result">Không tìm thấy</div>
-    )}
+              <div className="header__search">
+  <form onSubmit={handleSearch}>
+    <input 
+      type="text" 
+      placeholder="Tìm kiếm sản phẩm..." 
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      onKeyPress={handleKeyPress}
+      onFocus={() => searchQuery && setShowSuggest(true)}
+      onBlur={() => setTimeout(() => setShowSuggest(false), 200)}
+    />
+    <button type="submit"><GrSearch /></button>
+  </form>
 
-    {suggestions.map((item) => (
-      <div
-        key={item.id}
-        className="suggest-item"
-        onClick={() => {
-          navigate(`${ROUTERS.USER.PRODUCTDETAIL}?slug=${item.slug}`);
-          setShowSuggest(false);
-          setSearchQuery("");
-        }}
-      >
-        <img src={item.image || "/no-image.png"} alt={item.name} />
+  {showSuggest && (
+    <div className="suggest-box">
+      {suggestions.length === 0 && (
+        <div className="no-result">Không tìm thấy</div>
+      )}
 
-        <div className="info">
-          <div className="name">{item.name}</div>
-          <div className="price">
-            {item.price?.toLocaleString()}₫
+      {suggestions.map((item) => (
+        <div
+          key={item.id}
+          className="suggest-item"
+          onMouseDown={() => {
+  navigate(ROUTERS.USER.PRODUCTDETAIL.replace(":id", item.id));
+  setShowSuggest(false);
+  setSearchQuery("");
+}}
+        >
+          <img src={item.image || "/no-image.png"} alt={item.name} />
+
+          <div className="info">
+            <div className="name">{item.name}</div>
+            <div className="price">
+              {item.price?.toLocaleString()}₫
+            </div>
           </div>
         </div>
-      </div>
-    ))}
-  </div>
-)}
+      ))}
+    </div>
+  )}
+</div>
 
               {/* CART */}
               <div className="header__cart">
