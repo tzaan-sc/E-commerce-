@@ -19,7 +19,7 @@ import java.util.*;
 @RequestMapping("/api/uploads")
 @CrossOrigin(origins = "*")
 public class FileUploadController {
-
+    //
     // Quy định cứng thư mục lưu là "uploads" nằm ngay tại thư mục gốc dự án
     private final Path rootLocation = Paths.get("uploads");
 
