@@ -83,7 +83,6 @@ public class OrderServiceImpl implements OrderService {
         return mapOrderToDTO(orderRepository.save(order));
     }
 
-    // --- KHÁCH HÀNG XÁC NHẬN ĐÃ NHẬN HÀNG ---
     @Override
     @Transactional
     public OrderDTO confirmReceived(String email, Long orderId) {
@@ -97,19 +96,18 @@ public class OrderServiceImpl implements OrderService {
             throw new SecurityException("Bạn không có quyền thao tác đơn hàng này");
         }
 
-        if (!"DELIVERED".equalsIgnoreCase(order.getStatus())) {
+        // Yêu cầu: Khách hàng chỉ được xác nhận khi đơn đang ở SHIPPING
+        if (!"SHIPPING".equalsIgnoreCase(order.getStatus())) {
             throw new IllegalStateException(
-                    "Chỉ có thể xác nhận nhận hàng khi đơn ở trạng thái 'Đã giao'. Trạng thái hiện tại: "
+                    "Chỉ có thể xác nhận nhận hàng khi đơn ở trạng thái 'Đang giao'. Trạng thái hiện tại: "
                             + order.getStatus());
         }
 
-        order.setStatus("COMPLETED");
+        // Chuyển từ SHIPPING -> DELIVERED
+        order.setStatus("DELIVERED");
 
-        // 👇 Nếu là COD thì set PAID luôn vì khách vừa trả tiền mặt khi nhận hàng
-        if ("COD".equalsIgnoreCase(order.getPaymentMethod())
-                && order.getPaymentStatus() == PaymentStatus.UNPAID) {
-            order.setPaymentStatus(PaymentStatus.PAID);
-        }
+        // Cập nhật PaymentStatus thành PAID (vì khách đã thanh toán cho Shipper)
+        order.setPaymentStatus(com.ecommerce.backend.entity.product.PaymentStatus.PAID);
 
         return mapOrderToDTO(orderRepository.save(order));
     }
@@ -153,7 +151,6 @@ public class OrderServiceImpl implements OrderService {
         return mapOrderToDTO(order);
     }
 
-    // --- ADMIN CẬP NHẬT TRẠNG THÁI ---
     @Override
     @Transactional
     public OrderDTO updateOrderStatus(Long orderId, String status) {
@@ -161,11 +158,25 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
 
         String newStatus = status.toUpperCase();
-        String oldStatus = order.getStatus();
+        String oldStatus = order.getStatus() != null ? order.getStatus().toUpperCase() : "PENDING";
 
-        // ⚠️ Lưu ý: Không trừ kho ở đây nữa vì đã trừ lúc đặt hàng (Checkout) rồi.
+        // Admin BỊ CẤM chuyển trạng thái sang DELIVERED (hoặc COMPLETED)
+        if ("DELIVERED".equals(newStatus) || "COMPLETED".equals(newStatus)) {
+            throw new IllegalStateException("Admin không được phép chuyển trạng thái sang " + newStatus);
+        }
 
-        // 👇 Nếu Admin chuyển sang CANCELLED thì mới HOÀN LẠI KHO
+        if (!"CANCELLED".equals(newStatus)) {
+            // Kiểm tra trạng thái cũ trước khi update. Không cho phép nhảy cóc.
+            java.util.List<String> validFlow = java.util.Arrays.asList("PENDING", "CONFIRMED", "PROCESSING", "SHIPPING", "DELIVERED", "COMPLETED", "CANCELLED");
+            int oldIdx = validFlow.indexOf(oldStatus);
+            int newIdx = validFlow.indexOf(newStatus);
+            
+            if (newIdx != oldIdx + 1) {
+                throw new IllegalStateException("Chuyển trạng thái không hợp lệ: " + oldStatus + " -> " + newStatus + ". Không được nhảy cóc.");
+            }
+        }
+
+        // Nếu trạng thái mới là CANCELLED, bắt buộc gọi restoreStock
         if ("CANCELLED".equals(newStatus) && !"CANCELLED".equals(oldStatus)) {
             restoreStock(order);
         }
@@ -213,15 +224,18 @@ public class OrderServiceImpl implements OrderService {
 
     // --- HÀM PHỤ TRỢ ---
 
-    // Hàm cộng lại kho (Dùng khi hủy đơn)
     private void restoreStock(Order order) {
+        java.util.List<Product> productsToUpdate = new java.util.ArrayList<>();
         for (OrderItem item : order.getOrderItems()) {
             Product product = item.getProduct();
             if (product != null) {
                 int quantityToRestore = (item.getQuantity() != null) ? item.getQuantity() : 0;
                 product.setStockQuantity(product.getStockQuantity() + quantityToRestore);
-                productRepository.save(product);
+                productsToUpdate.add(product);
             }
+        }
+        if (!productsToUpdate.isEmpty()) {
+            productRepository.saveAll(productsToUpdate);
         }
     }
 
@@ -229,10 +243,8 @@ public class OrderServiceImpl implements OrderService {
         List<OrderItemDTO> itemDTOs = order.getOrderItems().stream()
                 .map(item -> {
                     String productImageUrl = null;
-                    if (item.getProduct() != null
-                            && item.getProduct().getImages() != null
-                            && !item.getProduct().getImages().isEmpty()) {
-                        productImageUrl = item.getProduct().getImages().get(0).getUrlImage();
+                    if (item.getProduct() != null) {
+                        productImageUrl = item.getProduct().getImageUrl(); // Lấy trực tiếp từ imageUrl của Product (tránh N+1)
                     }
                     return OrderItemDTO.builder()
                             .productName(item.getProductName())

@@ -5,6 +5,8 @@ import com.ecommerce.backend.entity.product.Order;
 import com.ecommerce.backend.entity.product.PaymentStatus;
 
 import jakarta.persistence.LockModeType;
+
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -27,6 +29,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     long countByUser(User user);
 
     List<Order> findAllByOrderByCreatedAtDesc();
+    
+    @EntityGraph(attributePaths = {"orderItems", "orderItems.product", "orderItems.product.images"})
+List<Order> findByUserOrderByCreatedAtDesc(User user);
 
     List<Order> findByStatusOrderByCreatedAtDesc(String status);
 

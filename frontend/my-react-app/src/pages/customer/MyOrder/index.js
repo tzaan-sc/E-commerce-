@@ -18,13 +18,13 @@ const MyOrdersPage = () => {
   const translateStatus = (status) => {
     if (!status) return 'Không rõ';
     const map = {
-      'PENDING':    'Chờ xác nhận',
+      'PENDING': 'Chờ xác nhận',
       'PROCESSING': 'Đang xử lý',
-      'CONFIRMED':  'Đã xác nhận',
-      'SHIPPING':   'Đang giao',
-      'DELIVERED':  'Đã giao',
-      'COMPLETED':  'Hoàn thành',
-      'CANCELLED':  'Đã hủy',
+      'CONFIRMED': 'Đã xác nhận',
+      'SHIPPING': 'Đang giao',
+      'DELIVERED': 'Đã giao',
+      'COMPLETED': 'Hoàn thành',
+      'CANCELLED': 'Đã hủy',
     };
     return map[status.toUpperCase()] || status;
   };
@@ -33,13 +33,13 @@ const MyOrdersPage = () => {
   const getStatusBadge = (status) => {
     const statusUpper = status?.toUpperCase();
     const statusConfig = {
-      PENDING:    { class: "warning",   text: translateStatus('PENDING')    },
-      PROCESSING: { class: "primary",   text: translateStatus('PROCESSING') },
-      CONFIRMED:  { class: "secondary", text: translateStatus('CONFIRMED')  },
-      SHIPPING:   { class: "info",      text: translateStatus('SHIPPING')   },
-      DELIVERED:  { class: "info",      text: translateStatus('DELIVERED')  },
-      COMPLETED:  { class: "success",   text: translateStatus('COMPLETED')  },
-      CANCELLED:  { class: "danger",    text: translateStatus('CANCELLED')  },
+      PENDING: { class: "warning", text: translateStatus('PENDING') },
+      PROCESSING: { class: "primary", text: translateStatus('PROCESSING') },
+      CONFIRMED: { class: "secondary", text: translateStatus('CONFIRMED') },
+      SHIPPING: { class: "info", text: translateStatus('SHIPPING') },
+      DELIVERED: { class: "info", text: translateStatus('DELIVERED') },
+      COMPLETED: { class: "success", text: translateStatus('COMPLETED') },
+      CANCELLED: { class: "danger", text: translateStatus('CANCELLED') },
     };
     const config = statusConfig[statusUpper] || { class: "secondary", text: status };
     return <span className={`badge bg-${config.class}`}>{config.text}</span>;
@@ -48,9 +48,9 @@ const MyOrdersPage = () => {
   // ── Badge trạng thái thanh toán ────────────────────────────────────────────
   const getPaymentBadge = (paymentStatus) => {
     const map = {
-      UNPAID:   { class: 'warning', text: 'Chưa thanh toán' },
-      PAID:     { class: 'success', text: 'Đã thanh toán'   },
-      REFUNDED: { class: 'info',    text: 'Đã hoàn tiền'    },
+      UNPAID: { class: 'warning', text: 'Chưa thanh toán' },
+      PAID: { class: 'success', text: 'Đã thanh toán' },
+      REFUNDED: { class: 'info', text: 'Đã hoàn tiền' },
     };
     const config = map[paymentStatus?.toUpperCase()] || { class: 'secondary', text: 'Không rõ' };
     return <span className={`badge bg-${config.class}`}>{config.text}</span>;
@@ -90,18 +90,18 @@ const MyOrdersPage = () => {
   };
 
   // ── Xác nhận đã nhận hàng ─────────────────────────────────────────────────
-const handleConfirmReceived = async (orderId) => {
-  if (window.confirm("Bạn xác nhận đã nhận được hàng?")) {
-    try {
-      await confirmReceived(orderId);
-      alert("Xác nhận nhận hàng thành công!");
-      fetchOrders();
-    } catch (err) {
-      console.error("Lỗi xác nhận nhận hàng:", err);
-      alert(err.response?.data?.message || "Không thể xác nhận. Vui lòng thử lại.");
+  const handleConfirmReceived = async (orderId) => {
+    if (window.confirm("Bạn xác nhận đã nhận được hàng?")) {
+      try {
+        await confirmReceived(orderId);
+        alert("Xác nhận nhận hàng thành công!");
+        fetchOrders();
+      } catch (err) {
+        console.error("Lỗi xác nhận nhận hàng:", err);
+        alert(err.response?.data?.message || "Không thể xác nhận. Vui lòng thử lại.");
+      }
     }
-  }
-};
+  };
 
   // ── Mua lại ───────────────────────────────────────────────────────────────
   const handleReorder = async (order) => {
@@ -114,7 +114,7 @@ const handleConfirmReceived = async (orderId) => {
 
       const addPromises = items.map(async (item) => {
         const productId = item.productId || item.id || (item.product ? item.product.id : null);
-        const quantity  = item.quantity || 1;
+        const quantity = item.quantity || 1;
         if (productId) {
           return await addToCart(productId, quantity);
         } else {
@@ -242,9 +242,8 @@ const handleConfirmReceived = async (orderId) => {
                 {order.items.map((item, index) => (
                   <div
                     key={index}
-                    className={`d-flex align-items-center mb-3 pb-3 ${
-                      index < order.items.length - 1 ? "border-bottom" : ""
-                    }`}
+                    className={`d-flex align-items-center mb-3 pb-3 ${index < order.items.length - 1 ? "border-bottom" : ""
+                      }`}
                   >
                     <img
                       src={
@@ -275,6 +274,9 @@ const handleConfirmReceived = async (orderId) => {
                         {(order.totalAmount || order.total || 0).toLocaleString("vi-VN")}₫
                       </span>
                     </p>
+                    <p className="mb-0 text-muted" style={{ fontSize: '0.85rem', marginTop: '4px' }}>
+                      Thanh toán: <strong>{order.paymentMethod === 'COD' ? 'Thanh toán khi nhận hàng (COD)' : `Thanh toán Online (${order.paymentMethod || 'Chuyển khoản'})`}</strong>
+                    </p>
                   </div>
 
                   <div>
@@ -293,18 +295,26 @@ const handleConfirmReceived = async (orderId) => {
                         Mua lại
                       </button>
                     )}
+
+                    {order.status === 'SHIPPING' && (
+                      <button
+                        className="btn btn-success btn-sm me-2"
+                        onClick={() => handleConfirmReceived(order.id)}
+                      >
+                        Đã nhận được hàng
+                      </button>
+                    )}
+
                     {order.status === 'DELIVERED' && (
-                        <button
-                          className="btn btn-success btn-sm"
-                          onClick={() => handleConfirmReceived(order.id)}
-                        >
-                          ✅ Xác nhận đã nhận hàng
-                        </button>
-                      )}
+                      <span className="ms-2 px-2 py-1 border border-success rounded text-success fw-bold"
+                        style={{ fontSize: '0.9rem', backgroundColor: '#f0fff4' }}>
+                        Giao hàng thành công
+                      </span>
+                    )}
 
                     {order.status === "PENDING" && (
                       <button
-                        className="btn btn-outline-danger btn-sm"
+                        className="btn btn-outline-danger btn-sm ms-2"
                         onClick={() => handleCancelOrder(order.id)}
                       >
                         Hủy đơn

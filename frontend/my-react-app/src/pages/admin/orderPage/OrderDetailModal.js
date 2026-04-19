@@ -71,7 +71,7 @@ const OrderDetailModal = ({ order, onClose, onSaveStatus }) => {
                   style={{ flex: 1 }}
                   disabled={isLocked}
                 >
-                  {STATUS_STEPS.map((s) => (
+                  {STATUS_STEPS.filter(s => s.value !== "DELIVERED" || order.status === "DELIVERED").map((s) => (
                     <option
                       key={s.value}
                       value={s.value}
