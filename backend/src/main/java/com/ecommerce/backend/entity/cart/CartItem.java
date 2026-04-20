@@ -2,6 +2,7 @@ package com.ecommerce.backend.entity.cart;
 
 import com.ecommerce.backend.entity.auth.User;
 import com.ecommerce.backend.entity.product.Product;
+import com.ecommerce.backend.entity.product.ProductVariant;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -24,7 +25,9 @@ public class CartItem {
     @ManyToOne(fetch = FetchType.EAGER) // <-- Đổi từ LAZY sang EAGER
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
-
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "variant_id", nullable = true) // Để true nếu có SP không có biến thể
+    private ProductVariant variant;
     @Column(nullable = false)
     private Integer quantity = 1;
 }

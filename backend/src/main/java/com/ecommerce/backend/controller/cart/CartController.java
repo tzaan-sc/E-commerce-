@@ -6,7 +6,6 @@ import com.ecommerce.backend.entity.product.Order;
 import com.ecommerce.backend.service.cart.CartService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-// Thêm 2 import quan trọng này
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -25,6 +24,7 @@ public class CartController {
     public ResponseEntity<CartItem> addToCart(
             @AuthenticationPrincipal UserDetails userDetails, // <-- Sửa: Lấy user đã login
             @RequestParam Long productId,
+            @RequestParam Long variantId, // 🔥 THÊM: Nhận variantId để khớp với Service
             @RequestParam Integer quantity
             // @RequestParam Long userId, <-- Xóa: Không còn cần
     ) {
@@ -37,8 +37,8 @@ public class CartController {
 
         if (quantity <= 0) quantity = 1;
 
-        // Sửa: Gọi service bằng username
-        return ResponseEntity.ok(cartService.addToCart(username, productId, quantity));
+        // Sửa: Gọi service bằng username và truyền đủ variantId
+        return ResponseEntity.ok(cartService.addToCart(username, productId, variantId, quantity));
     }
 
     @GetMapping // <-- Sửa: Xóa "/{userId}"
@@ -55,18 +55,19 @@ public class CartController {
         return ResponseEntity.ok(cartService.getCartItems(username));
     }
 
-        @PostMapping("/checkout-selected")
-        public ResponseEntity<Order> checkoutSelected(
-                @AuthenticationPrincipal UserDetails userDetails,
-                @RequestBody CheckoutRequest request // 👈 Sửa ở đây
-        ) {
-            if (userDetails == null) return ResponseEntity.status(401).build();
-            String username = userDetails.getUsername();
+    @PostMapping("/checkout-selected")
+    public ResponseEntity<Order> checkoutSelected(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody CheckoutRequest request // 👈 Sửa ở đây
+    ) {
+        if (userDetails == null) return ResponseEntity.status(401).build();
+        String username = userDetails.getUsername();
 
-            // Truyền cả object request vào service
-            Order order = cartService.checkoutSelected(username, request);
-            return ResponseEntity.ok(order);
-        }
+        // Truyền cả object request vào service
+        Order order = cartService.checkoutSelected(username, request);
+        return ResponseEntity.ok(order);
+    }
+
     @PutMapping("/update/{cartItemId}")
     public ResponseEntity<CartItem> updateCartItem(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -92,6 +93,7 @@ public class CartController {
         cartService.removeItemFromCart(username, cartItemId);
         return ResponseEntity.ok("Item removed");
     }
+
     @PostMapping("/remove-batch")
     public ResponseEntity<?> removeCartItems(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -102,6 +104,7 @@ public class CartController {
         cartService.removeItemsFromCart(username, cartItemIds); // Gọi service
         return ResponseEntity.ok("Items removed");
     }
+
     @GetMapping("/count")
     public ResponseEntity<Long> countCartItems(
             @AuthenticationPrincipal UserDetails userDetails
@@ -114,5 +117,4 @@ public class CartController {
         String username = userDetails.getUsername();
         return ResponseEntity.ok(cartService.countCartItems(username));
     }
-
 }

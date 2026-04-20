@@ -1,4 +1,3 @@
-// src/api/axiosConfig.js
 import axios from "axios";
 import { toast } from "react-toastify";
 
@@ -13,12 +12,10 @@ const TOAST_CONFIG = {
 };
 
 // ─── Hàm trích xuất message từ nhiều cấu trúc lỗi khác nhau của Spring Boot ──
-// Xử lý được:  { message: "..." }  /  { error: "..." }  /  chuỗi text thuần
 const extractErrorMessage = (data) => {
   if (!data) return null;
   if (typeof data === "string") return data;
   
-  // Nếu có danh sách chi tiết lỗi (từ Validation của backend), gom chúng lại hiển thị cho rõ
   if (data.details && Array.isArray(data.details) && data.details.length > 0) {
     if (data.details.length === 1) {
       const parts = data.details[0].split(': ');
@@ -49,19 +46,18 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // 🔥 Log để Hiển theo dõi phương thức thực tế gửi đi (POST/GET)
+    console.log(`[REQUEST] ${config.method.toUpperCase()} -> ${config.url}`);
     return config;
   },
   (error) => Promise.reject(error)
 );
 
 // ─── Response Interceptor: Xử lý lỗi tập trung ───────────────────────────────
-// ⚠️  KHÔNG auto-unwrap response.data để không làm hỏng code hiện tại.
-//     Toàn bộ code cũ vẫn tự truy cập .data như bình thường.
 api.interceptors.response.use(
-  (response) => response, // Trả nguyên response, không thay đổi
+  (response) => response,
 
   (error) => {
-    // Trường hợp không có phản hồi từ server (mất mạng, backend sập)
     if (!error.response) {
       toast.error("⚠️ Không thể kết nối đến máy chủ. Kiểm tra lại mạng!", TOAST_CONFIG);
       return Promise.reject(error);
@@ -70,9 +66,11 @@ api.interceptors.response.use(
     const { status, data } = error.response;
     const serverMessage = extractErrorMessage(data);
 
+    // 🔥 Debug log để Hiển nhìn thấy lỗi JPA hoặc Auth từ Backend
+    console.error(`[RESPONSE ERROR ${status}]`, data);
+
     switch (status) {
       case 400:
-        // Lỗi dữ liệu: hiển thị message từ server nếu có, fallback về mặc định
         toast.error(
           serverMessage || "Dữ liệu gửi lên không hợp lệ. Vui lòng kiểm tra lại!",
           TOAST_CONFIG
@@ -80,11 +78,11 @@ api.interceptors.response.use(
         break;
 
       case 401:
-        // Hết phiên đăng nhập: thông báo và redirect
         toast.warning(
           "⏱️ Phiên đăng nhập đã hết hạn. Đang chuyển về trang đăng nhập...",
           { ...TOAST_CONFIG, autoClose: 2500, onClose: () => {
             localStorage.removeItem("token");
+            localStorage.removeItem("user"); // Xóa thêm user cho sạch
             window.location.href = "/dang-nhap";
           }}
         );
@@ -104,13 +102,20 @@ api.interceptors.response.use(
         );
         break;
 
-      case 500:
+      case 405:
+        // 🔥 Xử lý lỗi "Method Not Allowed" (VD: POST bị biến thành GET)
         toast.error(
-          "🛠️ Hệ thống đang gặp sự cố. Vui lòng thử lại sau!",
+          "🛠️ Lỗi phương thức yêu cầu (405). Vui lòng kiểm tra lại quyền hoặc đường dẫn!",
           TOAST_CONFIG
         );
-        // Log chi tiết lỗi kỹ thuật ra console để dev debug, không show ra user
-        console.error("[500 Server Error]", data);
+        break;
+
+      case 500:
+        // Hiển thị serverMessage nếu lỗi JPA trả về chi tiết (VD: "Không đủ số lượng kho")
+        toast.error(
+          serverMessage || "🛠️ Hệ thống đang gặp sự cố. Vui lòng thử lại sau!",
+          TOAST_CONFIG
+        );
         break;
 
       default:
@@ -121,7 +126,6 @@ api.interceptors.response.use(
         break;
     }
 
-    // Vẫn reject để các try/catch trong component có thể bắt tiếp nếu cần
     return Promise.reject(error);
   }
 );

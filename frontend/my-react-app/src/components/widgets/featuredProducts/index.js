@@ -21,17 +21,57 @@ const FeaturedProducts = ({ filterBrandId, filterUsageId, filterScreenSizeId }) 
   const ITEMS_PER_BATCH = 8; 
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_BATCH);
 
-  // 👇 1. LOGIC TÍNH GIÁ KHUYẾN MÃI
-  const getDiscountedPrice = (product) => {
-    const promo = product.promotion;
-    if (!promo || promo.status !== "ACTIVE") return null;
+  // ✅ 1. LOGIC TÍNH GIÁ: Ưu tiên lấy giá của biến thể đầu tiên
+  const getProductDisplayInfo = (product) => {
+    // Tìm biến thể đầu tiên
+    const firstVariant = product.variants && product.variants.length > 0 ? product.variants[0] : null;
+    
+    // Lấy giá gốc: Ưu tiên giá biến thể, nếu không có lấy giá sản phẩm
+    const basePrice = firstVariant ? firstVariant.price : (product.price || 0);
 
-    if (promo.discountType === "PERCENTAGE") {
-      return product.price - (product.price * promo.discountValue) / 100;
-    } else if (promo.discountType === "FIXED_AMOUNT") {
-      return Math.max(0, product.price - promo.discountValue);
+    // Tính khuyến mãi
+    const promo = product.promotion;
+    let finalPrice = basePrice;
+    let discountDisplay = null;
+    let hasPromo = false;
+
+    if (promo && promo.status === "ACTIVE") {
+      hasPromo = true;
+      if (promo.discountType === "PERCENTAGE") {
+        finalPrice = basePrice * (1 - promo.discountValue / 100);
+        discountDisplay = `-${promo.discountValue}%`;
+      } else if (promo.discountType === "FIXED_AMOUNT") {
+        finalPrice = Math.max(0, basePrice - promo.discountValue);
+        discountDisplay = `-${(promo.discountValue / 1000).toLocaleString()}K`;
+      }
     }
-    return null;
+
+    return { basePrice, finalPrice, discountDisplay, hasPromo, firstVariant };
+  };
+
+  // ✅ 2. LOGIC LẤY ẢNH: Ưu tiên ảnh biến thể đầu tiên
+  const getProductImage = (item) => {
+    const BASE_URL = "http://localhost:8080";
+    const firstVariant = item.variants && item.variants.length > 0 ? item.variants[0] : null;
+
+    // 1. Ưu tiên ảnh trong mảng imageUrls của biến thể đầu (như Hiển đã làm ở Carousel)
+    if (firstVariant?.imageUrls && firstVariant.imageUrls.length > 0) {
+        const path = firstVariant.imageUrls[0];
+        return path.startsWith("http") ? path : `${BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`;
+    }
+
+    // 2. Dự phòng: Ảnh đơn trong cột image của biến thể
+    if (firstVariant?.image) {
+        return firstVariant.image.startsWith("http") ? firstVariant.image : `${BASE_URL}${firstVariant.image}`;
+    }
+
+    // 3. Dự phòng: Ảnh của sản phẩm gốc
+    if (item.images && item.images.length > 0) {
+        const url = item.images[0].urlImage || item.images[0];
+        return url.startsWith("http") ? url : `${BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+    }
+
+    return "https://via.placeholder.com/300x300?text=No+Image";
   };
 
   const shuffleArray = (array) => {
@@ -102,15 +142,16 @@ const FeaturedProducts = ({ filterBrandId, filterUsageId, filterScreenSizeId }) 
     fetchProducts();
   }, [filterBrandId, filterUsageId, filterScreenSizeId]);
 
-  const handleAddToCart = async (productId) => {
+  const handleAddToCart = async (product) => {
     const token = localStorage.getItem("token"); 
     if (!token) { 
-        const confirmLogin = window.confirm("Vui lòng đăng nhập để mua hàng.");
-        if (confirmLogin) navigate(ROUTERS.USER.LOGIN);
+        if (window.confirm("Vui lòng đăng nhập để mua hàng.")) navigate(ROUTERS.USER.LOGIN);
         return; 
     }
     try { 
-        await addToCart(productId, 1); 
+        // Lấy ID biến thể đầu tiên để thêm vào giỏ hàng (tránh lỗi 400 null variant)
+        const variantId = product.variants && product.variants.length > 0 ? product.variants[0].id : null;
+        await addToCart(product.id, 1, variantId); 
         fetchCartCount(); 
         toast.success("Đã thêm vào giỏ hàng thành công!"); 
     } catch (err) { 
@@ -120,7 +161,6 @@ const FeaturedProducts = ({ filterBrandId, filterUsageId, filterScreenSizeId }) 
   };
 
   const handleLoadMore = () => setVisibleCount(prev => prev + ITEMS_PER_BATCH);
-  
   const handleCollapse = () => {
     setVisibleCount(ITEMS_PER_BATCH);
     const section = document.querySelector('.featured-products');
@@ -134,27 +174,8 @@ const FeaturedProducts = ({ filterBrandId, filterUsageId, filterScreenSizeId }) 
         : ROUTERS.USER.PRODUCTDETAIL.replace(":id", id);
   };
 
-  const getProductImage = (item) => {
-    if (item.images && item.images.length > 0) {
-        const firstImg = item.images[0];
-        const url = firstImg.urlImage || firstImg;
-        return url.startsWith("http") ? url : `http://localhost:8080${url}`;
-    }
-    if (item.imageUrl) {
-        return item.imageUrl.startsWith("http") ? item.imageUrl : `http://localhost:8080${item.imageUrl}`;
-    }
-    return "https://via.placeholder.com/300x300?text=No+Image";
-  };
-
   if (loading) return <div style={{textAlign: 'center', padding: '20px'}}>Đang tải...</div>;
-  
-  if (products.length === 0) {
-      return (
-        <div style={{textAlign: 'center', padding: '40px', color: '#666'}}>
-            <h3>Không tìm thấy sản phẩm phù hợp.</h3>
-        </div>
-      );
-  }
+  if (products.length === 0) return <div style={{textAlign: 'center', padding: '40px', color: '#666'}}><h3>Không tìm thấy sản phẩm.</h3></div>;
 
   return (
     <section className="featured-products">
@@ -163,28 +184,20 @@ const FeaturedProducts = ({ filterBrandId, filterUsageId, filterScreenSizeId }) 
         
         <div className="product-grid">
           {products.slice(0, visibleCount).map((item) => {
-            // 👇 2. TÍNH TOÁN GIÁ GIẢM CHO TỪNG ITEM
-            const discountedPrice = getDiscountedPrice(item);
-            const hasPromo = discountedPrice !== null;
+            // ✅ SỬ DỤNG LOGIC MỚI ĐỂ LẤY GIÁ BIẾN THỂ ĐẦU
+            const { basePrice, finalPrice, discountDisplay, hasPromo } = getProductDisplayInfo(item);
 
             return (
               <div key={item.id} className="product-card">
                 <div className="product-card__image">
-                   {/* 👇 3. HIỂN THỊ BADGE GIẢM GIÁ */}
-                   {hasPromo && (
-                     <div className="promo-badge">
-                       {item.promotion.discountType === "PERCENTAGE" 
-                        ? `-${item.promotion.discountValue}%` 
-                        : `GIẢM ${(item.promotion.discountValue / 1000).toLocaleString()}K`}
-                     </div>
-                   )}
+                   {hasPromo && <div className="promo-badge">{discountDisplay}</div>}
                    <Link to={getProductLink(item.id)}>
                       <img src={getProductImage(item)} alt={item.name} loading="lazy" />
                    </Link>
                 </div>
 
                 <div className="product-card__content">
-                  <div className="product-brand" style={{fontSize: '12px', color: '#999', textTransform: 'uppercase', marginBottom: '5px', fontWeight: 'bold'}}>
+                  <div className="product-brand" style={{fontSize: '11px', color: '#999', textTransform: 'uppercase', marginBottom: '4px', fontWeight: 'bold'}}>
                       {item.brand?.name}
                   </div>
                   <h3 className="product-name">
@@ -197,19 +210,18 @@ const FeaturedProducts = ({ filterBrandId, filterUsageId, filterScreenSizeId }) 
                       </div>
                   )}
 
-                  {/* 👇 4. HIỂN THỊ GIÁ (CŨ & MỚI) */}
                   <div className="product-price-container">
                     {hasPromo ? (
                       <>
-                        <span className="product-price discounted">{formatter(discountedPrice)}</span>
-                        <span className="product-price original">{formatter(item.price)}</span>
+                        <span className="product-price discounted">{formatter(finalPrice)}</span>
+                        <span className="product-price original">{formatter(basePrice)}</span>
                       </>
                     ) : (
-                      <span className="product-price">{formatter(item.price)}</span>
+                      <span className="product-price">{formatter(basePrice)}</span>
                     )}
                   </div>
 
-                  <button className="btn-add-cart" onClick={() => handleAddToCart(item.id)}>
+                  <button className="btn-add-cart" onClick={() => handleAddToCart(item)}>
                       <AiOutlineShoppingCart style={{marginRight: '5px'}}/> Thêm vào giỏ hàng
                   </button>
                 </div>
