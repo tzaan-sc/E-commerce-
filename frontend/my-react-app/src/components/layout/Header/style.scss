@@ -190,29 +190,6 @@ $hover-bg: #f0f0f0;
       &:hover { background: darken($hover-bg, 10%); }
     }
   }
-//   &__search {
-//   position: relative; // 🔥 thêm dòng này
-
-//   display: flex;
-//   align-items: center;
-//   border: 1px solid $border-color;
-//   border-radius: 25px;
-//   overflow: visible; // 🔥 QUAN TRỌNG (đang là hidden → che dropdown)
-//   background: $bg-light;
-
-//   width: 350px; // 🔥 FIX CỨNG
-//   flex-shrink: 0; // 🔥 chống bị co
-
-//   form {
-//     display: flex;
-//     width: 100%;
-//   }
-
-//   input {
-//     flex: 1;
-//     padding: 10px;
-//   }
-// }
 
 
   &__cart {
