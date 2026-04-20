@@ -19,10 +19,11 @@ import UserPromotionPage from "./pages/promotionPage/index";
 // ====== Import các trang Admin ======
 import { ROUTERS } from "./utils/router";
 import AdminDashboard from "./pages/admin/dashboardPage";
+import StaffDashboard from "./pages/staff/dashboardPage";
 import SearchPage from "./pages/Search/SearchPage";  
 import ForgotPasswordPage from "./pages/Auth/ForgotPassword";
 import ResetPasswordPage from "./pages/Auth/ForgotPassword"; 
-import ProtectedRoute from "./components/ProtectedRoute"; // 1. Import cái này vào
+import ProtectedRoute from "./components/ProtectedRoute";
 import QRPaymentPage from "./components/page/qrPaymentPage";
 
 // ROUTER CHÍNH
@@ -62,7 +63,16 @@ const RouterCustom = () => {
           </ProtectedRoute>
         }
       />
-       
+      
+      {/* ====================== STAFF ROUTES ====================== */}
+      <Route
+        path={ROUTERS.STAFF.DASHBOARD}
+        element={
+          <ProtectedRoute roles={["STAFF"]}>
+            <StaffDashboard />
+          </ProtectedRoute>
+        }
+      />
 
       {/* <Route path="/customer/home" element={<CustomerLayout />}> */}
       <Route 

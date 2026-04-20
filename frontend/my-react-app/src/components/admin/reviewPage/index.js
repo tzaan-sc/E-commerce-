@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import apiClient from "../../../api/axiosConfig";
 import "./style.scss";
-
-const API = "http://localhost:8080/api";
 
 function ReviewManagement() {
 
@@ -13,34 +11,46 @@ function ReviewManagement() {
   }, []);
 
   const fetchReviews = async () => {
-    const res = await axios.get(`${API}/reviews`);
-    setReviews(res.data);
+    try {
+      const res = await apiClient.get("/reviews");
+      setReviews(res.data);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const approveReview = async (id) => {
-    await axios.put(`${API}/reviews/${id}/approve`);
-    fetchReviews();
+    try {
+      await apiClient.put(`/reviews/${id}/approve`);
+      fetchReviews();
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const deleteReview = async (id) => {
-    await axios.delete(`${API}/reviews/${id}`);
-    fetchReviews();
+    try {
+      await apiClient.delete(`/reviews/${id}`);
+      fetchReviews();
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const replyReview = async (id) => {
   const reply = prompt("Nhập phản hồi:");
   if (!reply) return;
 
-  const token = localStorage.getItem("token"); // 🔥 lấy token
-
-  await axios.put(`${API}/reviews/${id}/reply`, reply, {
-    headers: {
-      "Content-Type": "text/plain",
-      Authorization: `Bearer ${token}`, // 🔥 thêm dòng này
-    },
-  });
-
-  fetchReviews();
+  try {
+    await apiClient.put(`/reviews/${id}/reply`, reply, {
+      headers: {
+        "Content-Type": "text/plain",
+      },
+    });
+    fetchReviews();
+  } catch (e) {
+    console.error(e);
+  }
 };
 
   return (

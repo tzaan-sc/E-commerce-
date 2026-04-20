@@ -16,7 +16,10 @@ export const ROUTERS = {
   },
   ADMIN: {
     DASHBOARD: "/admin/dashboard",
-                   
+  },
+
+  STAFF: {
+    DASHBOARD: "/staff/dashboard",
   },
 
   CUSTOMER: { 

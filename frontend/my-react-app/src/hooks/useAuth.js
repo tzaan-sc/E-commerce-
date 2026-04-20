@@ -41,6 +41,7 @@ export const useAuth = () => {
 
       // Điều hướng theo role
       if (data.role === "ADMIN") navigate("/admin/dashboard");
+      else if (data.role === "STAFF") navigate("/staff/dashboard");
       else if (data.role === "CUSTOMER") navigate("/customer/home");
       else navigate("/");
 

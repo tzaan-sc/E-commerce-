@@ -78,8 +78,9 @@ public class ReviewController {
         return ResponseEntity.ok(review);
     }
 
-    // ⭐ ADMIN: duyệt đánh giá
+    // ⭐ ADMIN/STAFF: duyệt đánh giá
     @PutMapping("/reviews/{id}/approve")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public ResponseEntity<?> approveReview(@PathVariable Long id) {
 
         Review review = reviewRepository.findById(id).orElseThrow();
@@ -90,8 +91,9 @@ public class ReviewController {
         return ResponseEntity.ok("Approved");
     }
 
-    // ⭐ ADMIN: xóa review
+    // ⭐ ADMIN/STAFF: xóa review
     @DeleteMapping("/reviews/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public ResponseEntity<?> deleteReview(@PathVariable Long id) {
         reviewRepository.deleteById(id);
         return ResponseEntity.ok("Deleted");
@@ -117,8 +119,9 @@ public class ReviewController {
         return reviewService.getAverageStar(productId);
     }
 
-    // ⭐ ADMIN: reply review
+    // ⭐ ADMIN/STAFF: reply review
     @PutMapping("/reviews/{id}/reply")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public ResponseEntity<?> replyReview(
             @PathVariable Long id,
             @RequestBody String replyContent
@@ -127,15 +130,17 @@ public class ReviewController {
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
-        boolean isAdmin = auth.getAuthorities()
+        boolean isStaffOrAdmin = auth.getAuthorities()
                 .stream()
                 .anyMatch(a ->
                         a.getAuthority().equals("ADMIN") ||
-                                a.getAuthority().equals("ROLE_ADMIN")
+                        a.getAuthority().equals("ROLE_ADMIN") ||
+                        a.getAuthority().equals("STAFF") ||
+                        a.getAuthority().equals("ROLE_STAFF")
                 );
 
-        if (!isAdmin) {
-            return ResponseEntity.status(403).body("Chỉ admin mới được trả lời");
+        if (!isStaffOrAdmin) {
+            return ResponseEntity.status(403).body("Chỉ admin/staff mới được trả lời");
         }
 
         review.setReply(replyContent);

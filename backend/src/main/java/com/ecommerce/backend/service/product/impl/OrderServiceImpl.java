@@ -143,9 +143,10 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
 
         boolean isOwner = order.getUser() != null && order.getUser().getId().equals(user.getId());
-        boolean isAdmin = user.getRole() == com.ecommerce.backend.entity.auth.Role.ADMIN;
+        boolean isAdminOrStaff = user.getRole() == com.ecommerce.backend.entity.auth.Role.ADMIN
+                || user.getRole() == com.ecommerce.backend.entity.auth.Role.STAFF;
 
-        if (!isOwner && !isAdmin) {
+        if (!isOwner && !isAdminOrStaff) {
             throw new ResourceNotFoundException("Order", "id", orderId);
         }
         return mapOrderToDTO(order);
@@ -167,12 +168,14 @@ public class OrderServiceImpl implements OrderService {
 
         if (!"CANCELLED".equals(newStatus)) {
             // Kiểm tra trạng thái cũ trước khi update. Không cho phép nhảy cóc.
-            java.util.List<String> validFlow = java.util.Arrays.asList("PENDING", "CONFIRMED", "PROCESSING", "SHIPPING", "DELIVERED", "COMPLETED", "CANCELLED");
+            java.util.List<String> validFlow = java.util.Arrays.asList("PENDING", "CONFIRMED", "PROCESSING", "SHIPPING",
+                    "DELIVERED", "COMPLETED", "CANCELLED");
             int oldIdx = validFlow.indexOf(oldStatus);
             int newIdx = validFlow.indexOf(newStatus);
-            
+
             if (newIdx != oldIdx + 1) {
-                throw new IllegalStateException("Chuyển trạng thái không hợp lệ: " + oldStatus + " -> " + newStatus + ". Không được nhảy cóc.");
+                throw new IllegalStateException(
+                        "Chuyển trạng thái không hợp lệ: " + oldStatus + " -> " + newStatus + ". Không được nhảy cóc.");
             }
         }
 
@@ -244,7 +247,8 @@ public class OrderServiceImpl implements OrderService {
                 .map(item -> {
                     String productImageUrl = null;
                     if (item.getProduct() != null) {
-                        productImageUrl = item.getProduct().getImageUrl(); // Lấy trực tiếp từ imageUrl của Product (tránh N+1)
+                        productImageUrl = item.getProduct().getImageUrl(); // Lấy trực tiếp từ imageUrl của Product
+                                                                           // (tránh N+1)
                     }
                     return OrderItemDTO.builder()
                             .productName(item.getProductName())

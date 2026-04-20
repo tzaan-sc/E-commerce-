@@ -49,7 +49,11 @@ const LoginPage = () => {
       })
     );
 
-    navigate("/");
+    // Điều hướng theo role
+    if (res.data.role === "ADMIN") navigate("/admin/dashboard");
+    else if (res.data.role === "STAFF") navigate("/staff/dashboard");
+    else if (res.data.role === "CUSTOMER") navigate("/customer/home");
+    else navigate("/");
   
   } catch (error) {
     console.error("Google login failed", error);

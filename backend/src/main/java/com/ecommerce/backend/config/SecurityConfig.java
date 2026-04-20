@@ -44,9 +44,30 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-                // (Phần .authorizeHttpRequests của bạn giữ nguyên)
+                // ============================================
+                // 🔐 CẤU HÌNH PHÂN QUYỀN
+                // ============================================
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll()
+                    // .anyRequest().permitAll()
+
+                        // Các API công khai (đăng ký, đăng nhập...)
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/variants/**").permitAll() 
+
+                        // Chỉ ADMIN mới được truy cập admin chung
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        
+                        // Quản lý đơn hàng (ADMIN và STAFF) - và CUSTOMER cho các endpoint của riêng họ
+                        .requestMatchers("/api/orders/**").hasAnyRole("ADMIN", "STAFF", "CUSTOMER")
+                        
+                        // Quản lý đánh giá
+                        .requestMatchers("/api/reviews/**").hasAnyRole("ADMIN", "STAFF", "CUSTOMER")
+
+                        // Chỉ CUSTOMER được truy cập
+                        .requestMatchers("/api/customer/**").hasAnyRole("CUSTOMER", "ADMIN", "STAFF")
+
+                        // Các API còn lại phải đăng nhập
+                        .anyRequest().authenticated()
                 )
 
                 .sessionManagement(session -> session

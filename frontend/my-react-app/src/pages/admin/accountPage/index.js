@@ -1,17 +1,15 @@
-import { toast } from 'react-toastify';
-// src/pages/admin/accountsPage/index.js
 import React, { useState, useEffect } from "react";
 import AccountList from "./AccountList";
 import AccountEditModal from "./AccountEditModal";
+import apiClient from "../../../api/axiosConfig";
+import { toast } from 'react-toastify';
 
 const AccountsPage = () => {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingAccount, setEditingAccount] = useState(null);
-
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const API_BASE = "http://localhost:8080/api/users";
 
   useEffect(() => {
     fetchAccounts();
@@ -20,54 +18,45 @@ const AccountsPage = () => {
   const fetchAccounts = async () => {
     try {
       setLoading(true);
-      const response = await fetch(API_BASE);
-      const data = await response.json();
-
-      const mappedData = data.map((acc) => ({
+      const response = await apiClient.get("/users");
+      // GIỮ NGUYÊN role từ Backend trả về (ADMIN, STAFF, CUSTOMER)
+      const mappedData = response.data.map((acc) => ({
         id: acc.id,
         username: acc.username,
         email: acc.email,
-        role: acc.role === "ADMIN" ? "Admin" : "Khách hàng",
+        role: acc.role, 
         status: acc.active ? "Hoạt động" : "Khóa",
       }));
-
       setAccounts(mappedData);
     } catch (error) {
       console.error("Lỗi tải tài khoản:", error);
+      toast.error("Không thể tải danh sách tài khoản");
     } finally {
       setLoading(false);
     }
   };
 
   const handleUpdateAccount = async (updatedFormData) => {
+    // Payload gửi lên server phải đúng Enum chữ hoa
     const userPayload = {
       username: updatedFormData.username,
       email: updatedFormData.email,
-      role: updatedFormData.role === "Admin" ? "ADMIN" : "CUSTOMER",
+      role: updatedFormData.role, 
       active: updatedFormData.status === "Hoạt động",
     };
 
     try {
-      const response = await fetch(`${API_BASE}/${updatedFormData.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(userPayload),
-      });
-
-      if (response.ok) {
-        await fetchAccounts();
+      const response = await apiClient.put(`/users/${updatedFormData.id}`, userPayload);
+      if (response.status === 200 || response.status === 204) {
+        await fetchAccounts(); 
         setEditingAccount(null);
         toast.success("Cập nhật tài khoản thành công!");
-      } else {
-        toast.error("Lỗi khi cập nhật tài khoản!");
       }
     } catch (error) {
-      console.error("Error updating account:", error);
-      toast.error("Lỗi mạng khi cập nhật tài khoản!");
+      toast.error("Lỗi khi cập nhật tài khoản!");
     }
   };
 
-  // Pagination logic
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentAccounts = accounts.slice(indexOfFirstItem, indexOfLastItem);
@@ -78,7 +67,6 @@ const AccountsPage = () => {
       <div className="page-card__header">
         <h3 className="page-card__title">Quản lý tài khoản</h3>
       </div>
-
       {loading ? (
         <div style={{ padding: "20px", textAlign: "center" }}>Đang tải...</div>
       ) : (
@@ -90,7 +78,6 @@ const AccountsPage = () => {
           onEdit={setEditingAccount}
         />
       )}
-
       {editingAccount && (
         <AccountEditModal
           account={editingAccount}

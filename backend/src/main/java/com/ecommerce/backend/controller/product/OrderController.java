@@ -97,6 +97,7 @@ public class OrderController {
 
     // lấy danh sách tất cả đơn hàng cho admin
     @GetMapping("/admin")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public ResponseEntity<List<OrderDTO>> getAllOrdersForAdmin(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(defaultValue = "all") String status) {
@@ -116,6 +117,7 @@ public class OrderController {
 
     // cập nhật trạng thái đơn hàng
     @PutMapping("/{orderId}/status")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public ResponseEntity<OrderDTO> updateOrderStatus(
             @PathVariable Long orderId,
             @RequestParam String status) {
