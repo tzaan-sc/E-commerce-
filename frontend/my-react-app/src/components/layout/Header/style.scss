@@ -219,6 +219,7 @@ $hover-bg: #f0f0f0;
     }
   }
 
+
   &__cart {
     .cart-icon-wrapper {
       position: relative;
@@ -296,6 +297,74 @@ $hover-bg: #f0f0f0;
       flex-direction: column;
       min-width: 250px;
       gap: 15px;
+    }
+  }
+}
+// .suggest-box {
+//   position: absolute;
+//   top: calc(100% + 6px);
+//   left: 0;
+//   width: 100%;
+//   min-width: 350px;
+
+//   background: #fff;
+//   border-radius: 10px;
+//   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+
+//   z-index: 9999;
+// }
+.suggest-box {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 10;
+  width: 15%;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.suggest-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  cursor: pointer;
+
+  &:hover {
+    background: #f5f5f5;
+  }
+
+  img {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 6px;
+    flex-shrink: 0;
+  }
+
+  .info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0; // 🔥 cực quan trọng chống tràn
+
+    .name {
+      font-size: 14px;
+      font-weight: 500;
+      color: #333;
+
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 250px;
+    }
+
+    .price {
+      font-size: 13px;
+      color: #e53935;
+      margin-top: 2px;
     }
   }
 }

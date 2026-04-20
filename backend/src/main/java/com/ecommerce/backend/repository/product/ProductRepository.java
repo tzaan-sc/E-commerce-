@@ -1,11 +1,13 @@
 package com.ecommerce.backend.repository.product;
 
 import com.ecommerce.backend.entity.product.Product;
+import com.ecommerce.backend.dto.auth.SearchSuggestDTO;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
@@ -72,4 +74,25 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             @Param("minPrice") Double minPrice,
             @Param("maxPrice") Double maxPrice
     );
+    @Query("""
+SELECT new com.ecommerce.backend.dto.auth.SearchSuggestDTO(
+    p.id,
+    p.name,
+    p.slug,
+    MIN(v.image),
+    MIN(v.price)
+)
+FROM Product p
+JOIN p.variants v
+WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+GROUP BY p.id, p.name, p.slug
+ORDER BY 
+    CASE 
+        WHEN LOWER(p.name) LIKE LOWER(CONCAT(:keyword, '%')) THEN 0
+        ELSE 1
+    END,
+    LENGTH(p.name) ASC
+""")
+    List<SearchSuggestDTO> searchSuggest(@Param("keyword") String keyword, Pageable pageable);
+
 }
