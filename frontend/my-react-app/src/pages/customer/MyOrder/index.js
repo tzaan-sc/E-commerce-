@@ -5,7 +5,7 @@ import { addToCart } from "api/cart";
 import { useCart } from "context/index";
 import { useNavigate } from "react-router-dom";
 import { getMyOrders, cancelOrder, confirmReceived } from "api/order";
-
+import ReviewForm from "components/user/ReviewForm";
 const MyOrdersPage = () => {
 
   const { fetchCartCount } = useCart();
@@ -14,7 +14,10 @@ const MyOrdersPage = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
+  const [showReview, setShowReview] = useState(false);
+const [selectedProduct, setSelectedProduct] = useState(null);
 
+const user = JSON.parse(localStorage.getItem("user"));
   // ── Dịch trạng thái đơn hàng ───────────────────────────────────────────────
   const translateStatus = (status) => {
     if (!status) return 'Không rõ';
@@ -288,14 +291,27 @@ const MyOrdersPage = () => {
                       Xem chi tiết
                     </Link>
 
-                    {order.status === "COMPLETED" && (
+                    {order.status === "DELIVERED" && (
                       <button
-                        className="btn btn-primary btn-sm"
+                        className="btn btn-primary btn-sm me-2"
                         onClick={() => handleReorder(order)}
                       >
                         Mua lại
                       </button>
                     )}
+
+                    {order.status === "DELIVERED" && (
+                      <button
+                        className="btn btn-outline-primary btn-sm"
+                        onClick={() => {
+                          setSelectedProduct(order.items[0].productId);
+                          setShowReview(true);
+                        }}
+                      >
+                        Đánh giá
+                      </button>
+                    )}
+
 
                     {order.status === 'SHIPPING' && (
                       <button
@@ -329,6 +345,39 @@ const MyOrdersPage = () => {
           ))}
         </div>
       )}
+            {showReview && (
+<div
+style={{
+position: "fixed",
+top: 0,
+left: 0,
+width: "100%",
+height: "100%",
+background: "rgba(0,0,0,0.5)",
+display: "flex",
+justifyContent: "center",
+alignItems: "center",
+zIndex: 999
+}}
+>
+
+<div className="bg-white p-4 rounded shadow-lg" style={{width:"420px"}}>
+
+<ReviewForm
+productId={selectedProduct}
+userId={user.id}
+/>
+
+<button
+className="btn btn-secondary mt-3"
+onClick={() => setShowReview(false)}
+>
+Đóng
+</button>
+
+</div>
+</div>
+)}
     </div>
   );
 };

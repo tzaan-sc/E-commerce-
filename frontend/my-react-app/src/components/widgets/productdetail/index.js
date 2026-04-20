@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { useCart } from "../../../context/index"; 
 import { addToCart } from "api/cart"; 
 import { ROUTERS } from "utils/router";
+import ReviewList from "../../user/ReviewList"; 
+import AverageStar from "../../user/AverageStar";
 import "./style.scss";
 
 const ProductDetail = ({ product, variants, selectedVariant, setSelectedVariant }) => {
@@ -239,6 +241,9 @@ const ProductDetail = ({ product, variants, selectedVariant, setSelectedVariant 
           <div className={`tab-item ${activeTab === 'description' ? 'active' : ''}`} onClick={() => setActiveTab('description')} style={{padding: '20px 0', cursor: 'pointer', fontWeight: '700', fontSize: '16px', color: activeTab === 'description' ? '#d70018' : '#64748b', borderBottom: activeTab === 'description' ? '3px solid #d70018' : '3px solid transparent', transition: '0.3s' }}>
             Mô tả sản phẩm
           </div>
+          <div className={`tab-item ${activeTab === 'review' ? 'active' : ''}`} onClick={() => setActiveTab('review')} style={{padding: '20px 0', cursor: 'pointer', fontWeight: '700', fontSize: '16px', color: activeTab === 'review' ? '#d70018' : '#64748b', borderBottom: activeTab === 'review' ? '3px solid #d70018' : '3px solid transparent', transition: '0.3s' }}>
+            Đánh giá
+          </div>
           <div className={`tab-item ${activeTab === 'specs' ? 'active' : ''}`} onClick={() => setActiveTab('specs')} style={{padding: '20px 0', cursor: 'pointer', fontWeight: '700', fontSize: '16px', color: activeTab === 'specs' ? '#d70018' : '#64748b', borderBottom: activeTab === 'specs' ? '3px solid #d70018' : '3px solid transparent', transition: '0.3s' }}>
             Thông số kỹ thuật
           </div>
@@ -250,7 +255,23 @@ const ProductDetail = ({ product, variants, selectedVariant, setSelectedVariant 
               <div style={{ whiteSpace: "pre-line" }} dangerouslySetInnerHTML={{ __html: product.description || "Nội dung đang cập nhật..." }} />
             </div>
           )}
+{activeTab === 'review' && (
+  <div className="review-box" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
+      <div>
+        <h3 style={{ margin: 0, fontSize: '20px', color: '#111827' }}>Đánh giá sản phẩm</h3>
+        <p style={{ margin: '8px 0 0', color: '#64748b' }}>Xem đánh giá và điểm sao của khách hàng.</p>
+      </div>
+      <div style={{ fontSize: '24px', fontWeight: '700', color: '#d70018' }}>
+        <AverageStar productId={product.id} />
+      </div>
+    </div>
+
+    <ReviewList productId={product.id} showForm={false} />
+
+  </div>
+)}
           {activeTab === 'specs' && (
              <div className="specs-table-wrapper">
                {(() => {

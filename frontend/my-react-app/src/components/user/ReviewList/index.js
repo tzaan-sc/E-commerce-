@@ -3,7 +3,7 @@ import { getReviews } from "../../../api/reviewApi";
 import ReviewForm from "../ReviewForm";
 import "./style.scss";
 
-function ReviewList({ productId }) {
+function ReviewList({ productId, showForm = true }) {
 
   const [reviews, setReviews] = useState([]);
   const [starFilter, setStarFilter] = useState(null);
@@ -60,10 +60,11 @@ function ReviewList({ productId }) {
 
       <h3 className="review-title">Đánh giá sản phẩm</h3>
 
-      {/* 🔥 FORM FULL NGANG */}
-      <div className="review-form-wrapper">
-        <ReviewForm productId={productId} onSuccess={fetchReviews} />
-      </div>
+      {showForm && (
+        <div className="review-form-wrapper">
+          <ReviewForm productId={productId} onSuccess={fetchReviews} />
+        </div>
+      )}
 
       {/* STATISTIC */}
       <div className="review-statistic">
