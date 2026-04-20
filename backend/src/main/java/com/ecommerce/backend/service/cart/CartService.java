@@ -8,8 +8,8 @@ import java.util.List;
 public interface CartService {
 
     // Hàm thêm vào giỏ
-    CartItem addToCart(String username, Long productId, Integer quantity);
 
+    CartItem addToCart(String email, Long productId, Long variantId, Integer quantity);
     // Hàm lấy giỏ hàng
     List<CartItem> getCartItems(String username);
 

@@ -1,3 +1,4 @@
+import { toast } from 'react-toastify';
 import { memo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./style.scss";
@@ -142,7 +143,7 @@ const ProfilePage = () => {
           if (uploadRes.ok) {
               currentAvatarUrl = uploadData.url; // Lấy đường dẫn ảnh mới
           } else {
-              alert("Lỗi upload ảnh: " + uploadData.error);
+              toast.info("Lỗi upload ảnh: " + uploadData.error);
               return; 
           }
       }
@@ -176,12 +177,12 @@ const ProfilePage = () => {
       const newUserStorage = { ...localUser, ...updatedUser };
       localStorage.setItem("user", JSON.stringify(newUserStorage));
 
-      alert("Cập nhật thông tin thành công!");
+      toast.success("Cập nhật thông tin thành công!");
       window.dispatchEvent(new Event("storage"));
 
     } catch (err) {
       console.error(err);
-      alert("Lỗi: " + err.message);
+      toast.info("Lỗi: " + err.message);
     }
   };
 
@@ -189,7 +190,7 @@ const ProfilePage = () => {
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
     if (passwordData.newPassword !== passwordData.confirmNewPassword) {
-      alert("Mật khẩu mới không khớp!");
+      toast.info("Mật khẩu mới không khớp!");
       return;
     }
     
@@ -213,11 +214,11 @@ const ProfilePage = () => {
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Thất bại");
 
-      alert("Đổi mật khẩu thành công!");
+      toast.success("Đổi mật khẩu thành công!");
       setPasswordData({ oldPassword: "", newPassword: "", confirmNewPassword: "" });
 
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
     }
   };
 

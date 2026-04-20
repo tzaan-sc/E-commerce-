@@ -4,27 +4,32 @@ const API_URL = "/cart";
 
 export const getCart = () => apiClient.get(API_URL);
 
-export const addToCart = (productId, quantity = 1) =>
-  apiClient.post(`${API_URL}/add`, null, { params: { productId, quantity } });
+export const addToCart = (productId, variantId, quantity = 1) =>
+  apiClient.post(`${API_URL}/add`, null, { 
+    params: { 
+        productId, 
+        variantId, 
+        quantity 
+    } 
+  });
 
-// 👇 ĐÃ SỬA: Hàm này giờ nhận 2 tham số để khớp với Backend mới
 export const checkoutSelected = (selectedIds, formData) => {
-  // Tạo payload khớp với DTO CheckoutRequest trong Java
+  // Đảm bảo selectedIds là mảng số thực thụ
   const payload = {
-    selectedItemIds: selectedIds,  // List ID sản phẩm
-    note: formData.note,           // Ghi chú
-    address: formData.address,     // Địa chỉ giao hàng
-    phone: formData.phone,         // Số điện thoại
-    fullName: formData.fullName,   // Tên người nhận
-    paymentMethod: formData.paymentMethod || "COD" // Phương thức thanh toán
+    selectedItemIds: Array.isArray(selectedIds) ? selectedIds : [], 
+    note: formData.note || "",
+    address: formData.address || "",
+    phone: formData.phone || "",
+    fullName: formData.fullName || "",
+    paymentMethod: formData.paymentMethod || "COD"
   };
+
+  // 🔥 Log ra để kiểm tra trước khi gửi
+  console.log("Gửi yêu cầu POST thanh toán với payload:", payload);
 
   return apiClient.post(`${API_URL}/checkout-selected`, payload);
 };
 
-// --- CÁC HÀM KHÁC GIỮ NGUYÊN ---
-
-// cartItemId là ID của CartItem (ví dụ: 1, 2, 3), không phải productId
 export const updateQuantity = (cartItemId, quantity) =>
   apiClient.put(`${API_URL}/update/${cartItemId}`, null, { params: { quantity } });
 

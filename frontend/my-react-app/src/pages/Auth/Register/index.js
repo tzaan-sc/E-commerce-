@@ -1,3 +1,4 @@
+import { toast } from 'react-toastify';
 import React, { memo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
@@ -27,7 +28,7 @@ const [formData, setFormData] = useState({
   const handleSubmit = (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
-      alert('❌ Mật khẩu không khớp!');
+      toast.error('❌ Mật khẩu không khớp!');
       return;
     }
     register(formData);

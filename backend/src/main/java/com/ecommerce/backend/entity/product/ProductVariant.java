@@ -29,14 +29,14 @@ public class ProductVariant {
     private String sku;
 
     @NotNull(message = "Giá không được để trống")
-    @PositiveOrZero
+    @PositiveOrZero(message = "Giá tiền phải lớn hơn hoặc bằng 0")
     private Double price;
 
     // ✅ Từ code Đánh giá: Giá nhập để tính toán lợi nhuận
     private Double importPrice;
 
     @NotNull(message = "Số lượng không được để trống")
-    @Min(0)
+    @Min(value = 0, message = "Số lượng phải lớn hơn hoặc bằng 0")
     @Column(name = "stock_quantity")
     @Builder.Default
     private Integer stockQuantity = 0;

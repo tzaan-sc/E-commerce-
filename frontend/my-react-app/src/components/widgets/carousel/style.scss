@@ -3,49 +3,57 @@ $border-color: #e2e8f0;
 
 .product-carousel-wrapper {
   width: 100%;
-  max-width: 600px; // Giới hạn chiều rộng để ảnh không quá to gây loãng
+  max-width: 600px; // Giới hạn chiều rộng để layout cân đối
   margin: 0 auto;
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 16px;
 
-  // Khung ảnh lớn
+  // 🖼️ Khung ảnh lớn (Stage)
   .main-stage {
     position: relative;
     width: 100%;
-    aspect-ratio: 1 / 1; // Tạo khung vuông chuẩn
+    aspect-ratio: 1 / 1; // Khung vuông chuẩn e-commerce
     background: #fff;
     border-radius: 16px;
     border: 1px solid $border-color;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    overflow: hidden; // Quan trọng: để ẩn các ảnh nằm ngoài khung trượt
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
 
-    .carousel-slide {
+    // ✅ Lớp bọc để thực hiện hiệu ứng trượt
+    .carousel-track {
+      display: flex;
       width: 100%;
       height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      
-      img {
-        max-width: 90%;
-        max-height: 90%;
-        object-fit: contain; // Giữ nguyên tỉ lệ ảnh không bị méo
-        transition: opacity 0.3s ease;
+      transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1); // Hiệu ứng trượt mượt mà
+
+      .carousel-slide-item {
+        min-width: 100%; // Mỗi ảnh chiếm đúng 100% chiều rộng khung
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+
+        img {
+          max-width: 100%;
+          max-height: 100%;
+          object-fit: contain; // Giữ nguyên tỉ lệ ảnh
+          user-select: none;
+        }
       }
     }
 
+    // ⬅️➡️ Nút điều hướng (Nav)
     .carousel-nav {
       position: absolute;
       top: 50%;
       transform: translateY(-50%);
       background: rgba(255, 255, 255, 0.9);
       border: 1px solid $border-color;
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -53,40 +61,53 @@ $border-color: #e2e8f0;
       cursor: pointer;
       z-index: 10;
       transition: all 0.2s;
+      color: #334155;
 
       &:hover {
         background: #fff;
         color: $price-color;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        transform: translateY(-50%) scale(1.05);
       }
-      &.prev { left: 10px; }
-      &.next { right: 10px; }
+
+      &:active {
+        transform: translateY(-50%) scale(0.95);
+      }
+
+      &.prev { left: 15px; }
+      &.next { right: 15px; }
     }
   }
 
-  // Dàn ảnh nhỏ phía dưới
+  // 🎞️ Dàn ảnh nhỏ phía dưới (Thumbnails)
   .thumbnail-container {
     width: 100%;
     
     .thumbnail-list {
       display: flex;
-      justify-content: center; // Căn giữa dàn ảnh phụ
-      gap: 10px;
+      justify-content: center; 
+      gap: 12px;
       overflow-x: auto;
-      padding: 4px;
+      padding: 8px 4px;
       
+      // Thanh cuộn tinh tế cho Mobile
       &::-webkit-scrollbar { height: 4px; }
+      &::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+      }
 
       .thumbnail-item {
-        flex: 0 0 75px;
-        height: 75px;
+        flex: 0 0 70px;
+        height: 70px;
         border-radius: 10px;
         border: 2px solid transparent;
         background: #fff;
         cursor: pointer;
-        padding: 4px;
+        overflow: hidden;
         transition: all 0.2s;
         border: 1px solid $border-color;
+        padding: 2px;
 
         img {
           width: 100%;
@@ -98,12 +119,23 @@ $border-color: #e2e8f0;
         &.active {
           border-color: $price-color;
           box-shadow: 0 0 0 1px $price-color;
+          transform: translateY(-2px);
         }
 
         &:hover:not(.active) {
-          border-color: #cbd5e1;
+          border-color: #94a3b8;
+          transform: translateY(-2px);
         }
       }
     }
+  }
+}
+
+// Hiệu ứng trống khi không có ảnh
+.product-carousel-wrapper.empty {
+  .main-stage {
+    background: #f8fafc;
+    color: #94a3b8;
+    font-size: 14px;
   }
 }

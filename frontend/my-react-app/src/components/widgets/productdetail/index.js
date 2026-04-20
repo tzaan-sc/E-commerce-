@@ -1,3 +1,4 @@
+import { toast } from 'react-toastify';
 import { memo, useState, useEffect } from "react";
 import { AiOutlineShoppingCart, AiOutlineShareAlt } from "react-icons/ai";
 import { useNavigate } from "react-router-dom"; 
@@ -16,7 +17,7 @@ const ProductDetail = ({ product, variants, selectedVariant, setSelectedVariant 
 
   // --- 1. LOGIC XỬ LÝ KHUYẾN MÃI ---
   const promotion = product?.promotion;
-  const originalPrice = selectedVariant ? selectedVariant.price : product?.price;
+  const originalPrice = selectedVariant ? selectedVariant.price : (product?.price || 0);
   let finalPrice = originalPrice;
   let discountDisplay = null;
 
@@ -30,7 +31,8 @@ const ProductDetail = ({ product, variants, selectedVariant, setSelectedVariant 
     }
   }
 
-  const displayStock = selectedVariant ? selectedVariant.stockQuantity : product?.stockQuantity;
+  // ✅ ĐẢM BẢO HIỂN THỊ ĐÚNG DỮ LIỆU TỪ BIẾN THỂ
+  const displayStock = selectedVariant ? selectedVariant.stockQuantity : (product?.stockQuantity || 0);
   const displaySku = selectedVariant ? selectedVariant.sku : (product?.slug || "N/A");
 
   useEffect(() => {
@@ -38,7 +40,7 @@ const ProductDetail = ({ product, variants, selectedVariant, setSelectedVariant 
   }, [selectedVariant]);
 
   const formatPrice = (price) =>
-    new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+    new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price || 0);
 
   const handleQuantityChange = (delta) => {
     if (displayStock <= 0) return;
@@ -58,19 +60,20 @@ const ProductDetail = ({ product, variants, selectedVariant, setSelectedVariant 
     }
 
     if (variants && variants.length > 0 && !selectedVariant) {
-        alert("Vui lòng chọn cấu hình sản phẩm!");
+        toast.info("Vui lòng chọn cấu hình sản phẩm!");
         return null;
     }
 
     setIsAdding(true);
     try {
+        // 🔥 GỬI VARIANT ID ĐỂ FIX LỖI 400 TRANSACTION
         const variantId = selectedVariant ? selectedVariant.id : null;
         const response = await addToCart(product.id, quantity, variantId);
         fetchCartCount(); 
         return response.data; 
     } catch (error) {
         console.error("Lỗi thêm giỏ hàng:", error);
-        alert("Có lỗi xảy ra khi thêm vào giỏ hàng!");
+        toast.error("Có lỗi xảy ra khi thêm vào giỏ hàng!");
         return null;
     } finally {
         setIsAdding(false);
@@ -80,7 +83,7 @@ const ProductDetail = ({ product, variants, selectedVariant, setSelectedVariant 
   const handleAddToCart = async () => {
       const cartItem = await processAddToCart();
       if (cartItem) {
-          alert("Đã thêm sản phẩm vào giỏ hàng thành công!");
+          toast.success("Đã thêm sản phẩm vào giỏ hàng thành công!");
       }
   };
 
@@ -102,7 +105,7 @@ const ProductDetail = ({ product, variants, selectedVariant, setSelectedVariant 
           <span>Tình trạng: <strong style={{color: displayStock > 0 ? '#10b981' : '#ef4444'}}>{displayStock > 0 ? "Còn hàng" : "Hết hàng"}</strong></span>
       </div>
 
-      {/* ✅ CHỈNH GIÁ & KHUYẾN MÃI TRÊN 1 DÒNG HÀNG, ĐẸP VÀ GỌN */}
+      {/* BOX GIÁ & KHUYẾN MÃI */}
       <div className="price-container" style={{ 
         background: '#f8fafc', 
         padding: '16px 20px', 
@@ -114,18 +117,15 @@ const ProductDetail = ({ product, variants, selectedVariant, setSelectedVariant 
         gap: '8px'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
-          {/* Giá thực tế (To nhất) */}
           <span style={{ color: '#d70018', fontSize: '30px', fontWeight: '800' }}>
             {formatPrice(finalPrice)}
           </span>
           
           {discountDisplay && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              {/* Giá gốc gạch ngang */}
               <span style={{ textDecoration: 'line-through', color: '#94a3b8', fontSize: '16px' }}>
                 {formatPrice(originalPrice)}
               </span>
-              {/* Tag giảm giá đỏ */}
               <span style={{ 
                 background: '#d70018', 
                 color: '#fff', 
@@ -140,7 +140,6 @@ const ProductDetail = ({ product, variants, selectedVariant, setSelectedVariant 
           )}
         </div>
 
-        {/* Box quà tặng khuyến mãi tối giản */}
         {promotion && promotion.status === "ACTIVE" && (
           <div style={{ 
             marginTop: '5px',
@@ -160,6 +159,7 @@ const ProductDetail = ({ product, variants, selectedVariant, setSelectedVariant 
         )}
       </div>
 
+      {/* CHỌN CẤU HÌNH (BIẾN THỂ) */}
       {variants && variants.length > 0 && (
         <div className="variants-section" style={{ margin: '20px 0' }}>
             <p style={{ fontWeight: '700', marginBottom: '12px', fontSize: '15px' }}>Chọn cấu hình:</p>
@@ -181,10 +181,11 @@ const ProductDetail = ({ product, variants, selectedVariant, setSelectedVariant 
                             boxShadow: selectedVariant?.id === v.id ? '0 4px 12px rgba(215,0,24,0.1)' : 'none'
                         }}
                     >
+                        {/* ✅ HIỂN THỊ ẢNH NHỎ CỦA BIẾN THỂ TRONG NÚT CHỌN (NẾU CÓ) */}
                         <div style={{fontWeight: '700', fontSize: '14px'}}>
                             {v.ramCapacity || v.ramSize} - {v.storageCapacity || v.storageDisplay}
                         </div>
-                        <div style={{fontSize: '12px', color: '#64748b', marginTop: '2px'}}>{v.color || v.colorName}</div>
+                        <div style={{fontSize: '12px', color: '#64748b', marginTop: '2px'}}>{v.colorName || v.color}</div>
                         <div style={{fontSize: '14px', marginTop: '6px', fontWeight: '700'}}>{formatPrice(v.price)}</div>
                     </button>
                 ))}
@@ -192,6 +193,7 @@ const ProductDetail = ({ product, variants, selectedVariant, setSelectedVariant 
         </div>
       )}
 
+      {/* SỐ LƯỢNG */}
       <div className="quantity-section" style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '25px' }}>
         <div className="quantity-control" style={{ display: 'flex', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
           <button className="quantity-btn" onClick={() => handleQuantityChange(-1)} disabled={quantity <= 1} style={{ padding: '8px 15px', background: '#f8fafc', border: 'none', cursor: 'pointer' }}>−</button>
@@ -231,6 +233,7 @@ const ProductDetail = ({ product, variants, selectedVariant, setSelectedVariant 
         <button className="btn icon-btn" style={{ width: '54px', height: '54px', borderRadius: '12px', border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer' }}><AiOutlineShareAlt size={22} /></button>
       </div>
 
+      {/* TABS CHI TIẾT */}
       <div className="product-tabs-container" style={{marginTop: '40px', borderTop: '1px solid #f1f5f9'}}>
         <div className="tabs-header" style={{display: 'flex', gap: '30px'}}>
           <div className={`tab-item ${activeTab === 'description' ? 'active' : ''}`} onClick={() => setActiveTab('description')} style={{padding: '20px 0', cursor: 'pointer', fontWeight: '700', fontSize: '16px', color: activeTab === 'description' ? '#d70018' : '#64748b', borderBottom: activeTab === 'description' ? '3px solid #d70018' : '3px solid transparent', transition: '0.3s' }}>
@@ -255,17 +258,24 @@ const ProductDetail = ({ product, variants, selectedVariant, setSelectedVariant 
                  const displaySpecs = [];
                  if (spec || selectedVariant) {
                     if (spec?.cpu) displaySpecs.push({ label: "Vi xử lý (CPU)", value: spec.cpu });
+                    
+                    // LẤY DỮ LIỆU TỪ BIẾN THỂ ĐỂ HIỂN THỊ TRONG BẢNG THÔNG SỐ
                     const ramVal = selectedVariant ? (selectedVariant.ramCapacity || selectedVariant.ramSize) : "Tùy chọn cấu hình";
                     const storageVal = selectedVariant ? (selectedVariant.storageCapacity || selectedVariant.storageDisplay) : (spec?.storageType || "Tùy chọn cấu hình");
-                    displaySpecs.push({ label: "Bộ nhớ RAM", value: ramVal }, { label: "Ổ cứng (SSD)", value: storageVal });
+                    const colorVal = selectedVariant ? (selectedVariant.colorName || selectedVariant.color) : "Tùy chọn màu sắc";
+
+                    displaySpecs.push(
+                      { label: "Bộ nhớ RAM", value: ramVal }, 
+                      { label: "Ổ cứng (SSD)", value: storageVal },
+                      { label: "Màu sắc", value: colorVal }
+                    );
+
                     if (spec?.resolution) displaySpecs.push({ label: "Độ phân giải", value: spec.resolution });
                     if (spec?.refreshRate) displaySpecs.push({ label: "Tần số quét", value: spec.refreshRate });
                     if (spec?.panelType) displaySpecs.push({ label: "Tấm nền", value: spec.panelType });
                     if (spec?.battery || spec?.batteryCapacity) displaySpecs.push({ label: "Pin", value: spec.battery || spec.batteryCapacity });
                     if (spec?.weight) displaySpecs.push({ label: "Trọng lượng", value: spec.weight });
                     if (spec?.os) displaySpecs.push({ label: "Hệ điều hành", value: spec.os });
-                    if (spec?.wifi) displaySpecs.push({ label: "WiFi", value: spec.wifi });
-                    if (spec?.ports) displaySpecs.push({ label: "Cổng kết nối", value: spec.ports });
                  }
                  return displaySpecs.length > 0 ? (
                     <table style={{ width: '100%', borderCollapse: 'collapse', borderRadius: '12px', overflow: 'hidden', border: '1px solid #f1f5f9' }}>

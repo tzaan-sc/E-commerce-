@@ -33,4 +33,7 @@ public class OrderItem {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "product_id", nullable = true) // Sẽ tốt hơn nếu là `nullable = false`
     private Product product;
+    @ManyToOne
+    @JoinColumn(name = "variant_id") // Tên cột trong Database
+    private ProductVariant variant;
 }

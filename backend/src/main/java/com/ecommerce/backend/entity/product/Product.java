@@ -4,6 +4,9 @@ import com.ecommerce.backend.entity.promotion.Promotion;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Min;
 import lombok.*;
 import java.util.List;
 import java.util.ArrayList;
@@ -29,9 +32,13 @@ public class Product {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @NotNull(message = "Giá không được để trống")
+    @PositiveOrZero(message = "Giá tiền phải lớn hơn hoặc bằng 0")
     @Column(nullable = false)
     private Double price;
 
+    @NotNull(message = "Số lượng không được để trống")
+    @Min(value = 0, message = "Số lượng phải lớn hơn hoặc bằng 0")
     @Column(nullable = false)
     private Integer stockQuantity = 0;
 

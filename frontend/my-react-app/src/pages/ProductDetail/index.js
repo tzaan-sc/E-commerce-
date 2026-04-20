@@ -1,8 +1,7 @@
-import { memo } from 'react';
+import { memo, useEffect } from 'react'; // Thêm useEffect
 import { useParams } from 'react-router-dom';
 import { useProductDetail } from '../../hooks/useProductDetail';
 
-// ✅ Phải import lại Carousel vì trong ProductDetail đã xóa
 import Carousel from '../../components/widgets/carousel';
 import ProductDetail from '../../components/widgets/productdetail';
 import FeaturedProducts from '../../components/widgets/featuredProducts';
@@ -13,15 +12,24 @@ import './style.scss';
 
 const ProductDetailPage = () => {
   const { id } = useParams();
+  
   const { 
     product, 
-    images, // ✅ Lấy lại mảng images ở đây
-    variants, 
-    selectedVariant, 
+    images,           
+    variants,         
+    selectedVariant,  
     setSelectedVariant, 
     loading, 
     error 
   } = useProductDetail(id);
+
+  // ✅ FIX: Tự động chọn biến thể đầu tiên nếu selectedVariant đang null
+  // Điều này đảm bảo Carousel luôn có biến thể để lấy ảnh từ bảng variant_images
+  useEffect(() => {
+    if (!selectedVariant && variants && variants.length > 0) {
+      setSelectedVariant(variants[0]);
+    }
+  }, [variants, selectedVariant, setSelectedVariant]);
 
   if (loading) return <LoadingSpinner text="Đang tải thông tin sản phẩm..." />;
   if (error || !product) return <div className="text-center py-20">Lỗi hoặc không tìm thấy sản phẩm</div>;
@@ -32,12 +40,14 @@ const ProductDetailPage = () => {
     { label: product.name, link: null },
   ];
 
+  // Tạo một biến an toàn để truyền vào Carousel
+  const activeVariant = selectedVariant || (variants && variants.length > 0 ? variants[0] : null);
+
   return (
     <div className="main-container product-detail-page">
       <div className="container mx-auto px-4">
         <Breadcrumb items={breadcrumbItems} />
 
-        {/* ✅ BỐ CỤC MỚI: Dàn hàng dọc cho cân đối */}
         <div className="product-layout-vertical" style={{ 
           maxWidth: '1000px', 
           margin: '20px auto', 
@@ -46,21 +56,20 @@ const ProductDetailPage = () => {
           alignItems: 'center' 
         }}>
           
-          {/* 1. Ảnh chính diện hiện lên đầu tiên */}
           <div className="carousel-top-wrapper" style={{ width: '100%', marginBottom: '40px' }}>
+            {/* ✅ Truyền activeVariant để chắc chắn Carousel có dữ liệu images */}
             <Carousel 
               mainImage={product.imageUrl} 
               images={images} 
-              selectedVariant={selectedVariant} 
+              selectedVariant={activeVariant} 
             />
           </div>
 
-          {/* 2. Thông tin thanh toán, cấu hình ở ngay bên dưới */}
           <div className="info-bottom-wrapper" style={{ width: '100%' }}>
             <ProductDetail 
                 product={product} 
                 variants={variants}                   
-                selectedVariant={selectedVariant}     
+                selectedVariant={activeVariant}     
                 setSelectedVariant={setSelectedVariant} 
             />
           </div>

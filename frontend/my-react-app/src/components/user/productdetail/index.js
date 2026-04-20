@@ -1,3 +1,4 @@
+import { toast } from 'react-toastify';
 import { memo, useState } from "react";
 import { AiOutlineShoppingCart, AiOutlineShareAlt } from "react-icons/ai";
 import { useNavigate } from "react-router-dom"; 
@@ -44,7 +45,7 @@ const ProductDetail = ({ product }) => {
         return response.data; 
     } catch (error) {
         console.error("Lỗi thêm giỏ hàng:", error);
-        alert("Có lỗi xảy ra khi thêm vào giỏ hàng!");
+        toast.info("Có lỗi xảy ra khi thêm vào giỏ hàng!");
         return null;
     } finally {
         setIsAdding(false);
@@ -54,7 +55,7 @@ const ProductDetail = ({ product }) => {
   const handleAddToCart = async () => {
       const cartItem = await processAddToCart();
       if (cartItem) {
-          alert("Đã thêm sản phẩm vào giỏ hàng thành công!");
+          toast.success("Đã thêm sản phẩm vào giỏ hàng thành công!");
       }
   };
 

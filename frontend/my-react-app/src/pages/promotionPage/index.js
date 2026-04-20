@@ -1,3 +1,4 @@
+import { toast } from 'react-toastify';
 import React, { useState, useEffect } from "react";
 import apiClient from "api/axiosConfig";
 import { formatter } from "utils/formatter";
@@ -64,10 +65,10 @@ const UserPromotionPage = () => {
             const variantId = product.variants?.length > 0 ? product.variants[0].id : null;
             await addToCart(product.id, 1, variantId); 
             fetchCartCount(); 
-            alert("Đã thêm vào giỏ hàng thành công!"); 
+            toast.success("Đã thêm vào giỏ hàng thành công!"); 
         } catch (err) { 
             console.error(err);
-            alert("Thêm vào giỏ hàng thất bại!");
+            toast.error("Thêm vào giỏ hàng thất bại!");
         }
     };
 

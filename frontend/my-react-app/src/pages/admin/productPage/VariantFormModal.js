@@ -44,8 +44,19 @@ const VariantFormModal = ({ product, variant, onSave, onClose, ramList, gpuList,
   const validate = () => {
     const e = {};
     if (!form.sku?.trim()) e.sku = "SKU không được để trống";
-    if (form.price === "" || isNaN(form.price)) e.price = "Giá bán không hợp lệ";
-    if (form.stockQuantity === "" || isNaN(form.stockQuantity)) e.stockQuantity = "Số lượng không hợp lệ";
+    
+    if (form.price === "" || isNaN(form.price)) {
+      e.price = "Giá bán không được để trống";
+    } else if (Number(form.price) < 0) {
+      e.price = "Giá tiền phải lớn hơn hoặc bằng 0";
+    }
+
+    if (form.stockQuantity === "" || isNaN(form.stockQuantity)) {
+      e.stockQuantity = "Số lượng không được để trống";
+    } else if (Number(form.stockQuantity) < 0) {
+      e.stockQuantity = "Số lượng phải lớn hơn hoặc bằng 0";
+    }
+
     if (!form.ramId) e.ramId = "Chọn RAM";
     if (!form.gpuId) e.gpuId = "Chọn GPU";
     if (!form.chipId) e.chipId = "Chọn CPU";

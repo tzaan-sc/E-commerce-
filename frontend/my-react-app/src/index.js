@@ -7,6 +7,8 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import { CartProvider } from './context/index'; 
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 // 👇 2. IMPORT PROVIDER XÁC THỰC (Nếu có)
 import { useAuth } from './hooks/useAuth';
 
@@ -24,6 +26,17 @@ root.render(
       
         <CartProvider> {/* <-- CHÍNH LÀ CHỖ CẦN BỌC */}
           <RouterCustom />
+          {/* Toast container: hiện thông báo lỗi API toàn app */}
+          <ToastContainer
+            position="top-right"
+            autoClose={4000}
+            hideProgressBar={false}
+            newestOnTop
+            closeOnClick
+            pauseOnHover
+            draggable
+            theme="colored"
+          />
         </CartProvider>
       
     </BrowserRouter>

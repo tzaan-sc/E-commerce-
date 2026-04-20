@@ -1,3 +1,4 @@
+import { toast } from 'react-toastify';
 // src/pages/admin/ordersPage/index.js
 import React, { useState, useEffect } from "react";
 import apiClient from "../../../api/axiosConfig";
@@ -47,7 +48,7 @@ const OrdersPage = () => {
       setSelectedOrder(res.data);
       setShowDetailModal(true);
     } catch (err) {
-      alert("Lỗi tải chi tiết đơn hàng");
+      toast.error("Lỗi tải chi tiết đơn hàng");
     }
   };
 
@@ -61,18 +62,18 @@ const OrdersPage = () => {
       await apiClient.put(`/orders/${orderId}/status`, null, {
         params: { status: newStatus },
       });
-      alert("Cập nhật trạng thái đơn hàng thành công!");
+      toast.success("Cập nhật trạng thái đơn hàng thành công!");
       fetchOrders();
       handleCloseDetailModal();
     } catch (err) {
       console.error(err);
-      alert("Cập nhật trạng thái đơn hàng thất bại!");
+      toast.error("Cập nhật trạng thái đơn hàng thất bại!");
     }
   };
 
   // Hàm này bị vô hiệu hóa vì admin không có quyền sửa trực tiếp
   const handleUpdatePaymentStatus = async () => {
-    alert("Thông báo: Trạng thái thanh toán được cập nhật tự động bởi hệ thống, Admin không có quyền chỉnh sửa trực tiếp.");
+    toast.info("Thông báo: Trạng thái thanh toán được cập nhật tự động bởi hệ thống, Admin không có quyền chỉnh sửa trực tiếp.");
     return;
   };
 

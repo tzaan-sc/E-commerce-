@@ -1,3 +1,4 @@
+import { toast } from 'react-toastify';
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import apiClient from "../../../api/axiosConfig";
 import { Save, Upload } from "lucide-react";
@@ -47,7 +48,7 @@ const ScreenSizePage = () => {
   const handleSubmit = async () => {
     const valueAsDouble = parseFloat(formData.value);
     if (isNaN(valueAsDouble) || valueAsDouble <= 0) {
-      alert("Vui lòng nhập kích thước màn hình hợp lệ!");
+      toast.info("Vui lòng nhập kích thước màn hình hợp lệ!");
       return;
     }
     const payload = { id: editingId, value: valueAsDouble };
@@ -55,10 +56,10 @@ const ScreenSizePage = () => {
     const result = await fn;
 
     if (result.success) {
-      alert(editingId ? "Cập nhật thành công!" : "Thêm mới thành công!");
+      toast.info(editingId ? "Cập nhật thành công!" : "Thêm mới thành công!");
       resetForm();
     } else {
-      alert(result.error);
+      toast.error(result.error);
     }
   };
 
@@ -73,18 +74,18 @@ const ScreenSizePage = () => {
     if (!window.confirm("Bạn có chắc muốn xóa kích thước này?")) return;
     const result = await deleteSize(id);
     if (result.success) {
-      alert("Xóa thành công!");
+      toast.success("Xóa thành công!");
       setSelectedIds((prev) => prev.filter((x) => x !== id));
     } else {
       // 👇 Hiện lỗi chuẩn
-      alert(result.error);
+      toast.error(result.error);
     }
   };
 
   // ✅ SỬA LOGIC XÓA NHIỀU
   const handleDeleteSelected = async () => {
     if (selectedIds.length === 0) {
-      alert("Vui lòng chọn ít nhất một mục để xóa!");
+      toast.info("Vui lòng chọn ít nhất một mục để xóa!");
       return;
     }
     if (
@@ -96,14 +97,14 @@ const ScreenSizePage = () => {
     for (const id of selectedIds) {
       const result = await deleteSize(id);
       if (!result.success) {
-        alert(`Không thể xóa (ID: ${id}):\n${result.error}`);
+        toast.error(`Không thể xóa (ID: ${id}):\n${result.error}`);
         hasError = true;
         break;
       }
     }
 
     if (!hasError) {
-      alert("Xóa tất cả thành công!");
+      toast.success("Xóa tất cả thành công!");
       setSelectedIds([]);
     } else {
       setSelectedIds((prev) =>

@@ -1,3 +1,4 @@
+import { toast } from 'react-toastify';
 // src/hooks/useAuth.js
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -11,12 +12,12 @@ export const useAuth = () => {
     setLoading(true);
     try {
       const data = await authService.register(formData);
-      alert("✅ Đăng ký thành công!");
+      toast.success("Đăng ký thành công!");
       navigate("/dang-nhap");
       return data;
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || "❌ Đăng ký thất bại!");
+      toast.error(err.response?.data?.message || "❌ Đăng ký thất bại!");
     } finally {
       setLoading(false);
     }
@@ -46,7 +47,7 @@ export const useAuth = () => {
       return data;
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || "❌ Sai tài khoản hoặc mật khẩu!");
+      toast.error(err.response?.data?.message || "❌ Sai tài khoản hoặc mật khẩu!");
     } finally {
       setLoading(false);
     }

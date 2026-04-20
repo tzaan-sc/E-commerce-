@@ -6,11 +6,13 @@ import com.ecommerce.backend.entity.cart.CartItem;
 import com.ecommerce.backend.entity.product.Order;
 import com.ecommerce.backend.entity.product.OrderItem;
 import com.ecommerce.backend.entity.product.Product;
+import com.ecommerce.backend.entity.product.ProductVariant;
 import com.ecommerce.backend.exception.ResourceNotFoundException;
 import com.ecommerce.backend.repository.auth.UserRepository;
 import com.ecommerce.backend.repository.cart.CartItemRepository;
 import com.ecommerce.backend.repository.product.OrderRepository;
 import com.ecommerce.backend.repository.product.ProductRepository;
+import com.ecommerce.backend.repository.product.ProductVariantRepository; // 🔥 Thêm repo này
 import com.ecommerce.backend.service.cart.CartService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -27,36 +29,46 @@ public class CartServiceImpl implements CartService {
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
     private final OrderRepository orderRepository;
+    private final ProductVariantRepository productVariantRepository; // 🔥 Inject thêm repo biến thể
 
     @Override
     @Transactional
-    public CartItem addToCart(String email, Long productId, Integer quantity) {
+    public CartItem addToCart(String email, Long productId, Long variantId, Integer quantity) {
+        // 1. Tìm User
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
 
+        // 2. Tìm Sản phẩm chính
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", productId));
 
-        // Kiểm tra tồn kho ngay khi thêm vào giỏ
-        if (product.getStockQuantity() < quantity) {
-            throw new RuntimeException("Sản phẩm " + product.getName() + " không đủ số lượng tồn kho!");
+        // 3. 🔥 LẤY BIẾN THỂ (VARIANT) ĐỂ KIỂM TRA CHÍNH XÁC
+        ProductVariant variant = productVariantRepository.findById(variantId)
+                .orElseThrow(() -> new ResourceNotFoundException("Variant", "id", variantId));
+
+        // 4. KIỂM TRA TỒN KHO CỦA BIẾN THỂ (Sử dụng field stockQuantity)
+        if (variant.getStockQuantity() < quantity) {
+            throw new RuntimeException("Cấu hình này không đủ số lượng tồn kho (Hiện còn: " + variant.getStockQuantity() + ")");
         }
 
-        // Kiểm tra xem sản phẩm đã có trong giỏ chưa
-        CartItem cartItem = cartItemRepository.findByUserAndProduct(user, product)
+        // 5. Kiểm tra xem cấu hình này đã có trong giỏ của User này chưa
+        CartItem cartItem = cartItemRepository.findByUserAndProductAndVariant(user, product, variant)
                 .orElse(CartItem.builder()
                         .user(user)
                         .product(product)
+                        .variant(variant) // 🔥 Gán biến thể vào CartItem
                         .quantity(0)
                         .build());
 
-        // Kiểm tra tổng số lượng sau khi cộng dồn
+        // 6. Kiểm tra tổng số lượng sau khi cộng dồn (Dựa trên tồn kho của biến thể)
         int newQuantity = cartItem.getQuantity() + quantity;
-        if (product.getStockQuantity() < newQuantity) {
-            throw new RuntimeException("Tổng số lượng trong giỏ vượt quá tồn kho!");
+        if (variant.getStockQuantity() < newQuantity) {
+            throw new RuntimeException("Tổng số lượng cấu hình này trong giỏ vượt quá tồn kho hiện có!");
         }
 
         cartItem.setQuantity(newQuantity);
+
+        // Lưu lại
         return cartItemRepository.save(cartItem);
     }
 
@@ -89,7 +101,7 @@ public class CartServiceImpl implements CartService {
                 .shippingAddress(request.getAddress())
                 .note(request.getNote())
                 .paymentMethod(request.getPaymentMethod() != null ? request.getPaymentMethod() : "COD")
-                .status("PENDING") // Trạng thái chờ xác nhận
+                .status("PENDING")
                 .userOrderNumber((int) orderCount + 1)
                 .totalAmount(0.0)
                 .build();
@@ -100,28 +112,36 @@ public class CartServiceImpl implements CartService {
         // 3. Duyệt qua từng món hàng để xử lý
         for (CartItem cartItem : selectedItems) {
             Product product = cartItem.getProduct();
+            ProductVariant variant = cartItem.getVariant(); // 🔥 Lấy biến thể từ giỏ hàng
 
-            // 👇 QUAN TRỌNG: KIỂM TRA VÀ TRỪ KHO NGAY TẠI ĐÂY 👇
-            if (product.getStockQuantity() < cartItem.getQuantity()) {
-                throw new RuntimeException("Sản phẩm " + product.getName() + " đã hết hàng hoặc không đủ số lượng!");
+            // 👇 QUAN TRỌNG: KIỂM TRA VÀ TRỪ KHO BIẾN THỂ 👇
+            if (variant == null) {
+                throw new RuntimeException("Sản phẩm " + product.getName() + " thiếu thông tin cấu hình!");
             }
 
-            // Trừ số lượng tồn kho
-            int remainStock = product.getStockQuantity() - cartItem.getQuantity();
-            product.setStockQuantity(remainStock);
-            productRepository.save(product); // Lưu lại số lượng mới vào DB ngay lập tức
+            if (variant.getStockQuantity() < cartItem.getQuantity()) {
+                throw new RuntimeException("Cấu hình của sản phẩm " + product.getName() + " không đủ số lượng!");
+            }
 
-            // Tạo chi tiết đơn hàng (Snapshot giá và tên tại thời điểm mua)
+            // Trừ số lượng tồn kho của BIẾN THỂ
+            variant.setStockQuantity(variant.getStockQuantity() - cartItem.getQuantity());
+            productVariantRepository.save(variant); // Lưu lại vào bảng product_variants
+
+            // 🔥 SỬA LỖI TẠI ĐÂY: Gán variant và các trường giá cho OrderItem
             OrderItem orderItem = OrderItem.builder()
                     .order(order)
                     .product(product)
-                    .productName(product.getName())
+                    // ✅ Thêm variant để cột variant_id trong DB không bị NULL
+                    .variant(variant)
+                    .productName(product.getName() + " (" + variant.getRamCapacity() + " - " + variant.getStorageCapacity() + ")")
                     .quantity(cartItem.getQuantity())
-                    .price(product.getPrice())
+                    .price(variant.getPrice()) // Giá hiển thị
+                    // ✅ Nếu DB có cột price_at_purchase (NOT NULL) thì gán thêm ở đây cho chắc:
+                    // .priceAtPurchase(variant.getPrice())
                     .build();
 
             orderItems.add(orderItem);
-            totalAmount += product.getPrice() * cartItem.getQuantity();
+            totalAmount += variant.getPrice() * cartItem.getQuantity();
         }
 
         order.setTotalAmount(totalAmount);
@@ -129,11 +149,12 @@ public class CartServiceImpl implements CartService {
 
         // 4. Xóa các món đã mua khỏi giỏ hàng
         cartItemRepository.deleteAll(selectedItems);
+        // 🔥 Thêm flush để đảm bảo lệnh xóa được thực hiện trước khi kết thúc Transaction
+        cartItemRepository.flush();
 
         // 5. Lưu đơn hàng
         return orderRepository.save(order);
     }
-
     @Override
     public CartItem updateItemQuantity(String email, Long cartItemId, Integer quantity) {
         User user = userRepository.findByEmail(email)
@@ -146,9 +167,9 @@ public class CartServiceImpl implements CartService {
             throw new SecurityException("Không có quyền sửa giỏ hàng này");
         }
 
-        // Check tồn kho khi update số lượng
-        if(cartItem.getProduct().getStockQuantity() < quantity){
-            throw new RuntimeException("Kho không đủ số lượng");
+        // 🔥 Check tồn kho của BIẾN THỂ khi update số lượng
+        if (cartItem.getVariant().getStockQuantity() < quantity) {
+            throw new RuntimeException("Kho không đủ số lượng cho cấu hình này");
         }
 
         cartItem.setQuantity(quantity);

@@ -1,3 +1,4 @@
+import { toast } from 'react-toastify';
 // src/pages/admin/accountsPage/index.js
 import React, { useState, useEffect } from "react";
 import AccountList from "./AccountList";
@@ -56,13 +57,13 @@ const AccountsPage = () => {
       if (response.ok) {
         await fetchAccounts();
         setEditingAccount(null);
-        alert("Cập nhật tài khoản thành công!");
+        toast.success("Cập nhật tài khoản thành công!");
       } else {
-        alert("Lỗi khi cập nhật tài khoản!");
+        toast.error("Lỗi khi cập nhật tài khoản!");
       }
     } catch (error) {
       console.error("Error updating account:", error);
-      alert("Lỗi mạng khi cập nhật tài khoản!");
+      toast.error("Lỗi mạng khi cập nhật tài khoản!");
     }
   };
 

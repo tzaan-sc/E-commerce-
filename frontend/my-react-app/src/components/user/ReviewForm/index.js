@@ -1,3 +1,4 @@
+import { toast } from 'react-toastify';
 import React, { useState } from "react";
 import { createReview } from "../../../api/reviewApi";
 import "./style.scss";
@@ -13,13 +14,13 @@ function ReviewForm({ productId, onSuccess }) {
     // 🔥 CHECK LOGIN
     const token = localStorage.getItem("token");
     if (!token) {
-      alert("Bạn cần đăng nhập để đánh giá");
+      toast.info("Bạn cần đăng nhập để đánh giá");
       return;
     }
 
     // 🔥 CHECK STAR
     if (star === 0) {
-      alert("Vui lòng chọn số sao");
+      toast.info("Vui lòng chọn số sao");
       return;
     }
 
@@ -33,7 +34,7 @@ function ReviewForm({ productId, onSuccess }) {
     try {
       await createReview(data);
 
-      alert("Đánh giá thành công");
+      toast.success("Đánh giá thành công");
 
       // reset form
       setStar(0);
@@ -47,7 +48,7 @@ function ReviewForm({ productId, onSuccess }) {
 
       console.log("ERROR:", err.response?.data);
 
-      alert(
+      toast.info(
         err.response?.data?.message ||   // backend chuẩn
         err.response?.data ||            // fallback
         "Gửi đánh giá thất bại"

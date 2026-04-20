@@ -1,3 +1,4 @@
+import { toast } from 'react-toastify';
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { User, MapPin, Phone, Mail, CheckCircle, AlertCircle } from 'lucide-react';
@@ -20,16 +21,36 @@ const CheckoutPage = () => {
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
 
-  // --- HÀM LẤY ẢNH (Giống bên Giỏ Hàng) ---
-  const getProductImage = (product) => {
-    if (!product) return "https://via.placeholder.com/60";
-    if (product.images && product.images.length > 0) {
-        const firstImg = product.images[0];
+  // --- 🔥 HÀM TÍNH ĐƠN GIÁ ĐÚNG CHO TỪNG ITEM (DỰA TRÊN BIẾN THỂ & KHUYẾN MÃI) ---
+  const getItemUnitPrice = (item) => {
+    // Ưu tiên lấy giá từ Biến thể, nếu không có mới lấy giá SP chính
+    const basePrice = item.variant ? item.variant.price : (item.product?.price || 0);
+    const promotion = item.product?.promotion;
+
+    let finalPrice = basePrice;
+    if (promotion && promotion.status === "ACTIVE") {
+      if (promotion.discountType === "PERCENTAGE") {
+        finalPrice = basePrice * (1 - promotion.discountValue / 100);
+      } else if (promotion.discountType === "FIXED_AMOUNT") {
+        finalPrice = basePrice - promotion.discountValue;
+      }
+    }
+    return finalPrice > 0 ? finalPrice : 0;
+  };
+
+  // --- HÀM LẤY ẢNH (Ưu tiên ảnh biến thể để tránh lỗi ảnh 0đ) ---
+  const getProductImage = (item) => {
+    if (!item.product) return "https://via.placeholder.com/60";
+    
+    // Nếu biến thể có ảnh riêng (theo màu sắc) thì lấy ảnh đó
+    if (item.variant && item.variant.image) {
+        return `http://localhost:8080${item.variant.image}`;
+    }
+
+    if (item.product.images && item.product.images.length > 0) {
+        const firstImg = item.product.images[0];
         const url = firstImg.urlImage || firstImg;
         return `http://localhost:8080${url}`;
-    }
-    if (product.imageUrl) {
-        return `http://localhost:8080${product.imageUrl}`;
     }
     return "https://via.placeholder.com/60?text=No+Img";
   };
@@ -103,13 +124,13 @@ const CheckoutPage = () => {
       const res = await checkoutSelected(selectedIds, { ...formData, paymentMethod }); 
       const createdOrder = res.data;
       if (paymentMethod === 'VIETQR') {
-         navigate(`/payment/qr?orderId=${createdOrder.id}&amount=${createdOrder.totalAmount}`);
-
+          navigate(`/payment/qr?orderId=${createdOrder.id}&amount=${createdOrder.totalAmount}`);
       } else {
-         setStep('success');
+          setStep('success');
       }
     } catch (error) {
-      alert('Có lỗi xảy ra: ' + (error.response?.data?.message || error.message));
+      // Hiển thị thông báo lỗi cụ thể từ Backend trả về
+      toast.error('Lỗi đặt hàng: ' + (error.response?.data || 'Vui lòng kiểm tra lại thông tin.'));
     } finally {
       setIsLoading(false);
     }
@@ -160,7 +181,7 @@ const CheckoutPage = () => {
         </div>
       )}
 
-      {/* STEP 2: CONFIRM (ĐÃ THÊM ẢNH) */}
+      {/* STEP 2: CONFIRM */}
       {step === 'confirm' && (
         <div className="checkout-content">
             <h2>Xác Nhận Đơn Hàng</h2>
@@ -193,35 +214,43 @@ const CheckoutPage = () => {
 
             <h3>Sản phẩm ({displayItems?.length})</h3>
             <div className="order-items">
-                {displayItems?.map(item => (
-                    <div key={item.id} style={{display:'flex', alignItems:'center', justifyContent:'space-between', borderBottom:'1px dashed #eee', padding:'15px 0'}}>
-                        
-                        {/* 👇 PHẦN HIỂN THỊ ẢNH & TÊN */}
-                        <div style={{display:'flex', alignItems:'center', gap:'15px'}}>
-                            <img 
-                                src={getProductImage(item.product)} 
-                                alt={item.product?.name}
-                                style={{
-                                    width: '60px', 
-                                    height: '60px', 
-                                    objectFit: 'contain', 
-                                    border: '1px solid #eee',
-                                    borderRadius: '4px',
-                                    backgroundColor: '#fff'
-                                }}
-                            />
-                            <div>
-                                <div style={{fontWeight:'500', marginBottom:'5px'}}>{item.product?.name}</div>
-                                <div style={{fontSize:'14px', color:'#666'}}>Số lượng: <strong>x{item.quantity}</strong></div>
+                {displayItems?.map(item => {
+                    // 🔥 TÍNH GIÁ ĐÚNG CHO TỪNG DÒNG SẢN PHẨM
+                    const unitPrice = getItemUnitPrice(item);
+                    return (
+                        <div key={item.id} style={{display:'flex', alignItems:'center', justifyContent:'space-between', borderBottom:'1px dashed #eee', padding:'15px 0'}}>
+                            
+                            <div style={{display:'flex', alignItems:'center', gap:'15px'}}>
+                                <img 
+                                    src={getProductImage(item)} 
+                                    alt={item.product?.name}
+                                    style={{
+                                        width: '60px', 
+                                        height: '60px', 
+                                        objectFit: 'contain', 
+                                        border: '1px solid #eee',
+                                        borderRadius: '4px',
+                                        backgroundColor: '#fff'
+                                    }}
+                                />
+                                <div>
+                                    <div style={{fontWeight:'500', marginBottom:'5px'}}>{item.product?.name}</div>
+                                    {/* 🔥 HIỂN THỊ CẤU HÌNH BIẾN THỂ ĐỂ TRÁNH NHẦM LẪN */}
+                                    {item.variant && (
+                                        <div style={{fontSize: '12px', color: '#6b7280', marginBottom: '3px'}}>
+                                            Cấu hình: {item.variant.ramCapacity} / {item.variant.storageCapacity}
+                                        </div>
+                                    )}
+                                    <div style={{fontSize:'14px', color:'#666'}}>Số lượng: <strong>x{item.quantity}</strong></div>
+                                </div>
+                            </div>
+
+                            <div style={{fontWeight:'bold', color:'#333'}}>
+                                {formatCurrency(unitPrice * item.quantity)}
                             </div>
                         </div>
-
-                        {/* PHẦN GIÁ */}
-                        <div style={{fontWeight:'bold', color:'#333'}}>
-                            {formatCurrency((item.product?.price || 0) * item.quantity)}
-                        </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
             
             <div style={{textAlign:'right', fontSize:'20px', fontWeight:'bold', marginTop:'20px', color:'#d70018'}}>
@@ -242,7 +271,7 @@ const CheckoutPage = () => {
         <div className="checkout-content success" style={{textAlign:'center', padding:'40px'}}>
             <CheckCircle size={60} color="green" />
             <h2>Đặt Hàng Thành Công!</h2>
-            <p>Đặt hàng thành công. Thanh toán khi nhận hàng.</p>
+            <p>Đơn hàng của bạn đã được tiếp nhận và đang chờ xử lý.</p>
             <button className="btn-primary" onClick={() => navigate("/customer/home/don-mua")}>
                 Xem đơn hàng của tôi
             </button>

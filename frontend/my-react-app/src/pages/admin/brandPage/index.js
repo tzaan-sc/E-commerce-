@@ -1,3 +1,4 @@
+import { toast } from 'react-toastify';
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import apiClient from "../../../api/axiosConfig";
 import { Save, Upload } from "lucide-react";
@@ -53,7 +54,7 @@ const BrandsPage = () => {
   // Xử lý thêm/sửa thương hiệu
   const handleSubmit = async () => {
     if (!formData.name.trim()) {
-      alert("Vui lòng nhập tên thương hiệu!");
+      toast.info("Vui lòng nhập tên thương hiệu!");
       return;
     }
 
@@ -63,19 +64,19 @@ const BrandsPage = () => {
       const payload = { id: editingId, ...formData };
       const result = await updateBrand(payload);
       if (result.success) {
-        alert("Cập nhật thương hiệu thành công!");
+        toast.success("Cập nhật thương hiệu thành công!");
         resetForm();
       } else {
-        alert(`Cập nhật thất bại: ${result.error}`);
+        toast.info(`Cập nhật thất bại: ${result.error}`);
       }
     } else {
       // Thêm mới
       const result = await addBrand(formData);
       if (result.success) {
-        alert("Thêm thương hiệu thành công!");
+        toast.success("Thêm thương hiệu thành công!");
         resetForm();
       } else {
-        alert(`Thêm thất bại: ${result.error}`);
+        toast.info(`Thêm thất bại: ${result.error}`);
       }
     }
   };
@@ -92,10 +93,10 @@ const BrandsPage = () => {
     if (window.confirm("Bạn có chắc muốn xóa thương hiệu này?")) {
       const result = await deleteBrand(brandId);
       if (result.success) {
-        alert("Xóa thành công!");
+        toast.success("Xóa thành công!");
         setSelectedBrands((prev) => prev.filter((id) => id !== brandId));
       } else {
-        alert(result.error); // 👇 Hiện nguyên văn lỗi backend
+        toast.error(result.error); // 👇 Hiện nguyên văn lỗi backend
       }
     }
   };
@@ -104,7 +105,7 @@ const BrandsPage = () => {
   // --- XÓA NHIỀU MỤC ---
   const handleDeleteSelected = async () => {
     if (selectedBrands.length === 0) {
-      alert("Vui lòng chọn ít nhất một thương hiệu!");
+      toast.info("Vui lòng chọn ít nhất một thương hiệu!");
       return;
     }
     if (
@@ -120,7 +121,7 @@ const BrandsPage = () => {
 
       // 👇 Nếu gặp lỗi thì báo ngay và dừng lại, không xóa tiếp các mục sau
       if (!result.success) {
-        alert(result.error);
+        toast.error(result.error);
         // Load lại danh sách những cái đã xóa được (cập nhật lại state selected)
         setSelectedBrands((prev) =>
           prev.filter((id) => brands.find((b) => b.id === id))
@@ -130,7 +131,7 @@ const BrandsPage = () => {
     }
 
     // Nếu chạy hết vòng lặp mà không lỗi
-    alert("Đã xóa tất cả mục đã chọn thành công!");
+    toast.success("Đã xóa tất cả mục đã chọn thành công!");
     setSelectedBrands([]);
   };
 
