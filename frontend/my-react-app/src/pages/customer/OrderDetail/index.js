@@ -218,9 +218,9 @@ const [selectedProduct, setSelectedProduct] = useState(null);
                   <strong className="ms-2">{statusInfo.text}</strong>
                 </div>
                 {/* NÚT ĐÁNH GIÁ */}
-  {order.status === "COMPLETED" && (
+  {order.status === "DELIVERED" && (
     <button
-      className="btn btn-outline-success w-100"
+      className="btn btn-outline-primary w-100"
       onClick={() => {
         setSelectedProduct(order.items[0].productId);
         setShowReview(true);
