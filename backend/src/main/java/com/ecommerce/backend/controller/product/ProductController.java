@@ -3,6 +3,7 @@ package com.ecommerce.backend.controller.product;
 import com.ecommerce.backend.dto.product.CreateProductRequest;
 import com.ecommerce.backend.dto.product.UpdateProductRequest;
 import com.ecommerce.backend.entity.product.Product;
+import com.ecommerce.backend.repository.product.ProductRepository;
 import com.ecommerce.backend.service.product.impl.ProductImportService;
 import com.ecommerce.backend.service.product.impl.ProductServiceImpl;
 import jakarta.validation.Valid;
@@ -24,7 +25,8 @@ public class ProductController {
 
     @Autowired
     private ProductImportService productImportService; // ⚠️ Đảm bảo bạn đã tạo class này
-
+    @Autowired
+    private ProductRepository productRepository;
     // ==========================================
     // 👇 TÍNH NĂNG MỚI: NHẬP EXCEL
     // ==========================================
@@ -75,10 +77,14 @@ public class ProductController {
 
     // 1. GET ALL
     @GetMapping
-    public ResponseEntity<List<Product>> getAll() {
+    public ResponseEntity<?> getAll(@RequestParam(required = false) String mode) {
+        if ("admin".equals(mode)) {
+            // Nếu là admin, lấy tất cả không lọc
+            return ResponseEntity.ok(productRepository.findAll());
+        }
+        // Nếu là khách hàng (mặc định), chỉ lấy ACTIVE
         return ResponseEntity.ok(productService.getAllProducts());
     }
-
     // 2. TÌM KIẾM
     @GetMapping("/search")
     public ResponseEntity<List<Product>> searchProducts(@RequestParam("keyword") String keyword) {
@@ -109,7 +115,11 @@ public class ProductController {
         productService.deleteProduct(id);
         return ResponseEntity.ok("Đã xoá sản phẩm thành công");
     }
-
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<?> toggleStatus(@PathVariable Long id) {
+        productService.toggleProductStatus(id);
+        return ResponseEntity.ok("Cập nhật trạng thái thành công");
+    }
     // ==========================================
     // 👇 LỌC SẢN PHẨM
     // ==========================================

@@ -136,6 +136,7 @@ const ShoppingCart = () => {
         const finalUnitPrice = getItemPrice(item);
         const originalUnitPrice = item.variant ? item.variant.price : (item.product?.price || 0);
         const hasDiscount = finalUnitPrice < originalUnitPrice;
+        const promotion = item.product?.promotion;
 
         return (
           <div className="cart-item" key={item.id}>
@@ -144,14 +145,45 @@ const ShoppingCart = () => {
              <div className="cart-col product">
                 <img src={getProductImage(item)} alt={item.product?.name} />
                 <div className="info">
-                    <div className="name">{item.product?.name}</div>
-                    {/* 🔥 HIỂN THỊ CẤU HÌNH BIẾN THỂ */}
-                    {item.variant && (
-                        <div className="variant-label" style={{fontSize: '12px', color: '#64748b'}}>
-                            Cấu hình: {item.variant.ramCapacity} / {item.variant.storageCapacity}
-                        </div>
-                    )}
-                </div>
+    <div className="name" style={{ fontWeight: '600', marginBottom: '4px' }}>
+        {item.product?.name}
+    </div>
+    
+    {/* 🔥 HIỂN THỊ CẤU HÌNH BIẾN THỂ THAY VÌ MÃ SKU */}
+    {item.variant && (
+        <div className="variant-label" style={{
+            fontSize: '11px', 
+            color: '#475569', // Màu xám đậm chuyên nghiệp
+            background: '#f1f5f9', // Nền xám nhạt để tách biệt
+            padding: '2px 8px',
+            borderRadius: '4px',
+            display: 'inline-block',
+            marginBottom: '4px'
+        }}>
+            Cấu hình: {item.variant.ramCapacity || item.variant.ram?.ramSize || "N/A"} 
+        {" / "} 
+        {item.variant.storageCapacity || (item.variant.storage ? `${item.variant.storage.capacity} ${item.variant.storage.storageType}` : "N/A")}
+        {" / "}
+        {item.variant.colorName || item.variant.color?.colorName || ""}
+        </div>
+    )}
+
+    {/* Promotion Badge */}
+    {hasDiscount && promotion && (
+        <div className="promo-badge" style={{
+            fontSize: '10px', 
+            background: '#ff4d4f', 
+            color: 'white', 
+            padding: '2px 6px', 
+            borderRadius: '4px', 
+            width: 'fit-content',
+            fontWeight: 'bold',
+            textTransform: 'uppercase'
+        }}>
+           GIẢM {promotion.discountType === "PERCENTAGE" ? `${promotion.discountValue}%` : formatPrice(promotion.discountValue)}
+        </div>
+    )}
+</div>
              </div>
 
              <div className="cart-col price">
@@ -160,7 +192,15 @@ const ShoppingCart = () => {
                         {formatPrice(originalUnitPrice)}
                     </div>
                 )}
-                <div className={hasDiscount ? "red" : ""}>{formatPrice(finalUnitPrice)}</div>
+                <div className={hasDiscount ? "red" : ""}>
+                    {formatPrice(finalUnitPrice)}
+                </div>
+                {/* 🔥 HIỂN THỊ CHI TIẾT GIẢM GIÁ NHỎ PHÍA DƯỚI */}
+                {hasDiscount && (
+                    <div style={{fontSize: '11px', color: '#ff4d4f', fontStyle: 'italic'}}>
+                        (Tiết kiệm {formatPrice(originalUnitPrice - finalUnitPrice)})
+                    </div>
+                )}
              </div>
 
              <div className="cart-col quantity">

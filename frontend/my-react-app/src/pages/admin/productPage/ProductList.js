@@ -1,11 +1,12 @@
-// src/pages/admin/productPage/ProductList.js
 import React, { useState, useRef } from "react";
-import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, Package, RefreshCw, FileDown, Layers } from "lucide-react";
+import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, Package, RefreshCw, FileDown, Layers, Loader2 } from "lucide-react";
 import { getProductImage, StatusBadge } from "./helpers";
 
 const ProductList = ({
   products, onAdd, onEdit, onVariants, onDelete, onImport,
-  brands, purposes
+  onToggleStatus, // ✅ Hiển truyền thêm hàm này từ ProductsPage để xử lý gọi API
+  brands, purposes,
+  isLoading // ✅ Nhận thêm prop isLoading từ cha
 }) => {
   const [search, setSearch] = useState("");
   const [filterBrand, setFilterBrand] = useState("");
@@ -15,10 +16,14 @@ const ProductList = ({
   const perPage = 5;
   const fileInputRef = useRef(null);
 
+  // ✅ FIX LOGIC LỌC: Bóc tách ID từ Object lồng nhau để lọc chính xác
   const filtered = products.filter(p => {
-    const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
-    const matchBrand = !filterBrand || p.brandId === Number(filterBrand);
-    const matchPurpose = !filterPurpose || p.purposeId === Number(filterPurpose);
+    const matchSearch = p.name?.toLowerCase().includes(search.toLowerCase());
+    const bId = p.brand?.id || p.brandId;
+    const puId = p.usagePurpose?.id || p.purposeId;
+    
+    const matchBrand = !filterBrand || bId === Number(filterBrand);
+    const matchPurpose = !filterPurpose || puId === Number(filterPurpose);
     const matchStatus = !filterStatus || p.status === filterStatus;
     return matchSearch && matchBrand && matchPurpose && matchStatus;
   });
@@ -30,10 +35,21 @@ const ProductList = ({
     <div style={{ fontFamily: "'IBM Plex Sans', 'Be Vietnam Pro', sans-serif" }}>
       <style>{`
         @keyframes fadeUp { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform: translateY(0); } }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .prod-row:hover { background: #f0f5ff !important; }
         .prod-row { animation: fadeUp 0.3s ease both; }
         .icon-btn:hover { opacity: 0.85; transform: scale(1.05); }
         .icon-btn { transition: all 0.15s; }
+        .animate-spin { animation: spin 1s linear infinite; }
+
+        /* ✅ CSS NÚT GẠT TRẠNG THÁI */
+        .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #10b981; }
+        input:checked + .slider:before { transform: translateX(20px); }
+        .status-label { font-size: 10px; font-weight: 700; margin-top: 2px; display: block; }
       `}</style>
 
       {/* Header Actions */}
@@ -86,74 +102,123 @@ const ProductList = ({
         )}
       </div>
 
-      {/* Table */}
+      {/* Table Section */}
       <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
-            <colgroup>
-              <col style={{ width: 50 }} /><col style={{ width: 70 }} /><col /><col style={{ width: 100 }} />
-              <col style={{ width: 110 }} /><col style={{ width: 105 }} /><col style={{ width: 110 }} />
-              <col style={{ width: 115 }} /><col style={{ width: 160 }} />
-            </colgroup>
-            <thead>
-              <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
-                {["ID", "Ảnh", "Tên sản phẩm", "Thương hiệu", "Màn hình", "Mục đích", "Khuyến mãi", "Trạng thái", "Thao tác"]
-                  .map(h => (
-                    <th key={h} style={{ padding: "12px 10px", textAlign: "center", fontSize: 12, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.04em", whiteSpace: "nowrap" }}>{h}</th>
-                  ))}
-              </tr>
-            </thead>
-            <tbody>
-              {paginated.length === 0 ? (
-                <tr><td colSpan={9} style={{ textAlign: "center", padding: 48, color: "#9ca3af" }}>
-                  <Package size={36} style={{ marginBottom: 8, opacity: 0.3 }} /><br />Không tìm thấy sản phẩm nào
-                </td></tr>
-              ) : paginated.map((p, idx) => (
-                <tr key={p.id} className="prod-row" style={{ borderBottom: "1px solid #f1f5f9", background: "#fff", animationDelay: `${idx * 0.05}s` }}>
-                  <td style={{ textAlign: "center", fontSize: 12, color: "#9ca3af", fontWeight: 600 }}>#{p.id}</td>
-                  <td style={{ textAlign: "center", padding: "10px 8px" }}>
-                    <div style={{ width: 56, height: 42, borderRadius: 8, overflow: "hidden", margin: "0 auto", border: "1px solid #e5e7eb" }}>
-                      <img src={getProductImage(p)} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => e.target.src = "https://placehold.co/56x42/f1f5f9/94a3b8?text=IMG"} />
-                    </div>
-                  </td>
-                  <td style={{ padding: "10px 10px" }}>
-                    <div style={{ fontWeight: 600, fontSize: 13, color: "#1e293b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-                    <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.slug}</div>
-                    <div style={{ fontSize: 11, color: "#2563eb", marginTop: 2 }}>{p.variants?.length || 0} biến thể</div>
-                  </td>
-                  <td style={{ textAlign: "center", fontSize: 13, fontWeight: 500 }}>{p.brandName}</td>
-                  <td style={{ textAlign: "center", fontSize: 13 }}>{p.screenSizeValue}"</td>
-                  <td style={{ textAlign: "center" }}>
-                    <span style={{ fontSize: 12, padding: "3px 8px", borderRadius: 6, background: "#eff6ff", color: "#2563eb", fontWeight: 500 }}>{p.purposeName}</span>
-                  </td>
-                  <td style={{ textAlign: "center" }}>
-                    {p.promotionName
-                      ? <span style={{ fontSize: 12, padding: "3px 8px", borderRadius: 6, background: "#fff7ed", color: "#ea580c", fontWeight: 500 }}>{p.promotionName}</span>
-                      : <span style={{ color: "#cbd5e1", fontSize: 12 }}>—</span>}
-                  </td>
-                  <td style={{ textAlign: "center" }}><StatusBadge status={p.status} /></td>
-                  <td style={{ textAlign: "center" }}>
-                    <div style={{ display: "flex", gap: 4, justifyContent: "center", flexWrap: "nowrap" }}>
-                      <button onClick={() => onVariants(p)} className="icon-btn" title="Quản lý biến thể" style={{ padding: "6px 8px", borderRadius: 7, border: "1px solid #ddd6fe", background: "#ede9fe", color: "#7c3aed", cursor: "pointer" }}>
-                        <Layers size={14} />
-                      </button>
-                      <button onClick={() => onEdit(p)} className="icon-btn" title="Chỉnh sửa" style={{ padding: "6px 8px", borderRadius: 7, border: "1px solid #bfdbfe", background: "#eff6ff", color: "#2563eb", cursor: "pointer" }}>
-                        <Edit size={14} />
-                      </button>
-                      <button onClick={() => onDelete(p.id)} className="icon-btn" title="Xoá" style={{ padding: "6px 8px", borderRadius: 7, border: "1px solid #fecaca", background: "#fef2f2", color: "#dc2626", cursor: "pointer" }}>
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </td>
+        
+        {/* ✅ CHỈ LOADING PHẦN BODY BẢNG (Giữ nguyên vị trí phân trang) */}
+        <div style={{ position: "relative" }}>
+          {isLoading && (
+            <div style={{
+              position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+              background: "rgba(255, 255, 255, 0.7)", zIndex: 10,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              backdropFilter: "blur(1px)"
+            }}>
+              <div style={{ textAlign: "center", color: "#2563eb" }}>
+                <Loader2 size={36} className="animate-spin" />
+                <p style={{ marginTop: 6, fontWeight: 600, fontSize: 13 }}>Đang tải...</p>
+              </div>
+            </div>
+          )}
+
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
+              <colgroup>
+                <col style={{ width: 50 }} /><col style={{ width: 70 }} /><col /><col style={{ width: 100 }} />
+                <col style={{ width: 110 }} /><col style={{ width: 105 }} /><col style={{ width: 110 }} />
+                <col style={{ width: 115 }} /><col style={{ width: 160 }} />
+              </colgroup>
+              <thead>
+                <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
+                  {["ID", "Ảnh", "Tên sản phẩm", "Thương hiệu", "Màn hình", "Mục đích", "Khuyến mãi", "Trạng thái", "Thao tác"]
+                    .map(h => (
+                      <th key={h} style={{ padding: "12px 10px", textAlign: "center", fontSize: 12, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.04em", whiteSpace: "nowrap" }}>{h}</th>
+                    ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {paginated.length === 0 ? (
+                  <tr><td colSpan={9} style={{ textAlign: "center", padding: 48, color: "#9ca3af" }}>
+                    <Package size={36} style={{ marginBottom: 8, opacity: 0.3 }} /><br />Không tìm thấy sản phẩm nào
+                  </td></tr>
+                ) : paginated.map((p, idx) => (
+                  <tr key={p.id} className="prod-row" style={{ borderBottom: "1px solid #f1f5f9", background: "#fff", animationDelay: `${idx * 0.05}s` }}>
+                    <td style={{ textAlign: "center", fontSize: 12, color: "#9ca3af", fontWeight: 600 }}>#{p.id}</td>
+                   <td style={{ textAlign: "center", padding: "10px 8px" }}>
+  <div style={{ 
+    width: 56, 
+    height: 42, 
+    borderRadius: 8, 
+    overflow: "hidden", 
+    margin: "0 auto", 
+    border: "1px solid #e5e7eb",
+    background: "#f8fafc" // Đổ nền nhẹ để nếu ảnh trong suốt nhìn vẫn đẹp
+  }}>
+    <img 
+      /* Logic chỉnh sửa: 
+         1. Khai báo BASE_URL của Backend (localhost:8080).
+         2. Kiểm tra nếu p.imageUrl đã có link tuyệt đối (http) thì dùng luôn, 
+            nếu là link tương đối (/api/uploads...) thì nối thêm BASE_URL.
+      */
+      src={(() => {
+        const baseUrl = "http://localhost:8080";
+        const rawPath = p.imageUrl || (p.variants && p.variants[0]?.image);
+        
+        if (!rawPath) return "https://placehold.co/56x42/f1f5f9/94a3b8?text=No+Img";
+        
+        // Nếu đường dẫn đã bắt đầu bằng http (link ngoài) thì giữ nguyên, ngược lại thì nối portal
+        return rawPath.startsWith("http") ? rawPath : `${baseUrl}${rawPath}`;
+      })()} 
+      
+      alt={p.name} 
+      style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+      
+      /* Xử lý khi link ảnh bị lỗi 404 hoặc server backend chưa bật */
+      onError={(e) => {
+        e.target.onerror = null; 
+        e.target.src = "https://placehold.co/56x42/f1f5f9/94a3b8?text=Error";
+      }} 
+    />
+  </div>
+</td>
+                    <td style={{ padding: "10px 10px" }}>
+                      <div style={{ fontWeight: 600, fontSize: 13, color: "#1e293b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                      <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>{p.variants?.length || 0} biến thể</div>
+                    </td>
+                    <td style={{ textAlign: "center", fontSize: 13, fontWeight: 500 }}>{p.brand?.name || p.brandName || "—"}</td>
+                    <td style={{ textAlign: "center", fontSize: 13 }}>{p.screenSize?.value ? `${p.screenSize.value}"` : (p.screenSizeValue ? `${p.screenSizeValue}"` : "—")}</td>
+                    <td style={{ textAlign: "center" }}>
+                      <span style={{ fontSize: 12, padding: "3px 8px", borderRadius: 6, background: "#eff6ff", color: "#2563eb", fontWeight: 500 }}>{p.usagePurpose?.name || p.purposeName || "—"}</span>
+                    </td>
+                    <td style={{ textAlign: "center" }}>
+                      {(p.promotion?.name || p.promotionName)
+                        ? <span style={{ fontSize: 12, padding: "3px 8px", borderRadius: 6, background: "#fff7ed", color: "#ea580c", fontWeight: 500 }}>{p.promotion?.name || p.promotionName}</span>
+                        : <span style={{ color: "#cbd5e1", fontSize: 12 }}>—</span>}
+                    </td>
+                    <td style={{ textAlign: "center" }}>
+                      <label className="switch">
+                        <input type="checkbox" checked={p.status === "ACTIVE"} onChange={() => onToggleStatus && onToggleStatus(p.id, p.status)} />
+                        <span className="slider"></span>
+                      </label>
+                      <span className="status-label" style={{ color: p.status === "ACTIVE" ? "#10b981" : "#94a3af" }}>{p.status === "ACTIVE" ? "Hoạt động" : "ẨN"}</span>
+                    </td>
+                    <td style={{ textAlign: "center" }}> 
+                      <div style={{ display: "flex", gap: 4, justifyContent: "center", flexWrap: "nowrap" }}>
+                        <button onClick={() => onVariants(p)} className="icon-btn" title="Quản lý biến thể" style={{ padding: "6px 8px", borderRadius: 7, border: "1px solid #ddd6fe", background: "#ede9fe", color: "#7c3aed", cursor: "pointer" }}><Layers size={14} /></button>
+                        <button onClick={() => onEdit(p)} className="icon-btn" title="Chỉnh sửa" style={{ padding: "6px 8px", borderRadius: 7, border: "1px solid #bfdbfe", background: "#eff6ff", color: "#2563eb", cursor: "pointer" }}><Edit size={14} /></button>
+                        <button onClick={() => onDelete(p.id)} className="icon-btn" title="Xoá" style={{ padding: "6px 8px", borderRadius: 7, border: "1px solid #fecaca", background: "#fef2f2", color: "#dc2626", cursor: "pointer" }}><Trash2 size={14} /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        {/* Pagination */}
+        {/* ✅ PHÂN TRANG (Pagination) - Nằm ngoài khối relative loading nên sẽ không bao giờ mất */}
         {totalPages > 1 && (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderTop: "1px solid #f1f5f9" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderTop: "1px solid #f1f5f9", background: "#fff" }}>
             <span style={{ fontSize: 13, color: "#6b7280" }}>
               Hiển thị {(currentPage - 1) * perPage + 1}–{Math.min(currentPage * perPage, filtered.length)} / {filtered.length}
             </span>

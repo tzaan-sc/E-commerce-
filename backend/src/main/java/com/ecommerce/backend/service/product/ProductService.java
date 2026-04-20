@@ -10,6 +10,7 @@ public interface ProductService {
     Product createProduct(CreateProductRequest request);
     Product updateProduct(Long id, UpdateProductRequest request);
     void deleteProduct(Long id);
+    void toggleProductStatus(Long id);
     Product getProductById(Long id);
     List<Product> getAllProducts();
     List<Product> getProductsByBrand(Long brandId);

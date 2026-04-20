@@ -1,5 +1,5 @@
 import { toast } from 'react-toastify';
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { ArrowLeft, Save, Laptop, Cpu, Image as ImageIcon, Upload, Star, X, Loader2, Link as LinkIcon } from "lucide-react";
 import { FormField } from "./helpers";
 import axios from "axios";
@@ -11,25 +11,48 @@ const ProductForm = ({ product, onSave, onBack, brands, purposes, screenSizes, p
 
   const BASE_URL = "http://localhost:8080";
 
+  // ✅ LOGIC TÍNH TỔNG KHO TỪ BIẾN THỂ
+  const calculateTotalStock = (variants) => {
+    if (!variants || variants.length === 0) return product?.stockQuantity || 0;
+    return variants.reduce((sum, v) => sum + (Number(v.stockQuantity) || 0), 0);
+  };
+
   const [form, setForm] = useState({
     id: product?.id || null,
     name: product?.name || "", 
     slug: product?.slug || "",
     description: product?.description || "", 
     status: product?.status || "ACTIVE",
-    stockQuantity: product?.stockQuantity || 0,
-    brandId: product?.brandId || "", 
-    brandName: product?.brandName || "",
-    screenSizeId: product?.screenSizeId || "", 
-    screenSizeValue: product?.screenSizeValue || "",
-    purposeId: product?.purposeId || "", 
-    purposeName: product?.purposeName || "",
-    promotionId: product?.promotionId || "", 
-    promotionName: product?.promotionName || "",
+    // ✅ CHỈNH: Lấy tổng tồn kho từ biến thể
+    stockQuantity: calculateTotalStock(product?.variants),
+    // ✅ CHỈNH: Lấy đúng ID từ object lồng nhau trong Database
+    brandId: product?.brand?.id || product?.brandId || "", 
+    brandName: product?.brand?.name || product?.brandName || "",
+    screenSizeId: product?.screenSize?.id || product?.screenSizeId || "", 
+    screenSizeValue: product?.screenSize?.value || product?.screenSizeValue || "",
+    purposeId: product?.usagePurpose?.id || product?.purposeId || "", 
+    purposeName: product?.usagePurpose?.name || product?.purposeName || "",
+    promotionId: product?.promotion?.id || product?.promotionId || "", 
+    promotionName: product?.promotion?.name || product?.promotionName || "",
     imageUrl: product?.imageUrl || "", 
     specification: product?.specification || { resolution: "", refreshRate: "", panelType: "", battery: "", weight: "", os: "", wifi: "", bluetooth: "", ports: "" },
     variants: product?.variants || [],
   });
+
+  // ✅ ĐẢM BẢO DỮ LIỆU ĐƯỢC CẬP NHẬT KHI PRODUCT THAY ĐỔI (DÙNG CHO TRƯỜNG HỢP CHỈNH SỬA)
+  useEffect(() => {
+    if (product) {
+      setForm({
+        ...product,
+        stockQuantity: calculateTotalStock(product.variants),
+        brandId: product.brand?.id || product.brandId || "",
+        screenSizeId: product.screenSize?.id || product.screenSizeId || "",
+        purposeId: product.usagePurpose?.id || product.purposeId || "",
+        promotionId: product.promotion?.id || product.promotionId || "",
+        specification: product.specification || { resolution: "", refreshRate: "", panelType: "", battery: "", weight: "", os: "", wifi: "", bluetooth: "", ports: "" }
+      });
+    }
+  }, [product]);
 
   const [activeTab, setActiveTab] = useState("general");
   const [errors, setErrors] = useState({});
@@ -77,36 +100,34 @@ const ProductForm = ({ product, onSave, onBack, brands, purposes, screenSizes, p
     return Object.keys(e).length === 0;
   };
 
-  // ✅ CHỈNH SỬA ĐẦY ĐỦ LOGIC ĐỂ BẤM TẠO ĐƯỢC
   const handleSubmit = () => {
     if (!validate()) {
-      setActiveTab("general"); // Tự chuyển về tab lỗi để người dùng thấy
+      setActiveTab("general"); 
       return;
     }
 
-    // Tìm kiếm thông tin từ các list props gửi vào
     const brand = brands?.find(b => String(b.id) === String(form.brandId));
     const purpose = purposes?.find(p => String(p.id) === String(form.purposeId));
     const screen = screenSizes?.find(s => String(s.id) === String(form.screenSizeId));
     const promo = promotions?.find(p => String(p.id) === String(form.promotionId));
 
-    // ✅ ĐÓNG GÓI PAYLOAD CHUẨN ĐỂ GỬI QUA API
+    const specData = { ...form.specification };
+    
     const finalData = { 
       ...form, 
-      // Đảm bảo các ID là kiểu số khi gửi lên Backend
       brandId: form.brandId ? Number(form.brandId) : null,
       purposeId: form.purposeId ? Number(form.purposeId) : null,
       screenSizeId: form.screenSizeId ? Number(form.screenSizeId) : null,
       promotionId: form.promotionId ? Number(form.promotionId) : null,
       stockQuantity: Number(form.stockQuantity || 0),
-      
-      // Bổ sung tên để hiển thị (nếu Backend cần dùng ProductDTO cũ)
+      specification: specData,
       brandName: brand?.name || "", 
       purposeName: purpose?.name || "", 
       screenSizeValue: screen?.value || "", 
       promotionName: promo?.name || null 
     };
 
+    console.log("Dữ liệu gửi lên server:", finalData);
     onSave(finalData);
   };
 
@@ -160,8 +181,8 @@ const ProductForm = ({ product, onSave, onBack, brands, purposes, screenSizes, p
               <input value={form.name} onChange={e => { setF("name", e.target.value); setF("slug", autoSlug(e.target.value)); }}
                 placeholder="VD: ASUS ROG Strix G15" style={inputStyle(errors.name)} />
             </FormField>
-            <FormField label="Số lượng tồn kho tổng (Tự động)" style={{ gridColumn: "1/-1" }}>
-              <input type="number" value={form.stockQuantity} readOnly style={{ ...inputStyle(), background: "#f3f4f6", cursor: "not-allowed" }} />
+            <FormField label="Số lượng tồn kho tổng (Tự động cộng từ biến thể)" style={{ gridColumn: "1/-1" }}>
+              <input type="number" value={form.stockQuantity} readOnly style={{ ...inputStyle(), background: "#f3f4f6", cursor: "not-allowed", fontWeight: 'bold', color: '#2563eb' }} />
             </FormField>
             <FormField label="Slug" style={{ gridColumn: "1/-1" }}>
               <input value={form.slug} onChange={e => setF("slug", e.target.value)} placeholder="asus-rog-strix-g15" style={inputStyle()} />

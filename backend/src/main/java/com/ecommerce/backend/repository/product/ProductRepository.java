@@ -22,7 +22,14 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     // 👇 THÊM HÀM NÀY: Kiểm tra tồn tại theo tên NHƯNG trừ ID hiện tại ra (Dùng cho Update)
     boolean existsByNameAndIdNot(String name, Long id);
+    // Lấy tất cả sản phẩm đang hoạt động (Cho trang chủ)
+    List<Product> findByStatus(String status);
 
+    // Tìm theo Brand và phải ACTIVE
+    List<Product> findByBrandIdAndStatus(Long brandId, String status);
+
+    // Kiểm tra nhanh danh mục kèm trạng thái
+    long countByBrandIdAndStatus(Long brandId, String status);
     @Modifying
     @Query("UPDATE Product p SET p.brand = NULL WHERE p.brand.id = :brandId")
     void setBrandToNullByBrandId(Long brandId);

@@ -132,29 +132,39 @@ const VariantFormModal = ({ product, variant, onSave, onClose, ramList, gpuList,
             <input type="number" value={form.stockQuantity} onChange={e => setF("stockQuantity", e.target.value)} placeholder="0" style={inputStyle(errors.stockQuantity)} />
           </FormField>
 
-          <div style={{ gridColumn: "1/-1", height: 1, background: "#f1f5f9", margin: "8px 0" }} />
-          <p style={{ gridColumn: "1/-1", margin: 0, fontWeight: 700, fontSize: 13, color: "#4b5563", textTransform: "uppercase" }}>⚙️ Cấu hình phần cứng</p>
+          
 
-          {[
-            ["RAM *", "ramId", ramList, r => `${r.ramSize}`, errors.ramId],
-            ["GPU *", "gpuId", gpuList, g => g.gpuName, errors.gpuId],
-            ["CPU / Chip *", "chipId", chipList, c => c.cpuName, errors.chipId],
-            ["Storage", "storageId", storageList, s => `${s.capacity} ${s.storageType}`, null],
-            ["Màu sắc", "colorId", colorList, c => c.colorName, null],
-          ].map(([label, key, opts, display, err]) => (
-            <FormField key={key} label={label} error={err}>
-              <select 
-                value={String(form[key] || "")} 
-                onChange={e => setF(key, e.target.value)} 
-                style={inputStyle(err)}
-              >
-                <option value="">-- Chọn {label.replace(" *", "")} --</option>
-                {opts?.map(o => (
-                  <option key={o.id} value={String(o.id)}>{display(o)}</option>
-                ))}
-              </select>
-            </FormField>
-          ))}
+<div style={{ 
+  gridColumn: "1/-1", 
+  display: "grid", 
+  gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", // Tự chia cột thông minh
+  gap: 16 
+}}>
+  {[
+    ["RAM *", "ramId", ramList, r => `${r.ramSize}`, errors.ramId],
+    ["GPU *", "gpuId", gpuList, g => g.gpuName, errors.gpuId],
+    ["CPU / Chip *", "chipId", chipList, c => c.cpuName, errors.chipId],
+    ["Storage", "storageId", storageList, s => `${s.capacity} ${s.storageType}`, null],
+    ["Màu sắc", "colorId", colorList, c => c.colorName, null],
+  ].map(([label, key, opts, display, err]) => (
+    <FormField key={key} label={label} error={err}>
+      <select 
+        value={String(form[key] || "")} 
+        onChange={e => setF(key, e.target.value)} 
+        style={{
+          ...inputStyle(err),
+          textOverflow: "ellipsis", // Nếu tên linh kiện quá dài trong select thì hiện ...
+          whiteSpace: "nowrap"
+        }}
+      >
+        <option value="">-- Chọn {label.replace(" *", "")} --</option>
+        {opts?.map(o => (
+          <option key={o.id} value={String(o.id)}>{display(o)}</option>
+        ))}
+      </select>
+    </FormField>
+  ))}
+</div>
 
           {/* ✅ KHU VỰC QUẢN LÝ ẢNH CÓ REVIEW */}
           <div style={{ gridColumn: "1/-1", marginTop: 10 }}>

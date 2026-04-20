@@ -21,24 +21,26 @@ public class CartController {
     private final CartService cartService;
 
     @PostMapping("/add")
-    public ResponseEntity<CartItem> addToCart(
-            @AuthenticationPrincipal UserDetails userDetails, // <-- Sửa: Lấy user đã login
+    public ResponseEntity<?> addToCart(
+            @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam Long productId,
-            @RequestParam Long variantId, // 🔥 THÊM: Nhận variantId để khớp với Service
+            @RequestParam Long variantId,
             @RequestParam Integer quantity
-            // @RequestParam Long userId, <-- Xóa: Không còn cần
     ) {
-        // Kiểm tra xem user đã được xác thực chưa
         if (userDetails == null) {
-            return ResponseEntity.status(401).build(); // 401 Unauthorized
+            return ResponseEntity.status(401).body("Vui lòng đăng nhập để thêm vào giỏ hàng");
         }
-        // Lấy username (thường là email) từ token
-        String username = userDetails.getUsername();
 
-        if (quantity <= 0) quantity = 1;
+        try {
+            String username = userDetails.getUsername();
+            if (quantity == null || quantity <= 0) quantity = 1;
 
-        // Sửa: Gọi service bằng username và truyền đủ variantId
-        return ResponseEntity.ok(cartService.addToCart(username, productId, variantId, quantity));
+            CartItem savedItem = cartService.addToCart(username, productId, variantId, quantity);
+            return ResponseEntity.ok(savedItem);
+        } catch (RuntimeException e) {
+            // Trả về lỗi nếu hết kho hoặc không tìm thấy biến thể
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @GetMapping // <-- Sửa: Xóa "/{userId}"

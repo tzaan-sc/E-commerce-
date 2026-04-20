@@ -90,80 +90,135 @@ const VariantManagement = ({ product, onBack, showToast, onUpdateProduct, fetchA
             <p style={{ margin: 0, fontWeight: 600 }}>Chưa có biến thể nào</p>
           </div>
         ) : variants.map(v => (
-          <div key={v.id} style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", padding: 18, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-            
-            {/* ✅ LOGIC HIỂN THỊ ẢNH ĐÃ FIX ĐƯỜNG DẪN BASE_URL */}
-            <div style={{ display: "flex", gap: 8, marginBottom: 15, overflowX: "auto", paddingBottom: 5 }}>
-              {((v.imageUrls && v.imageUrls.length > 0) || (v.images && v.images.length > 0)) ? (
-                (v.imageUrls || v.images).map((img, index) => {
-                  const rawSrc = typeof img === 'string' ? img : img.imageUrl;
-                  if (!rawSrc) return null;
+          <div key={v.id} style={{ 
+  background: "#fff", 
+  borderRadius: 16, // Bo góc mềm mại hơn
+  border: "1px solid #e5e7eb", 
+  padding: 20, // Padding rộng rãi hơn
+  boxShadow: "0 2px 10px rgba(0,0,0,0.04)" // Shadow nhẹ sang trọng
+}}>
+  
+  {/* ✅ KHU VỰC ẢNH BIẾN THỂ ĐÃ CHỈNH SỬA: Chuyên nghiệp hơn */}
+  <div style={{ display: "flex", gap: 10, marginBottom: 18, alignItems: "center" }}>
+    <div style={{ 
+      display: "flex", gap: 8, overflowX: "auto", flex: 1, paddingBottom: 5 
+    }}>
+      {((v.imageUrls && v.imageUrls.length > 0) || (v.images && v.images.length > 0)) ? (
+        (v.imageUrls || v.images).map((img, index) => {
+          const rawSrc = typeof img === 'string' ? img : img.imageUrl;
+          if (!rawSrc) return null;
+          const fullSrc = rawSrc.startsWith("http") ? rawSrc : `${BASE_URL}${rawSrc}`;
+          
+          return (
+            <img 
+              key={index} 
+              src={fullSrc} 
+              alt="variant" 
+              style={{ 
+                width: 58, 
+                height: 58, 
+                objectFit: "cover", 
+                borderRadius: 10, 
+                border: index === 0 ? "2px solid #7c3aed" : "1px solid #f1f5f9", // Ảnh đầu tiên làm ảnh chính
+                flexShrink: 0,
+                boxShadow: index === 0 ? "0 4px 10px rgba(124,58,237,0.1)" : "none"
+              }} 
+              onError={(e) => { 
+                e.target.onerror = null; 
+                e.target.src = "https://placehold.co/58x58/e2e8f0/94a3b8?text=Loi"; 
+              }}
+            />
+          );
+        })
+      ) : (
+        <div style={{ width: "100%", height: 58, background: "#f8fafc", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", border: "1px dashed #e2e8f0" }}>
+          <ImageIcon size={18} style={{ color: "#94a3b8", marginRight: 8 }} />
+          <span style={{ fontSize: 12, color: "#94a3b8", fontWeight: 500 }}>Chưa có ảnh biến thể</span>
+        </div>
+      )}
+    </div>
 
-                  // Nếu link chưa có http/https thì ghép BASE_URL vào
-                  const fullSrc = rawSrc.startsWith("http") ? rawSrc : `${BASE_URL}${rawSrc}`;
-                  
-                  return (
-                    <img 
-                      key={index} 
-                      src={fullSrc} 
-                      alt="variant" 
-                      style={{ width: 55, height: 55, objectFit: "cover", borderRadius: 8, border: "1px solid #f1f5f9", flexShrink: 0 }} 
-                      onError={(e) => { 
-                        e.target.onerror = null; 
-                        e.target.src = "https://placehold.co/55x55/e2e8f0/94a3b8?text=Loi+Link"; 
-                      }}
-                    />
-                  );
-                })
-              ) : (
-                <div style={{ width: "100%", height: 55, background: "#f8fafc", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", border: "1px dashed #e2e8f0" }}>
-                  <ImageIcon size={16} style={{ color: "#94a3b8", marginRight: 6 }} />
-                  <span style={{ fontSize: 11, color: "#94a3b8" }}>Chưa có ảnh</span>
-                </div>
-              )}
-            </div>
+    {/* Nút Sửa/Xóa ảnh được đưa vào đây cho gọn (nếu cần) */}
+  </div>
 
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
-              <div>
-                <span style={{ fontSize: 11, fontWeight: 700, color: "#7c3aed", textTransform: "uppercase" }}>SKU</span>
-                <p style={{ margin: "2px 0 0", fontSize: 13, fontWeight: 600 }}>{v.sku}</p>
-              </div>
-              <StatusBadge status={v.isActive} />
-            </div>
+  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+    <div>
+      <span style={{ fontSize: 11, fontWeight: 700, color: "#7c3aed", textTransform: "uppercase", letterSpacing: "0.05em" }}>Mã hàng (SKU)</span>
+      <p style={{ margin: "2px 0 0", fontSize: 14, fontWeight: 600, color: "#111827" }}>{v.sku}</p>
+    </div>
+    {/* ✅ Chỗ hoạt động đẹp hơn: Tên gọi rõ ràng, bo góc fit */}
+    <span style={{ 
+      fontSize: 12, 
+      fontWeight: 600, 
+      padding: "5px 12px", 
+      borderRadius: 100, // Bo tròn hoàn toàn dạng pill
+      background: v.isActive ? "#dcfce7" : "#fee2e2", 
+      color: v.isActive ? "#166534" : "#991b1b",
+      border: `1px solid ${v.isActive ? "#bbf7d0" : "#fecaca"}` // Thêm border nhẹ
+    }}>
+      {v.isActive ? "● Hoạt động" : "○ Tạm ẩn"}
+    </span>
+  </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
-              {[
-                [Cpu, "CPU", v.chipName || v.chip?.cpuName], 
-                [Monitor, "GPU", v.gpuName || v.gpu?.gpuName],
-                [Package, "RAM", v.ramSize || v.ram?.ramSize], 
-                [HardDrive, "Lưu trữ", v.storageDisplay || (v.storage ? `${v.storage.capacity} ${v.storage.storageType}` : "")],
-                [Palette, "Màu", v.colorName || v.color?.colorName],
-              ].map(([Icon, label, val], i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 7, background: "#f8fafc", padding: "7px 10px", borderRadius: 8 }}>
-                  <Icon size={13} style={{ color: "#7c3aed", flexShrink: 0 }} />
-                  <span style={{ fontSize: 12, color: "#6b7280" }}>{label}: </span>
-                  <span style={{ fontSize: 12, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {val || "N/A"}
-                  </span>
-                </div>
-              ))}
-            </div>
+  {/* ✅ PHẦN CẤU HÌNH ĐÃ CHỈNH SỬA: Tự fit nội dung, nhảy hàng khi tràn */}
+  <div style={{ 
+    display: "flex", 
+    flexWrap: "wrap", // Chìa khóa: Cho phép nhảy hàng
+    gap: 8, 
+    marginBottom: 16,
+    padding: "12px",
+    background: "#f9fafb",
+    borderRadius: 12,
+    border: "1px solid #f1f5f9"
+  }}>
+    {[
+      [Cpu, "CPU", v.chipName || v.chip?.cpuName], 
+      [Monitor, "GPU", v.gpuName || v.gpu?.gpuName],
+      [Package, "RAM", v.ramSize || v.ram?.ramSize], 
+      [HardDrive, "Lưu trữ", v.storageDisplay || (v.storage ? `${v.storage.capacity} ${v.storage.storageType}` : "")],
+      [Palette, "Màu", v.colorName || v.color?.colorName],
+    ].map(([Icon, label, val], i) => (
+      <div key={i} style={{ 
+        display: "flex", 
+        alignItems: "center", 
+        gap: 6, 
+        background: "#fff", 
+        padding: "6px 12px", // Thêm padding ngang
+        borderRadius: 8,
+        border: "1px solid #e5e7eb",
+        width: "fit-content", // Khung vừa khít nội dung
+        maxWidth: "100%",     // Không tràn quá cha
+      }}>
+        <Icon size={12} style={{ color: "#7c3aed", flexShrink: 0 }} />
+        <span style={{ fontSize: 11, color: "#6b7280", whiteSpace: "nowrap" }}>{label}: </span>
+        <span style={{ 
+          fontSize: 12, 
+          fontWeight: 600, 
+          color: "#1f2937",
+          // Cho phép text xuống dòng nếu quá dài thay vì bị cắt
+          wordBreak: "break-word" 
+        }}>
+          {val || "—"}
+        </span>
+      </div>
+    ))}
+  </div>
 
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 12, borderTop: "1px solid #f1f5f9" }}>
-              <div>
-                <p style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#2563eb" }}>{formatPrice(v.price)}</p>
-                <p style={{ margin: "2px 0 0", fontSize: 12, color: "#9ca3af" }}>Tồn kho: <span style={{ fontWeight: 600, color: v.stockQuantity > 5 ? "#16a34a" : "#dc2626" }}>{v.stockQuantity}</span></p>
-              </div>
-              <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={() => { setEditVariant(v); setShowForm(true); }} style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 12px", border: "1px solid #bfdbfe", borderRadius: 8, background: "#eff6ff", color: "#2563eb", cursor: "pointer", fontWeight: 600, fontSize: 13 }}>
-                  <Edit size={13} /> Sửa
-                </button>
-                <button onClick={() => handleDelete(v.id)} style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 12px", border: "1px solid #fecaca", borderRadius: 8, background: "#fef2f2", color: "#dc2626", cursor: "pointer", fontWeight: 600, fontSize: 13 }}>
-                  <Trash2 size={13} />
-                </button>
-              </div>
-            </div>
-          </div>
+  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 14, borderTop: "1px solid #f1f5f9" }}>
+    <div>
+      <p style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#2563eb" }}>{formatPrice(v.price)}</p>
+      <p style={{ margin: "2px 0 0", fontSize: 12, color: "#9ca3af" }}>Tồn kho: <span style={{ fontWeight: 700, color: v.stockQuantity > 5 ? "#16a34a" : "#dc2626" }}>{v.stockQuantity}</span></p>
+    </div>
+    <div style={{ display: "flex", gap: 8 }}>
+      <button onClick={() => { setEditVariant(v); setShowForm(true); }} className="icon-btn-edit" style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", border: "1px solid #bfdbfe", borderRadius: 9, background: "#eff6ff", color: "#2563eb", cursor: "pointer", fontWeight: 600, fontSize: 13 }}>
+        <Edit size={13} /> Sửa
+      </button>
+      <button onClick={() => handleDelete(v.id)} className="icon-btn-delete" style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", border: "1px solid #fecaca", borderRadius: 9, background: "#fef2f2", color: "#dc2626", cursor: "pointer", fontWeight: 600, fontSize: 13 }}>
+        <Trash2 size={13} />
+      </button>
+    </div>
+  </div>
+</div>
         ))}
       </div>
     </div>

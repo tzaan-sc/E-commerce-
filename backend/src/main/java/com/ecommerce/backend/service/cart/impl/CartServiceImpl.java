@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -34,42 +35,44 @@ public class CartServiceImpl implements CartService {
     @Override
     @Transactional
     public CartItem addToCart(String email, Long productId, Long variantId, Integer quantity) {
-        // 1. Tìm User
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
 
-        // 2. Tìm Sản phẩm chính
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", productId));
 
-        // 3. 🔥 LẤY BIẾN THỂ (VARIANT) ĐỂ KIỂM TRA CHÍNH XÁC
+        // 1. Phải lấy đúng Variant cụ thể
         ProductVariant variant = productVariantRepository.findById(variantId)
                 .orElseThrow(() -> new ResourceNotFoundException("Variant", "id", variantId));
 
-        // 4. KIỂM TRA TỒN KHO CỦA BIẾN THỂ (Sử dụng field stockQuantity)
-        if (variant.getStockQuantity() < quantity) {
-            throw new RuntimeException("Cấu hình này không đủ số lượng tồn kho (Hiện còn: " + variant.getStockQuantity() + ")");
+        // 2. Tìm xem TRONG GIỎ của User đã có đúng CẶP (Sản phẩm + Biến thể này) chưa
+        Optional<CartItem> existingItem = cartItemRepository.findByUserAndProductAndVariant(user, product, variant);
+
+        if (existingItem.isPresent()) {
+            // TRƯỜNG HỢP: TRÙNG BIẾN THỂ -> CỘNG DỒN
+            CartItem cartItem = existingItem.get();
+            int newQuantity = cartItem.getQuantity() + quantity;
+
+            if (variant.getStockQuantity() < newQuantity) {
+                throw new RuntimeException("Số lượng trong giỏ vượt quá tồn kho hiện có!");
+            }
+
+            cartItem.setQuantity(newQuantity);
+            return cartItemRepository.save(cartItem);
+        } else {
+            // TRƯỜNG HỢP: BIẾN THỂ MỚI -> TẠO DÒNG MỚI
+            if (variant.getStockQuantity() < quantity) {
+                throw new RuntimeException("Kho không đủ số lượng!");
+            }
+
+            CartItem newItem = CartItem.builder()
+                    .user(user)
+                    .product(product)
+                    .variant(variant)
+                    .quantity(quantity)
+                    .build();
+            return cartItemRepository.save(newItem);
         }
-
-        // 5. Kiểm tra xem cấu hình này đã có trong giỏ của User này chưa
-        CartItem cartItem = cartItemRepository.findByUserAndProductAndVariant(user, product, variant)
-                .orElse(CartItem.builder()
-                        .user(user)
-                        .product(product)
-                        .variant(variant) // 🔥 Gán biến thể vào CartItem
-                        .quantity(0)
-                        .build());
-
-        // 6. Kiểm tra tổng số lượng sau khi cộng dồn (Dựa trên tồn kho của biến thể)
-        int newQuantity = cartItem.getQuantity() + quantity;
-        if (variant.getStockQuantity() < newQuantity) {
-            throw new RuntimeException("Tổng số lượng cấu hình này trong giỏ vượt quá tồn kho hiện có!");
-        }
-
-        cartItem.setQuantity(newQuantity);
-
-        // Lưu lại
-        return cartItemRepository.save(cartItem);
     }
 
     @Override

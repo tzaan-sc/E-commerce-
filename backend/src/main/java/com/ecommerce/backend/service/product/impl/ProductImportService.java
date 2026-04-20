@@ -1,9 +1,16 @@
 package com.ecommerce.backend.service.product.impl;
 
 import com.ecommerce.backend.entity.product.*;
+import com.ecommerce.backend.entity.product.variant.*; // Import toàn bộ variant entities
 import com.ecommerce.backend.repository.product.*;
+import com.ecommerce.backend.repository.product.*;
+import com.ecommerce.backend.util.SlugUtil;
 import lombok.RequiredArgsConstructor;
-import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,11 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.Normalizer;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.regex.Pattern;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -26,156 +29,132 @@ public class ProductImportService {
     private final UsagePurposeRepository usagePurposeRepository;
     private final ScreenSizeRepository screenSizeRepository;
 
-    // ✅ Chốt chặn quan trọng: Nếu 1 dòng lỗi, toàn bộ quá trình sẽ Rollback (không lưu dòng nào cả)
+    private final RamRepository ramRepository;
+    private final GpuRepository gpuRepository;
+    private final ChipRepository chipRepository;
+    private final StorageRepository storageRepository;
+    private final ColorRepository colorRepository;
+
     @Transactional(rollbackFor = Exception.class)
     public void importProducts(MultipartFile file) throws IOException {
-        List<Product> productList = new ArrayList<>();
-
         try (InputStream inputStream = file.getInputStream();
              Workbook workbook = new XSSFWorkbook(inputStream)) {
 
             Sheet sheet = workbook.getSheetAt(0);
+            Map<String, Product> productMap = new LinkedHashMap<>();
 
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
-                if (row == null) continue;
+                if (row == null || getCellValue(row.getCell(0)).isEmpty()) continue;
 
-                // ✅ currentRowNumber xác định vị trí chính xác trong Excel để báo lỗi
-                int currentRowNumber = i + 1;
+                int rowNum = i + 1;
+                String productName = getCellValue(row.getCell(0));
 
-                // 1. ĐỌC DỮ LIỆU TỪ EXCEL
-                String name = getCellValue(row.getCell(0));
-                if (name.isEmpty()) continue;
-
-                // ✅ KIỂM TRA TRÙNG TÊN: Kiểm tra ngay trước khi tạo Object
-                if (productRepository.existsByName(name)) {
-                    throw new RuntimeException("Dòng " + currentRowNumber + ": Tên sản phẩm '" + name + "' đã tồn tại trong hệ thống.");
+                Product product;
+                if (!productMap.containsKey(productName)) {
+                    if (productRepository.existsByName(productName)) {
+                        throw new RuntimeException("Dòng " + rowNum + ": Sản phẩm '" + productName + "' đã có trong hệ thống.");
+                    }
+                    product = createNewProductHeader(row, rowNum);
+                    productMap.put(productName, product);
+                } else {
+                    product = productMap.get(productName);
                 }
 
-                // ✅ VALIDATE GIÁ & KHO: Kiểm tra số âm hoặc định dạng không phải số
-                double price = parseDoubleWithValidation(getCellValue(row.getCell(1)), currentRowNumber, "Giá");
-                int stockQuantity = (int) parseDoubleWithValidation(getCellValue(row.getCell(2)), currentRowNumber, "Số lượng kho");
+                // 1. ĐỌC GIÁ VÀ KHO BIẾN THỂ (Cột Q, R)
+                double vPrice = parseDouble(getCellValue(row.getCell(16)), rowNum, "Giá biến thể");
+                int vStock = (int) parseDouble(getCellValue(row.getCell(17)), rowNum, "Kho biến thể");
 
-                String description = getCellValue(row.getCell(3));
-                String rawSpecifications = getCellValue(row.getCell(4));
-                String brandName = getCellValue(row.getCell(5));
-                String purposeName = getCellValue(row.getCell(6));
+                // 2. TRA CỨU LINH KIỆN (S, T, U, V, W)
+                Ram ram = ramRepository.findByRamSize(getCellValue(row.getCell(18))).orElse(null);
+                Gpu gpu = gpuRepository.findByGpuName(getCellValue(row.getCell(19))).orElse(null);
+                Chip chip = chipRepository.findByCpuName(getCellValue(row.getCell(20))).orElse(null);
+                Storage storage = storageRepository.findByCapacity(getCellValue(row.getCell(21))).orElse(null);
 
-                String screenSizeRaw = getCellValue(row.getCell(7));
-                double screenSizeValue = parseDoubleWithValidation(screenSizeRaw, currentRowNumber, "Kích thước màn hình");
+                // ✅ FIX LỖI AMBIGUOUS COLOR: Gọi đích danh class Color trong package của bạn
+                com.ecommerce.backend.entity.product.variant.Color color = colorRepository.findByColorName(getCellValue(row.getCell(22))).orElse(null);
 
-                String rawImages = getCellValue(row.getCell(8));
-
-                // 2. TRA CỨU DỮ LIỆU DANH MỤC
-                Brand brand = brandRepository.findByName(brandName)
-                        .orElseThrow(() -> new RuntimeException("Dòng " + currentRowNumber + ": Không tìm thấy hãng '" + brandName + "'."));
-
-                UsagePurpose purpose = usagePurposeRepository.findByName(purposeName)
-                        .orElseThrow(() -> new RuntimeException("Dòng " + currentRowNumber + ": Không tìm thấy nhu cầu '" + purposeName + "'."));
-
-                ScreenSize screenSize = screenSizeRepository.findByValue(screenSizeValue)
-                        .orElseThrow(() -> new RuntimeException("Dòng " + currentRowNumber + ": Không tìm thấy màn hình " + screenSizeValue + " inch."));
-
-                // 3. XỬ LÝ LOGIC & TẠO PRODUCT
-                String slug = generateSlug(name);
-                if (productRepository.existsBySlug(slug)) {
-                    slug = slug + "-" + System.currentTimeMillis();
-                }
-
-                Product product = Product.builder()
-                        .name(name)
-                        .slug(slug)
-                        .price(price)
-                        .stockQuantity(stockQuantity)
-                        .description(description)
-                        .brand(brand)
-                        .usagePurpose(purpose)
-                        .screenSize(screenSize)
+                // 3. TẠO BIẾN THỂ
+                ProductVariant variant = ProductVariant.builder()
+                        .sku(getCellValue(row.getCell(15)))
+                        .price(vPrice)
+                        .stockQuantity(vStock)
+                        .ram(ram)
+                        .gpu(gpu)
+                        .chip(chip)
+                        .storage(storage)
+                        .color(color)
+                        .ramCapacity(getCellValue(row.getCell(23))) // Cột X: RAM Text
+                        .storageCapacity(getCellValue(row.getCell(21)))
+                        .colorName(getCellValue(row.getCell(22)))
+                        .image(product.getImageUrl()) // Ảnh đại diện biến thể lấy từ ảnh chính SP
+                        .product(product)
+                        .isActive(true)
+                        .images(new ArrayList<>()) // Khởi tạo list ảnh phụ cho biến thể
                         .build();
 
-                // XỬ LÝ BÓC TÁCH THÔNG SỐ KỸ THUẬT
-//                ProductSpecification spec = parseSpecifications(rawSpecifications);
-//                spec.setProduct(product);
-//                product.setSpecification(spec);
-
-                // 4. XỬ LÝ ẢNH
-                List<ImageProduct> images = new ArrayList<>();
-                if (!rawImages.isEmpty()) {
-                    String[] urls = rawImages.split(";");
-                    for (String url : urls) {
+                // 4. ✅ XỬ LÝ ẢNH PHỤ CHO BIẾN THỂ (Cột Y - Index 24)
+                String rawVariantImages = getCellValue(row.getCell(24));
+                if (!rawVariantImages.isEmpty()) {
+                    for (String url : rawVariantImages.split(";")) {
                         if (!url.trim().isEmpty()) {
-                            ImageProduct img = ImageProduct.builder()
-                                    .name(name)
-                                    .urlImage(url.trim())
-                                    .product(product)
-                                    .build();
-                            images.add(img);
+                            VariantImage vImg = new VariantImage();
+                            vImg.setImageUrl(url.trim());
+                            vImg.setProductVariant(variant);
+                            variant.getImages().add(vImg);
                         }
                     }
                 }
-                product.setImages(images);
-                productList.add(product);
-            }
 
-            if (!productList.isEmpty()) {
-                productRepository.saveAll(productList);
+                if (product.getVariants() == null) product.setVariants(new ArrayList<>());
+                product.getVariants().add(variant);
+
+                // 5. CẬP NHẬT THÔNG TIN TỔNG CHO CHA
+                if (product.getPrice() == 0.0) product.setPrice(vPrice);
+                product.setStockQuantity(product.getStockQuantity() + vStock);
             }
+            productRepository.saveAll(productMap.values());
         }
     }
 
-    /**
-     * ✅ Hàm parse Double tích hợp Validation để báo lỗi dòng cụ thể
-     */
-    private double parseDoubleWithValidation(String value, int row, String fieldName) {
-        try {
-            if (value == null || value.trim().isEmpty()) return 0;
-            String standardized = value.replace(",", ".").trim();
-            double result = Double.parseDouble(standardized);
+    private Product createNewProductHeader(Row row, int rowNum) {
+        Product product = Product.builder()
+                .name(getCellValue(row.getCell(0)))
+                .description(getCellValue(row.getCell(1)))
+                .imageUrl(getCellValue(row.getCell(5)))
+                .slug(SlugUtil.toSlug(getCellValue(row.getCell(0))))
+                .status("ACTIVE")
+                .price(0.0)
+                .stockQuantity(0)
+                .build();
 
-            if (result < 0) {
-                throw new RuntimeException("Dòng " + row + ": " + fieldName + " không được là số âm.");
-            }
-            return result;
-        } catch (NumberFormatException e) {
-            throw new RuntimeException("Dòng " + row + ": " + fieldName + " không đúng định dạng số.");
-        }
+        brandRepository.findByName(getCellValue(row.getCell(2))).ifPresent(product::setBrand);
+        usagePurposeRepository.findByName(getCellValue(row.getCell(3))).ifPresent(product::setUsagePurpose);
+        double ss = parseDouble(getCellValue(row.getCell(4)), rowNum, "Màn hình");
+        screenSizeRepository.findByValue(ss).ifPresent(product::setScreenSize);
+
+        ProductSpecification spec = ProductSpecification.builder()
+                .resolution(getCellValue(row.getCell(6))).refreshRate(getCellValue(row.getCell(7)))
+                .panelType(getCellValue(row.getCell(8))).battery(getCellValue(row.getCell(9)))
+                .weight(getCellValue(row.getCell(10))).os(getCellValue(row.getCell(11)))
+                .wifi(getCellValue(row.getCell(12))).bluetooth(getCellValue(row.getCell(13)))
+                .ports(getCellValue(row.getCell(14))).product(product).build();
+        product.setSpecification(spec);
+
+        return product;
     }
 
-//    private ProductSpecification parseSpecifications(String rawText) {
-//        ProductSpecification spec = new ProductSpecification();
-//        spec.setCpu(extractValue(rawText, "Loại CPU", "Cổng giao tiếp"));
-//        spec.setVga(extractValue(rawText, "Loại card đồ họa", "Dung lượng RAM"));
-//        spec.setScreenDetail(extractValue(rawText, "Kích thước màn hình", "Công nghệ màn hình"));
-//        spec.setResolution(extractValue(rawText, "Độ phân giải màn hình", "Loại CPU"));
-//        spec.setStorageType(extractValue(rawText, "Ổ cứng", "Kích thước màn hình"));
-//        spec.setOtherSpecs(rawText);
-//        return spec;
-//    }
-
-    private String extractValue(String text, String startKey, String endKey) {
-        if (text == null || !text.contains(startKey)) return "N/A";
+    private double parseDouble(String val, int row, String field) {
         try {
-            int start = text.indexOf(startKey) + startKey.length();
-            int end = text.indexOf(endKey);
-            if (end == -1 || end < start) return text.substring(start).trim();
-            return text.substring(start, end).trim();
-        } catch (Exception e) { return "N/A"; }
+            if (val == null || val.isEmpty()) return 0;
+            return Double.parseDouble(val.replace(",", "."));
+        } catch (Exception e) {
+            throw new RuntimeException("Dòng " + row + ": " + field + " không hợp lệ.");
+        }
     }
 
     private String getCellValue(Cell cell) {
         if (cell == null) return "";
-        DataFormatter formatter = new DataFormatter();
-        return formatter.formatCellValue(cell).trim();
-    }
-
-    private static final Pattern NONLATIN = Pattern.compile("[^\\w-]");
-    private static final Pattern WHITESPACE = Pattern.compile("[\\s]");
-
-    public String generateSlug(String input) {
-        if (input == null) return "";
-        String nowhitespace = WHITESPACE.matcher(input).replaceAll("-");
-        String normalized = Normalizer.normalize(nowhitespace, Normalizer.Form.NFD);
-        String slug = NONLATIN.matcher(normalized).replaceAll("");
-        return slug.toLowerCase(Locale.ENGLISH);
+        return new DataFormatter().formatCellValue(cell).trim();
     }
 }
