@@ -129,28 +129,56 @@ $hover-bg: #f0f0f0;
     }
     &.laptop-dropdown {
       display: flex;
-      gap: 30px;
-      min-width: 600px;
-      padding: 20px;
+      justify-content: space-between; // Chia đều khoảng cách giữa các cột
+      align-items: flex-start;       // Căn tất cả cột bắt đầu từ đỉnh như nhau
+      min-width: 700px;              // Tăng nhẹ chiều rộng để thoải mái hơn
+      padding: 25px;
+      left: 50%;                     // Căn giữa menu dropdown
+      transform: translateX(-50%);    // Kết hợp left: 50% để menu nằm chính giữa mục Laptop
+
       .dropdown-column {
-        flex: 1;
+        flex: 1;                     // QUAN TRỌNG: Chia đều 100% width cho 3 cột (mỗi cột 33.33%)
+        padding: 0 15px;             // Tạo khoảng cách an toàn giữa nội dung các cột
+        display: block;              // Đảm bảo column là một khối độc lập
+
         .section-title {
-          font-weight: 600;
+          font-weight: 700;          // Làm đậm tiêu đề hơn
           color: $primary-color;
           font-size: 18px;
           display: block;
-          margin-bottom: 10px;
+          margin-bottom: 15px;       // Tăng khoảng cách dưới tiêu đề
           padding-bottom: 8px;
           border-bottom: 2px solid $border-color;
+          white-space: nowrap;       // Giữ tiêu đề trên 1 dòng
         }
+
         .sub-dropdown {
           list-style: none;
           padding: 0;
           margin: 0;
           display: flex;
           flex-direction: column;
-          gap: 5px;
-          li { margin: 0; }
+          gap: 8px;                  // Khoảng cách giữa các dòng item
+
+          li { 
+            margin: 0; 
+            padding: 0;              // Reset padding của li
+
+            a {
+              text-decoration: none;
+              color: $text-color;
+              padding: 0 !important; // Xóa padding mặc định của menu li thường
+              font-size: 16px;
+              display: inline-block;
+              transition: all 0.2s ease;
+
+              &:hover {
+                background: transparent; // Xóa background gray khi hover ở mega menu
+                color: $primary-color;
+                padding-left: 5px !important; // Hiệu ứng dịch sang phải nhẹ khi hover
+              }
+            }
+          }
         }
       }
     }
