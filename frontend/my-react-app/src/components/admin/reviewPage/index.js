@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import apiClient from "../../../api/axiosConfig";
+import { CircleCheck, CornerDownLeft, SquarePen, CircleX } from 'lucide-react';
 import "./style.scss";
 
 function ReviewManagement() {
@@ -29,7 +30,7 @@ function ReviewManagement() {
   const approveReview = async (id) => {
     try {
       await apiClient.put(`/reviews/${id}/approve`);
-      fetchReviews(); // Load lại để nút Duyệt tự mất đi vì approved đã thành true
+      fetchReviews();
     } catch (e) {
       console.error(e);
     }
@@ -111,33 +112,36 @@ function ReviewManagement() {
                   </td>
 
                   <td className="actions">
-                    {/* CHỨC NĂNG BẠN HỎI: Chỉ hiện nút Duyệt nếu chưa duyệt */}
-                    {!r.approved && (
-                      <button 
-                        className="btn approve" 
-                        onClick={() => approveReview(r.id)}
-                        title="Duyệt ngay"
-                      >
-                        ✔
-                      </button>
-                    )}
-
-                    <button 
-                      className="btn reply" 
-                      onClick={() => replyReview(r.id, r.reply)}
-                      title="Phản hồi"
-                    >
-                      {r.reply ? "📝" : "💬"}
-                    </button>
-
-                    <button 
-                      className="btn delete" 
-                      onClick={() => deleteReview(r.id)}
-                      title="Xóa"
-                    >
-                      ✖
-                    </button>
-                  </td>
+                    <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                      {!r.approved && (
+                        <CircleCheck
+                          size={18}
+                          onClick={() => approveReview(r.id)}
+                          title="Duyệt ngay"
+                          style={{ cursor: "pointer", color: "#28a745" }}
+                        />
+                      )}
+                      {r.reply
+                        ? <SquarePen
+                            size={18}
+                            onClick={() => replyReview(r.id, r.reply)}
+                            title="Sửa trả lời"
+                            style={{ cursor: "pointer", color: "#3b82f6" }}
+                          />
+                        : <CornerDownLeft
+                            size={18}
+                            onClick={() => replyReview(r.id, r.reply)}
+                            title="Trả lời"
+                            style={{ cursor: "pointer", color: "#3b82f6" }}
+                          />
+                      }
+                      <CircleX
+                        size={18}
+                        onClick={() => deleteReview(r.id)}
+                        title="Xóa"
+                        style={{ cursor: "pointer", color: "#ef4444" }}
+                      />
+                    </div>                  </td>
                 </tr>
               ))}
             </tbody>
