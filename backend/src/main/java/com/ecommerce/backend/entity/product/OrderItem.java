@@ -33,7 +33,8 @@ public class OrderItem {
 
     @Column(name = "promotion_name")
     private String promotionName; // Tên nội dung khuyến mãi
-
+    @Column(name = "image_url") // Đảm bảo tên cột khớp với DB
+    private String imageUrl;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
     @JsonBackReference

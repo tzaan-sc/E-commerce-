@@ -153,11 +153,15 @@ public class CartServiceImpl implements CartService {
             OrderItem orderItem = OrderItem.builder()
                     .order(order)
                     .product(product)
-                    // ✅ Thêm variant để cột variant_id trong DB không bị NULL
-                    .variant(variant)
+                    .variant(variant) // Giúp variant_id không bị NULL
+
+                    // ✅ THÊM DÒNG NÀY: Để image_url trong bảng order_items có dữ liệu
+                    // Ưu tiên lấy ảnh biến thể, nếu biến thể k có ảnh thì mới lấy ảnh đầu tiên của sản phẩm
+                    .imageUrl(variant.getImage() != null ? variant.getImage() : product.getImages().get(0).getUrlImage())
+
                     .productName(product.getName() + " (" + variant.getRamCapacity() + " - " + variant.getStorageCapacity() + ")")
                     .quantity(cartItem.getQuantity())
-                    .price(finalPrice) // Giá hiển thị (đã trừ khuyến mãi)
+                    .price(finalPrice)
                     .originalPrice(originalPrice)
                     .discountAmount(discountAmount)
                     .promotionName(promotionName)

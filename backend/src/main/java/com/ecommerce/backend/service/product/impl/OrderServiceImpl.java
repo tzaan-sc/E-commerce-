@@ -245,11 +245,17 @@ public class OrderServiceImpl implements OrderService {
     private OrderDTO mapOrderToDTO(Order order) {
         List<OrderItemDTO> itemDTOs = order.getOrderItems().stream()
                 .map(item -> {
-                    String productImageUrl = null;
-                    if (item.getProduct() != null) {
-                        productImageUrl = item.getProduct().getImageUrl(); // Lấy trực tiếp từ imageUrl của Product
-                                                                           // (tránh N+1)
+                    // 🔥 SỬA TẠI ĐÂY: Ưu tiên lấy ảnh biến thể từ chính OrderItem
+                    String finalImageUrl = null;
+
+                    if (item.getImageUrl() != null && !item.getImageUrl().isBlank()) {
+                        // Nếu cột image_url trong bảng order_items có dữ liệu, bốc cái này ngay (Ảnh biến thể)
+                        finalImageUrl = item.getImageUrl();
+                    } else if (item.getProduct() != null) {
+                        // Nếu không có (đơn cũ), mới lấy ảnh mặc định của sản phẩm
+                        finalImageUrl = item.getProduct().getImageUrl();
                     }
+
                     return OrderItemDTO.builder()
                             .productName(item.getProductName())
                             .quantity(item.getQuantity())
@@ -257,13 +263,13 @@ public class OrderServiceImpl implements OrderService {
                             .originalPrice(item.getOriginalPrice())
                             .discountAmount(item.getDiscountAmount())
                             .promotionName(item.getPromotionName())
-                            .imageUrl(productImageUrl)
+                            .imageUrl(finalImageUrl) // ✅ Đã gán đúng link ảnh biến thể
                             .productId(item.getProduct() != null ? item.getProduct().getId() : null)
                             .build();
                 })
                 .collect(Collectors.toList());
 
-        // 👇 Sửa đoạn này — thêm paymentStatus và note
+        // 👇 Giữ nguyên đoạn này của bạn — thêm paymentStatus và note
         return OrderDTO.builder()
                 .id(order.getId())
                 .status(order.getStatus())
@@ -278,7 +284,7 @@ public class OrderServiceImpl implements OrderService {
                 .phone(order.getPhone())
                 .shippingAddress(order.getShippingAddress())
                 .paymentMethod(order.getPaymentMethod())
-                .note(order.getNote()) // 👈
+                .note(order.getNote())
                 .build();
     }
 }
