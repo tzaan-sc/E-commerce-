@@ -254,8 +254,11 @@ public class OrderServiceImpl implements OrderService {
                             .productName(item.getProductName())
                             .quantity(item.getQuantity())
                             .price(item.getPrice())
+                            .originalPrice(item.getOriginalPrice())
+                            .discountAmount(item.getDiscountAmount())
+                            .promotionName(item.getPromotionName())
                             .imageUrl(productImageUrl)
-                            .productId(item.getProduct().getId())
+                            .productId(item.getProduct() != null ? item.getProduct().getId() : null)
                             .build();
                 })
                 .collect(Collectors.toList());

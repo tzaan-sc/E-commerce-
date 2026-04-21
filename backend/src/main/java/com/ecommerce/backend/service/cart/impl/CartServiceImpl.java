@@ -130,6 +130,25 @@ public class CartServiceImpl implements CartService {
             variant.setStockQuantity(variant.getStockQuantity() - cartItem.getQuantity());
             productVariantRepository.save(variant); // Lưu lại vào bảng product_variants
 
+            // Tính giá cuối cùng sau khi áp dụng khuyến mãi
+            double originalPrice = variant.getPrice();
+            double finalPrice = originalPrice;
+            String promotionName = null;
+
+            if (product.getPromotion() != null && product.getPromotion().getStatus() != null && "ACTIVE".equals(product.getPromotion().getStatus().name())) {
+                if (product.getPromotion().getDiscountType() != null) {
+                    if ("PERCENTAGE".equals(product.getPromotion().getDiscountType().name())) {
+                        finalPrice = finalPrice * (1 - product.getPromotion().getDiscountValue() / 100.0);
+                        promotionName = product.getPromotion().getName() + " (Giảm " + product.getPromotion().getDiscountValue() + "%)";
+                    } else if ("FIXED_AMOUNT".equals(product.getPromotion().getDiscountType().name())) {
+                        finalPrice = finalPrice - product.getPromotion().getDiscountValue();
+                        promotionName = product.getPromotion().getName() + " (Giảm " + product.getPromotion().getDiscountValue() + "₫)";
+                    }
+                }
+            }
+            if (finalPrice < 0) finalPrice = 0;
+            double discountAmount = originalPrice - finalPrice;
+
             // 🔥 SỬA LỖI TẠI ĐÂY: Gán variant và các trường giá cho OrderItem
             OrderItem orderItem = OrderItem.builder()
                     .order(order)
@@ -138,13 +157,14 @@ public class CartServiceImpl implements CartService {
                     .variant(variant)
                     .productName(product.getName() + " (" + variant.getRamCapacity() + " - " + variant.getStorageCapacity() + ")")
                     .quantity(cartItem.getQuantity())
-                    .price(variant.getPrice()) // Giá hiển thị
-                    // ✅ Nếu DB có cột price_at_purchase (NOT NULL) thì gán thêm ở đây cho chắc:
-                    // .priceAtPurchase(variant.getPrice())
+                    .price(finalPrice) // Giá hiển thị (đã trừ khuyến mãi)
+                    .originalPrice(originalPrice)
+                    .discountAmount(discountAmount)
+                    .promotionName(promotionName)
                     .build();
 
             orderItems.add(orderItem);
-            totalAmount += variant.getPrice() * cartItem.getQuantity();
+            totalAmount += finalPrice * cartItem.getQuantity();
         }
 
         order.setTotalAmount(totalAmount);

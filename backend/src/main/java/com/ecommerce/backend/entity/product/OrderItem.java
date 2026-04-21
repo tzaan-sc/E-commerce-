@@ -25,6 +25,15 @@ public class OrderItem {
     @Column(name = "price")
     private Double price;
 
+    @Column(name = "original_price")
+    private Double originalPrice; // Giá gốc ban đầu
+
+    @Column(name = "discount_amount")
+    private Double discountAmount; // Số tiền được giảm
+
+    @Column(name = "promotion_name")
+    private String promotionName; // Tên nội dung khuyến mãi
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
     @JsonBackReference

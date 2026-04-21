@@ -122,17 +122,28 @@ const [selectedProduct, setSelectedProduct] = useState(null);
                       </div>
 
                       <p className="mb-0 mt-1 text-muted">Số lượng: {item.quantity}</p>
+                      
+                      {item.discountAmount > 0 && (
+                        <div className="mt-1">
+                          <span className="badge bg-danger">
+                            {item.promotionName || 'Đang khuyến mãi'}
+                          </span>
+                        </div>
+                      )}
                     </div>
                     
                     <div className="text-end ms-3" style={{ minWidth: "120px" }}>
-
-<span className="fw-bold text-dark fs-6">
-{(item.price * item.quantity).toLocaleString("vi-VN")} ₫
-</span>
-
-
-
-</div>
+                      <div className="d-flex flex-column align-items-end">
+                        <span className="fw-bold text-dark fs-6">
+                            {((item.price || 0) * (item.quantity || 1)).toLocaleString("vi-VN")} ₫
+                        </span>
+                        {item.discountAmount > 0 && (
+                          <span className="text-muted text-decoration-line-through small mt-1">
+                            {((item.originalPrice || 0) * (item.quantity || 1)).toLocaleString("vi-VN")} ₫
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -205,7 +216,18 @@ const [selectedProduct, setSelectedProduct] = useState(null);
 
                 <hr className="my-3" />
                 
-                <div className="d-flex justify-content-between align-items-center mb-3">
+                  {/* Tính tổng tiết kiệm */}
+                  {order.totalDiscount = order.items.reduce((sum, item) => sum + (item.discountAmount || 0) * (item.quantity || 1), 0)}
+                  {order.totalDiscount > 0 && (
+                    <div className="d-flex justify-content-between mb-3">
+                      <span className="text-muted">Tiết kiệm được</span>
+                      <span className="fw-medium text-success">
+                        - {order.totalDiscount.toLocaleString("vi-VN")} ₫
+                      </span>
+                    </div>
+                  )}
+
+                <div className="d-flex justify-content-between align-items-center mb-3 pt-2">
                   <span className="fw-bold fs-5">Tổng cộng</span>
                   <span className="fw-bold fs-4 text-primary">
                     {(order.totalAmount).toLocaleString("vi-VN")} ₫

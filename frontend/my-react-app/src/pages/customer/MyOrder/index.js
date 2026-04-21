@@ -262,9 +262,25 @@ const user = JSON.parse(localStorage.getItem("user"));
                     <div className="ms-3 flex-grow-1">
                       <h6 className="mb-1">{item.productName}</h6>
                       <p className="text-muted mb-1 small">Số lượng: x{item.quantity}</p>
-                      <p className="text-primary fw-bold mb-0">
-                        {((item.price || 0) * (item.quantity || 0)).toLocaleString("vi-VN")}₫
-                      </p>
+                      
+                      {item.discountAmount > 0 && (
+                        <div className="mb-1">
+                          <span className="badge bg-danger">
+                            {item.promotionName || 'Đang khuyến mãi'}
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="d-flex align-items-center">
+                        <p className="text-primary fw-bold mb-0 me-2" style={{ fontSize: '1.1rem' }}>
+                          {((item.price || 0) * (item.quantity || 0)).toLocaleString("vi-VN")}₫
+                        </p>
+                        {item.discountAmount > 0 && (
+                          <span className="text-muted text-decoration-line-through small">
+                            {((item.originalPrice || 0) * (item.quantity || 0)).toLocaleString("vi-VN")}₫
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
