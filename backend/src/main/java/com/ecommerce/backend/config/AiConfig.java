@@ -19,7 +19,7 @@ public class AiConfig {
     public VectorStore vectorStore(EmbeddingModel embeddingModel) {
         SimpleVectorStore vectorStore = new SimpleVectorStore(embeddingModel);
         File file = new File(vectorStorePath);
-        // Nếu file đã tồn tại (đã từng chạy đồng bộ), thì load lên RAM
+        // Nếu file đã tồn tại thì load lên RAM
         if (file.exists()) {
             vectorStore.load(file);
         }
