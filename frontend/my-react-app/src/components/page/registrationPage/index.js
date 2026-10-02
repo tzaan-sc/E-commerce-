@@ -1,18 +1,25 @@
 import React, { memo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
+import { useLocation } from "react-router-dom";
 import './style.scss';
 
 const RegistrationPage = () => {
   const { register, loading } = useAuth();
-  const [formData, setFormData] = useState({
-    username: '',
-    phone: '',
-    email: '',
-    address: '',
-    password: '',
-    confirmPassword: '',
-  });
+  const location = useLocation();
+
+const [formData, setFormData] = useState({
+  username: '',
+  phone: '',
+  email: location.state?.email || '',
+  address: '',
+  password: '',
+  confirmPassword: '',
+});
+
+
+  
+
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -83,6 +90,7 @@ const RegistrationPage = () => {
                   value={formData.email}
                   onChange={handleChange}
                   required
+                  readOnly={!!location.state?.email}
                 />
               </div>
 
@@ -134,6 +142,9 @@ const RegistrationPage = () => {
               <button type="submit" className="btn btn-primary w-100 mb-3">
                 Đăng Kí
               </button>
+              
+             
+
 
               <p className="text-center mt-3">
                 Đã có tài khoản? <Link to="/dang-nhap">Đăng nhập</Link>

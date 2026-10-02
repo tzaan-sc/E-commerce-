@@ -6,7 +6,7 @@ import './styles/style.scss'
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import { CartProvider } from './context/index'; 
-
+import { GoogleOAuthProvider } from '@react-oauth/google';
 // 👇 2. IMPORT PROVIDER XÁC THỰC (Nếu có)
 import { useAuth } from './hooks/useAuth';
 
@@ -17,15 +17,18 @@ root.render(
   
   // </BrowserRouter>
   <React.StrictMode>
-    <BrowserRouter>
+    <GoogleOAuthProvider clientId="733137263298-rd2c4so8vnreuua7dvtgrmgg90cnu72i.apps.googleusercontent.com">
+      <BrowserRouter>
       {/* 3. BỌC PROVIDER VÀO ĐÂY */}
       {/* Đặt AuthProvider bên ngoài cùng, sau đó là CartProvider */}
-      <useAuth> 
+      
         <CartProvider> {/* <-- CHÍNH LÀ CHỖ CẦN BỌC */}
           <RouterCustom />
         </CartProvider>
-      </useAuth>
+      
     </BrowserRouter>
+    </GoogleOAuthProvider>
+    
   </React.StrictMode>
 );
 
